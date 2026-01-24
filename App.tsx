@@ -6,9 +6,9 @@ import { SessionView } from './components/SessionView';
 import { RepositoryView } from './components/RepositoryView';
 import { Drawer } from './components/Drawer';
 import * as JulesApi from './services/geminiService';
-import { JulesActivity, JulesSource, JulesSession } from './types';
+import { JulesActivity, JulesSource, JulesSession, AutomationMode } from './types';
 import { AlertCircle, Key, ChevronRight } from 'lucide-react';
-import { SessionMode } from './components/InputArea';
+import { SessionMode, SessionCreateOptions } from './components/InputArea';
 
 export default function App() {
     const [apiKey, setApiKey] = useState<string>('');
@@ -27,6 +27,7 @@ export default function App() {
 
     // Polling ref
     const pollInterval = useRef<number | null>(null);
+    const activitiesRef = useRef<JulesActivity[]>([]);
 
     useEffect(() => {
         const key = localStorage.getItem('jules_api_key');
@@ -82,10 +83,10 @@ export default function App() {
 
     const fetchSources = async () => {
         try {
-            const list = await JulesApi.listSources();
-            setSources(list);
-            if (list.length > 0 && !currentSource) {
-                setCurrentSource(list[0]);
+            const response = await JulesApi.listSources();
+            setSources(response.sources);
+            if (response.sources.length > 0 && !currentSource) {
+                setCurrentSource(response.sources[0]);
             }
         } catch (e) {
             console.error(e);
@@ -97,28 +98,39 @@ export default function App() {
     };
 
     const fetchSessions = async () => {
-        const list = await JulesApi.listSessions();
-        setSessions(list);
+        const response = await JulesApi.listSessions();
+        setSessions(response.sessions);
     };
 
     const startPolling = useCallback((sessionName: string) => {
         if (pollInterval.current) clearInterval(pollInterval.current);
 
         // Immediate fetch
-        JulesApi.listActivities(sessionName).then(setActivities);
+        JulesApi.listActivities(sessionName).then(response => {
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
+        });
 
         // Poll every 2s
         pollInterval.current = window.setInterval(async () => {
-            const acts = await JulesApi.listActivities(sessionName);
-            setActivities(acts);
+            const response = await JulesApi.listActivities(sessionName);
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
 
-            // Also check session status for outputs
+            // Also check session status for outputs and state
             const sess = await JulesApi.getSession(sessionName);
             setCurrentSession(sess);
+
+            // Use API state to determine if processing
+            // Active states: QUEUED, PLANNING, IN_PROGRESS
+            // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
+            // Terminal states: COMPLETED, FAILED
+            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+            setIsProcessing(isActive);
         }, 2000);
     }, []);
 
-    const handleSendMessage = async (text: string, mode: SessionMode = 'START', branch: string = 'main') => {
+    const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
         setError(null);
         setIsProcessing(true);
 
@@ -130,11 +142,13 @@ export default function App() {
                 }
 
                 // Map UI Mode to API Options
-                const requireApproval = mode === 'REVIEW' || mode === 'SCHEDULED' || mode === 'INTERACTIVE';
+                const requireApproval = options.mode === 'REVIEW' || options.mode === 'SCHEDULED' || options.mode === 'INTERACTIVE';
 
                 const session = await JulesApi.createSession(text, currentSource.name, {
+                    title: options.title,
                     requirePlanApproval: requireApproval,
-                    startingBranch: branch
+                    startingBranch: options.branch || 'main',
+                    automationMode: options.automationMode || 'AUTO_CREATE_PR'
                 });
 
                 setCurrentSession(session);
@@ -142,15 +156,15 @@ export default function App() {
                 navigate(`/session/${session.name.replace('sessions/', '')}`);
                 startPolling(session.name);
             } else {
-                // SEND MESSAGE TO EXISTING
+                // SEND MESSAGE TO EXISTING SESSION
                 await JulesApi.sendMessage(currentSession.name, text);
-                // Force immediate update
-                const acts = await JulesApi.listActivities(currentSession.name);
-                setActivities(acts);
+                // Force immediate update - polling will set isProcessing based on API state
+                const response = await JulesApi.listActivities(currentSession.name);
+                setActivities(response.activities);
+                // Polling will handle isProcessing based on session.state from API
             }
         } catch (e: any) {
             setError(e.message || "An error occurred");
-        } finally {
             setIsProcessing(false);
         }
     };
@@ -217,7 +231,7 @@ export default function App() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-[#050505] text-textMain font-sans flex flex-col overflow-hidden">
+        <div className="h-[100dvh] w-full bg-[#0c0c0c] text-textMain font-sans flex flex-col overflow-hidden">
             <Header
                 onOpenDrawer={() => setIsDrawerOpen(true)}
                 currentSource={currentSource}
@@ -255,6 +269,8 @@ export default function App() {
                             localStorage.removeItem('jules_api_key');
                             setApiKey('');
                         }}
+                        sessions={sessions}
+                        onSelectSession={handleSelectSession}
                     />
                 } />
 
@@ -265,7 +281,7 @@ export default function App() {
                             activities={activities}
                             isProcessing={isProcessing}
                             error={error}
-                            onSendMessage={(text) => handleSendMessage(text, 'START')}
+                            onSendMessage={(text) => handleSendMessage(text, { mode: 'START' })}
                             onApprovePlan={handleApprovePlan}
                         />
                     ) : (

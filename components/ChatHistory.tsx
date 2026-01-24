@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { JulesActivity, Step } from '../types';
+import { JulesActivity, Step, formatRelativeTime } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Command, Clock, Bot, Download, ArrowRight
+    Command, Clock, Bot, Download, ArrowRight, MoreVertical, XCircle, GitBranch
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
@@ -16,7 +16,7 @@ interface ChatHistoryProps {
     activities: JulesActivity[];
     isStreaming: boolean;
     onApprovePlan: (activityId: string) => void;
-    sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string } }>;
+    sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string; branch?: string } }>;
     sessionPrompt?: string;
     sessionCreateTime?: string;
 }
@@ -58,7 +58,7 @@ const MarkdownComponents = {
                     <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 border-b border-white/5">
                         <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">{match[1]}</span>
                     </div>
-                    <pre className="p-3 overflow-x-auto text-sm text-zinc-300 font-mono custom-scrollbar">
+                    <pre className="p-3 overflow-x-auto text-sm text-zinc-300 font-mono custom-scrollbar max-w-full">
                         <code className={className} {...props}>
                             {children}
                         </code>
@@ -68,13 +68,13 @@ const MarkdownComponents = {
         }
         // Otherwise treat as inline code
         return (
-            <code className={twMerge("bg-white/10 rounded px-1.5 py-0.5 text-[0.9em] font-mono text-zinc-200 break-all", className)} {...props}>
+            <code className={twMerge("bg-white/10 rounded px-1.5 py-0.5 text-[0.9em] font-mono text-zinc-200 break-words", className)} {...props}>
                 {children}
             </code>
         )
     },
     a({ node, children, ...props }: any) {
-        return <a target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors break-all" {...props}>{children}</a>
+        return <a target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors break-words" {...props}>{children}</a>
     },
     ul({ children }: any) { return <ul className="list-disc pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ul> },
     ol({ children }: any) { return <ol className="list-decimal pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ol> },
@@ -89,26 +89,26 @@ const MarkdownComponents = {
 
 const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, time }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const isLong = text.length > 300 || text.split('\n').length > 5;
+    const lineCount = text.split('\n').length;
+    const isLong = text.length > 500 || lineCount > 8;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex gap-3 sm:gap-4 justify-end w-full"
+            className="flex gap-3 sm:gap-4 justify-end w-full overflow-hidden"
         >
-            <div className="flex flex-col items-end gap-1 max-w-[90%] sm:max-w-[75%]">
+            <div className="flex flex-col items-end gap-1.5 max-w-[92%] sm:max-w-[85%] md:max-w-[80%] min-w-0">
                 <div
-                    onClick={() => isLong && setIsExpanded(!isExpanded)}
                     className={twMerge(
-                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg",
-                        isLong && "cursor-pointer hover:bg-[#323236] transition-colors pr-10"
+                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg w-full",
+                        isLong && !isExpanded && "pb-8"
                     )}
                 >
                     <div className={twMerge(
-                        !isExpanded && isLong && 'line-clamp-[8] overflow-hidden',
-                        "prose prose-invert prose-p:my-0 prose-pre:my-2 max-w-none break-words"
+                        "prose prose-invert prose-p:my-0 prose-pre:my-2 max-w-none break-words overflow-hidden",
+                        !isExpanded && isLong && 'line-clamp-[12]'
                     )}>
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -118,10 +118,23 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
                         </ReactMarkdown>
                     </div>
 
+                    {/* Gradient fade for truncated content */}
+                    {isLong && !isExpanded && (
+                        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#27272A] to-transparent pointer-events-none rounded-b-[20px] sm:rounded-b-[24px]" />
+                    )}
+
+                    {/* Expand/Collapse button inside bubble at bottom */}
                     {isLong && (
-                        <div className="absolute top-4 right-4 text-zinc-400 group-hover:text-white transition-colors">
-                            <ChevronDown size={16} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                        </div>
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full border border-white/5 transition-all min-h-[28px]"
+                        >
+                            {isExpanded ? (
+                                <>Show less <ChevronDown size={12} className="rotate-180" /></>
+                            ) : (
+                                <>Show more <ChevronDown size={12} /></>
+                            )}
+                        </button>
                     )}
                 </div>
                 {time && <span className="text-[10px] text-zinc-600 font-mono px-1">{time}</span>}
@@ -137,7 +150,7 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
         <motion.div
             layout
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex flex-col gap-2 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-transparent hover:border-white/5 select-none"
+            className="flex flex-col gap-2 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-transparent hover:border-white/5 select-none min-h-[44px]"
         >
             <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 flex items-center justify-center text-[10px] font-mono text-zinc-500 group-hover:border-indigo-500/50 group-hover:text-indigo-300 transition-colors">
@@ -168,40 +181,58 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
     );
 };
 
-const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ command, output }) => {
+const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = ({ command, output, exitCode }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const isFailed = exitCode !== undefined && exitCode !== 0;
 
     return (
-        <div className="w-full max-w-2xl">
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl md:max-w-2xl box-border">
             <div
                 className={twMerge(
-                    "font-mono text-xs bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
-                    isExpanded ? "border-white/20" : ""
+                    "font-mono text-xs bg-[#09090b] border rounded-xl overflow-hidden shadow-lg ring-1 transition-all w-full",
+                    isFailed
+                        ? "border-red-500/30 ring-red-500/10 hover:border-red-500/50"
+                        : "border-white/10 ring-white/5 hover:border-white/20",
+                    isExpanded ? (isFailed ? "border-red-500/50" : "border-white/20") : ""
                 )}
             >
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group"
+                    className={twMerge(
+                        "flex items-center justify-between px-3 py-2.5 border-b cursor-pointer transition-colors group min-h-[44px] w-full",
+                        isFailed
+                            ? "bg-red-500/[0.03] border-red-500/10 hover:bg-red-500/[0.06]"
+                            : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
+                    )}
                 >
-                    <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-                        <Terminal size={14} className="text-zinc-500 flex-shrink-0" />
-                        <div className="flex items-center gap-2 min-w-0 truncate">
-                            <span className="text-green-500 font-bold">➜</span>
-                            <span className="font-medium text-zinc-300 truncate">{command}</span>
+                    <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                        <Terminal size={14} className={isFailed ? "text-red-400 flex-shrink-0" : "text-zinc-500 flex-shrink-0"} />
+                        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                            <span className={twMerge("flex-shrink-0", isFailed ? "text-red-400 font-bold" : "text-green-500 font-bold")}>
+                                {isFailed ? "✕" : "➜"}
+                            </span>
+                            <span className="font-medium text-zinc-300 truncate min-w-0">{command}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pl-3 flex-shrink-0">
-                        {!isExpanded && output && (
-                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                    <div className="flex items-center gap-2 pl-2 flex-shrink-0">
+                        {isFailed && (
+                            <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                                <XCircle size={10} />
+                                Failed
+                            </span>
+                        )}
+                        {!isExpanded && output && !isFailed && (
+                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hidden sm:inline">
                                 Output
                             </span>
                         )}
                         <ChevronDown
                             size={14}
                             className={twMerge(
-                                "text-zinc-500 transition-transform duration-200",
+                                "transition-transform duration-200 flex-shrink-0",
+                                isFailed ? "text-red-400" : "text-zinc-500",
                                 isExpanded && "rotate-180"
                             )}
                         />
@@ -216,10 +247,17 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
+                            className="w-full overflow-hidden"
                         >
-                            <div className="p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t border-white/5 bg-black/20">
+                            <div className={twMerge(
+                                "p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t w-full",
+                                isFailed ? "border-red-500/10 bg-red-500/[0.02]" : "border-white/5 bg-black/20"
+                            )}>
                                 {output ? (
-                                    <div className="text-zinc-400/90 whitespace-pre-wrap break-all leading-relaxed font-mono text-xs">
+                                    <div className={twMerge(
+                                        "whitespace-pre-wrap break-all leading-relaxed font-mono text-xs w-full overflow-hidden",
+                                        isFailed ? "text-red-300/90" : "text-zinc-400/90"
+                                    )}>
                                         {output}
                                     </div>
                                 ) : (
@@ -239,38 +277,55 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
 
+    const getFileName = (patch: string) => {
+        const match = patch.match(/^\+\+\+\s+(?:b\/)?(.+)$/m);
+        if (match) {
+            const fullPath = match[1].trim();
+            const parts = fullPath.split('/');
+            return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : fullPath;
+        }
+        return null;
+    };
+
+    const fileName = getFileName(changeSet.gitPatch.unidiffPatch);
+
     return (
-        <div className="w-full max-w-2xl">
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl md:max-w-2xl box-border">
             <div
                 className={twMerge(
-                    "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
+                    "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20 w-full",
                     isExpanded ? "border-white/20" : ""
                 )}
             >
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group"
+                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px] w-full"
                 >
-                    <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                         <FileDiff size={14} className="text-zinc-500 flex-shrink-0" />
-                        <div className="flex items-center gap-2 min-w-0 truncate">
-                            <span className="font-medium text-zinc-300 truncate font-mono text-xs">
+                        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                            <span className="font-medium text-zinc-300 truncate font-mono text-xs min-w-0">
                                 {changeSet.gitPatch?.suggestedCommitMessage || "Code Changes Proposed"}
                             </span>
+                            {fileName && (
+                                <span className="text-zinc-500 text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 truncate font-mono flex-shrink-0 max-w-[100px] sm:max-w-[150px] hidden sm:inline">
+                                    {fileName}
+                                </span>
+                            )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pl-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 pl-2 flex-shrink-0">
                         {!isExpanded && (
-                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hidden sm:inline">
                                 View Diff
                             </span>
                         )}
                         <ChevronDown
                             size={14}
                             className={twMerge(
-                                "text-zinc-500 transition-transform duration-200",
+                                "text-zinc-500 transition-transform duration-200 flex-shrink-0",
                                 isExpanded && "rotate-180"
                             )}
                         />
@@ -285,9 +340,10 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
+                            className="w-full overflow-hidden"
                         >
-                            <div className="p-0 overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-[#0d0d10]">
-                                <pre className="p-3 font-mono text-xs leading-relaxed">
+                            <div className="overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-[#0d0d10] w-full">
+                                <pre className="p-3 font-mono text-xs leading-relaxed w-max min-w-full">
                                     {changeSet.gitPatch.unidiffPatch.split('\n').map((line: string, i: number) => {
                                         let color = "text-zinc-400";
                                         let bg = "transparent";
@@ -303,8 +359,8 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                                         }
 
                                         return (
-                                            <div key={i} className={`${bg} px-2 -mx-2 w-full`}>
-                                                <span className={`${color} inline-block min-w-full`}>{line}</span>
+                                            <div key={i} className={`${bg} px-2 -mx-2`}>
+                                                <span className={`${color} whitespace-pre`}>{line}</span>
                                             </div>
                                         );
                                     })}
@@ -318,8 +374,17 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
     );
 };
 
-const CompactSessionCompleted: React.FC = () => {
+const CompactSessionCompleted: React.FC<{ timestamp?: string }> = ({ timestamp }) => {
     React.useEffect(() => {
+        // Only trigger confetti if the completion event is recent (within last 10 seconds)
+        // This prevents confetti from showing when viewing old history
+        if (!timestamp) return;
+
+        const eventTime = new Date(timestamp).getTime();
+        // Allow a small window for clock skew/network delay, but generally we want "fresh" events
+        // If the event is older than 10 seconds, assume it's history loading
+        if (Date.now() - eventTime > 10000) return;
+
         const end = Date.now() + 1000;
         const colors = ['#a786ff', '#fd8bbc', '#eca184', '#f8deb1'];
 
@@ -343,7 +408,7 @@ const CompactSessionCompleted: React.FC = () => {
                 requestAnimationFrame(frame);
             }
         }());
-    }, []);
+    }, [timestamp]);
 
     return (
         <motion.div
@@ -359,6 +424,159 @@ const CompactSessionCompleted: React.FC = () => {
     );
 };
 
+const CompactSessionFailed: React.FC<{ reason?: string }> = ({ reason }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex justify-center my-6"
+        >
+            <div className="flex flex-col items-center gap-2 px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 shadow-lg shadow-red-500/10 backdrop-blur-sm max-w-md">
+                <div className="flex items-center gap-2">
+                    <XCircle size={16} className="text-red-400" />
+                    <span className="text-xs font-medium text-red-100">Session Failed</span>
+                </div>
+                {reason && (
+                    <p className="text-[11px] text-red-300/80 text-center leading-relaxed">
+                        {reason}
+                    </p>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: string; description: string; branch?: string } } }> = ({ output }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const pr = output.pullRequest;
+
+    if (!pr) return null;
+
+    const getBranchUrl = () => {
+        if (!pr.branch || !pr.url) return null;
+        try {
+            const urlParts = pr.url.split('/');
+            if (urlParts.length >= 5) {
+                const baseUrl = urlParts.slice(0, 5).join('/');
+                return `${baseUrl}/tree/${pr.branch}`;
+            }
+        } catch (e) { return null; }
+        return null; // Fallback or unable to parse
+    };
+
+    const branchUrl = getBranchUrl();
+
+    return (
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-md md:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative box-border">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] rounded-t-xl gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5 flex-shrink-0">
+                        <GitPullRequest size={14} className="text-green-400 sm:w-4 sm:h-4" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="text-zinc-200 font-medium text-xs sm:text-sm tracking-wide truncate">Pull Request Ready</div>
+                        <div className="text-[10px] text-zinc-500 font-medium hidden sm:block">Click to review</div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        >
+                            <MoreVertical size={16} />
+                        </button>
+
+                        {isMenuOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-48 max-w-[calc(100vw-2rem)] bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                    <a
+                                        href={pr.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <ExternalLink size={14} /> View Pull Request
+                                    </a>
+                                    {branchUrl && (
+                                        <a
+                                            href={branchUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            <GitMerge size={14} /> View Branch
+                                        </a>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 rounded-b-xl">
+                <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-sm sm:text-base font-semibold text-white leading-snug mb-1.5 sm:mb-2">
+                        <span className="line-clamp-2 break-words">{pr.title || "Untitled Pull Request"}</span>
+                    </h3>
+                    {pr.description && (
+                        <p className="text-[11px] sm:text-xs text-zinc-400 leading-relaxed line-clamp-2 sm:line-clamp-3 break-words">
+                            {pr.description}
+                        </p>
+                    )}
+                    {pr.branch && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                            <GitBranch size={11} className="text-zinc-500" />
+                            <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                                {pr.branch}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
+                    <a
+                        href={pr.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs sm:text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98] min-h-[40px]"
+                    >
+                        <ExternalLink size={14} />
+                        <span className="truncate">View PR</span>
+                    </a>
+                    <button
+                        onClick={() => {
+                            if (pr.url) {
+                                navigator.clipboard.writeText(pr.url);
+                            }
+                        }}
+                        className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center flex-shrink-0"
+                        title="Copy URL"
+                    >
+                        <Copy size={16} />
+                    </button>
+                </div>
+
+                <div className="text-[9px] sm:text-[10px] font-mono text-zinc-600/70 text-center select-all overflow-hidden">
+                    <div className="truncate">{pr.url}</div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
 export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
     // Check if the initial prompt is already represented in activities
     const hasInitialPromptInActivities = activities.some(act => {
@@ -367,7 +585,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
     });
 
     return (
-        <div className="space-y-6 sm:space-y-8 px-2 sm:px-4">
+        <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
             <AnimatePresence initial={false}>
                 {/* 0. Initial Prompt (if not in activities) */}
                 {sessionPrompt && !hasInitialPromptInActivities && (
@@ -415,13 +633,13 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className="flex gap-3 sm:gap-5 justify-start group w-full"
+                                className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
                             >
                                 <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
                                     <Bot size={18} className="text-indigo-400" />
                                 </div>
-                                <div className="max-w-full sm:max-w-[90%] flex flex-col gap-1">
-                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light">
+                                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
+                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={MarkdownComponents}
@@ -447,10 +665,10 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 key="plan"
                                 initial={{ opacity: 0, y: 20, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className="flex gap-3 sm:gap-5 justify-start"
+                                className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                             >
                                 <div className="w-8 h-8 flex-shrink-0" />
-                                <div className="w-full max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+                                <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
                                     <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
                                         <span className="text-sm font-medium text-white flex items-center gap-2">
                                             <ListTodo size={16} className="text-indigo-400" />
@@ -502,12 +720,13 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-bash`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CommandArtifact
                                             command={artifact.bashOutput.command}
                                             output={artifact.bashOutput.output}
+                                            exitCode={artifact.bashOutput.exitCode}
                                         />
                                     </motion.div>
                                 );
@@ -522,7 +741,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
-                                        <div className="max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
+                                        <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
                                             <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
                                                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                                                     <ImageIcon size={12} />
@@ -571,7 +790,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-diff`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CodeChangeArtifact changeSet={artifact.changeSet} />
@@ -598,9 +817,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         );
 
                         items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start">
+                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[90%] sm:max-w-xl hover:border-white/10 transition-colors">
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
                                     <Loader2
                                         size={14}
                                         className={twMerge(
@@ -608,8 +827,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                             isCurrentlyActive && "animate-spin"
                                         )}
                                     />
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-medium text-zinc-300 transition-colors">
+                                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
+                                        <span className="font-medium text-zinc-300 transition-colors truncate">
                                             {title}
                                         </span>
                                         {!isRedundant && (
@@ -623,7 +842,12 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
 
                     // --- 6. Session Completed ---
                     if (act.sessionCompleted) {
-                        items.push(<CompactSessionCompleted key="completed" />);
+                        items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
+                    }
+
+                    // --- 7. Session Failed ---
+                    if (act.sessionFailed) {
+                        items.push(<CompactSessionFailed key="failed" reason={act.sessionFailed.reason} />);
                     }
 
                     if (items.length === 0) return null;
@@ -637,60 +861,27 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="flex gap-4 sm:gap-5 justify-start"
+                        className="flex gap-4 sm:gap-5 justify-start w-full min-w-0"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
-                        <div className="w-full max-w-lg bg-[#121215] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                            {/* ... (Existing PR Card Content) ... */}
-                            <div className="bg-[#18181B] px-4 py-3 border-b border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                    </div>
-                                    <span className="text-zinc-200 font-medium text-sm">Pull Request Ready</span>
-                                </div>
-                            </div>
-                            <div className="p-4 space-y-4">
-                                <a href={out.pullRequest?.url} target="_blank" rel="noreferrer" className="block group">
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors">
-                                            <GitPullRequest size={18} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-zinc-100 group-hover:text-white transition-colors leading-snug break-words">
-                                                {out.pullRequest?.title || "Untitled Pull Request"}
-                                            </div>
-                                            {out.pullRequest?.description && (
-                                                <div className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                                                    {out.pullRequest.description}
-                                                </div>
-                                            )}
-                                            <div className="text-xs text-zinc-500 truncate mt-1 font-mono flex items-center gap-1">
-                                                <span>#{out.pullRequest?.url.split('/').pop()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
+                        <PullRequestCard output={out} />
                     </motion.div>
                 ))}
 
                 {isStreaming && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="flex gap-5"
+                        className="flex gap-3 sm:gap-5 justify-start w-full"
                     >
                         <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 border border-white/10 flex items-center justify-center mt-1">
                             <Bot size={18} className="text-indigo-400 opacity-70" />
                         </div>
-                        <div className="flex items-center gap-1.5 pt-3">
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                        <div className="flex flex-col gap-3 w-full max-w-[90%] sm:max-w-[75%] pt-1.5">
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[90%]" />
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[70%]" />
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[80%]" />
                         </div>
                     </motion.div>
                 )}

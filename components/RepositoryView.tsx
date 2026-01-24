@@ -69,7 +69,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
     }, [sessions, filter, search]);
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#050505] overflow-y-auto animate-in fade-in duration-300">
+        <div className="flex-1 flex flex-col h-full bg-[#0c0c0c] overflow-y-auto animate-in fade-in duration-300">
             {/* Hero Header */}
             <div className="w-full bg-[#0E0E11] border-b border-white/5 pt-6 md:pt-8 px-4 sm:px-8 pb-0">
                 <div className="max-w-6xl mx-auto">

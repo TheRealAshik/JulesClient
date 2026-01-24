@@ -1,14 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Zap, Palette, ShieldCheck, Search, GitBranch, ChevronDown } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JulesSource } from '../types';
+import { JulesSource, AutomationMode } from '../types';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export type SessionMode = 'SCHEDULED' | 'INTERACTIVE' | 'REVIEW' | 'START';
 
+export interface SessionCreateOptions {
+    mode: SessionMode;
+    branch?: string;
+    title?: string;
+    automationMode?: AutomationMode;
+}
+
 interface InputAreaProps {
-    onSendMessage: (text: string, mode: SessionMode, branch?: string) => void;
+    onSendMessage: (text: string, options: SessionCreateOptions) => void;
     isLoading: boolean;
     variant?: 'default' | 'chat';
     placeholder?: string;
@@ -34,11 +41,16 @@ export const InputArea: React.FC<InputAreaProps> = ({
     const [branchSearch, setBranchSearch] = useState('');
     const [selectedBranch, setSelectedBranch] = useState<string>('main');
 
-    // Filter Toggles (Visual only)
-    const [filters, setFilters] = useState({ performance: false, design: false, security: false });
+    // Session title (optional)
+    const [sessionTitle, setSessionTitle] = useState('');
+    const [showTitleInput, setShowTitleInput] = useState(false);
+
+    // Automation mode
+    const [automationMode, setAutomationMode] = useState<AutomationMode>('AUTO_CREATE_PR');
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const titleInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize selected branch
     useEffect(() => {
@@ -51,8 +63,15 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
     const handleSubmit = () => {
         if (!input.trim() || isLoading) return;
-        onSendMessage(input, selectedMode, selectedBranch);
+        onSendMessage(input, {
+            mode: selectedMode,
+            branch: selectedBranch,
+            title: sessionTitle.trim() || undefined,
+            automationMode
+        });
         setInput('');
+        setSessionTitle('');
+        setShowTitleInput(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             if (variant === 'default') {
@@ -78,7 +97,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     const scrollHeight = textareaRef.current.scrollHeight;
                     textareaRef.current.style.height = `${Math.max(scrollHeight, 40)}px`;
                 } else {
-                    textareaRef.current.style.height = '28px';
+                    textareaRef.current.style.height = '24px';
                 }
             } else {
                 textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -93,7 +112,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 if (!input.trim()) {
                     setIsFocused(false);
                 }
-                // Close menus if clicking outside container
                 const target = event.target as Element;
                 if (!target.closest('.branch-menu-trigger') && !target.closest('.branch-menu-dropdown')) {
                     setIsBranchMenuOpen(false);
@@ -139,7 +157,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder || "Reply to Jules..."}
-                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal custom-scrollbar"
+                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
                         rows={1}
                     />
 
@@ -161,16 +179,15 @@ export const InputArea: React.FC<InputAreaProps> = ({
         );
     }
 
-    // --- DEFAULT VARIANT (Hero Card - Expandable) ---
+    // --- DEFAULT VARIANT (Hero Card - Expandable with Linear Animation) ---
     return (
-        <motion.div
+        <div
             ref={containerRef}
-            layout
             className={twMerge(
-                "relative w-full bg-[#18181B] border flex flex-col cursor-text rounded-[32px] transition-colors",
+                "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out",
                 isExpanded
-                    ? 'min-h-[200px] border-indigo-500/30 shadow-[0_0_60px_-15px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
-                    : 'min-h-[140px] border-white/5 shadow-xl hover:border-white/10'
+                    ? 'rounded-[28px] min-h-[180px] border-indigo-500/30 shadow-[0_0_40px_-12px_rgba(99,102,241,0.2)] ring-1 ring-indigo-500/20'
+                    : 'rounded-[22px] min-h-[64px] border-white/8 shadow-lg hover:border-white/12 hover:bg-[#161619]'
             )}
             onClick={() => {
                 if (!isFocused) {
@@ -179,7 +196,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 }
             }}
         >
-            <div className="w-full p-6">
+            <div className={twMerge(
+                "w-full transition-all duration-200 ease-out",
+                isExpanded ? 'p-5 pb-2' : 'p-3 px-4'
+            )}>
                 <textarea
                     ref={textareaRef}
                     aria-label="Message input"
@@ -188,33 +208,75 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
                     placeholder={placeholder}
-                    className="w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-[#52525B] resize-none font-normal leading-relaxed text-[16px]"
+                    className={twMerge(
+                        "w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-[#52525B] resize-none font-normal leading-relaxed transition-all duration-200",
+                        isExpanded ? 'text-[16px]' : 'text-[15px]'
+                    )}
                     rows={1}
                     style={{
-                        height: isExpanded ? 'auto' : '28px',
-                        minHeight: '28px'
+                        height: isExpanded ? 'auto' : '24px',
+                        minHeight: isExpanded ? '28px' : '24px'
                     }}
                 />
             </div>
 
-            <div className="flex-1" />
+            {isExpanded && <div className="flex-1" />}
 
-            {/* Footer Controls */}
-            <div className="px-5 pb-5 pt-2 flex items-center justify-between pointer-events-auto">
+            {/* Footer Controls - Animated appearance */}
+            <div className={twMerge(
+                "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out",
+                isExpanded ? 'px-4 pb-4 pt-1 opacity-100' : 'px-3 pb-3 opacity-100'
+            )}>
 
-                {/* Left: Attach & Branch */}
-                <div className="flex items-center gap-3">
+                {/* Left: Attach, Title & Branch - Hidden when collapsed */}
+                <div className={twMerge(
+                    "flex items-center gap-2 transition-all duration-200 ease-out",
+                    isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
+                )}>
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className={twMerge(
-                            "w-9 h-9 flex items-center justify-center rounded-xl bg-[#27272A] hover:bg-[#323235] border border-white/5 text-zinc-400 hover:text-white transition-colors",
-                            !isExpanded && !input.trim() && 'bg-opacity-50'
-                        )}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} />
                     </motion.button>
+
+                    {/* Session Title Toggle/Input */}
+                    {showTitleInput ? (
+                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-xl px-2.5 py-1.5 h-8">
+                            <Type size={13} className="text-indigo-400 flex-shrink-0" />
+                            <input
+                                ref={titleInputRef}
+                                type="text"
+                                value={sessionTitle}
+                                onChange={(e) => setSessionTitle(e.target.value)}
+                                placeholder="Session title..."
+                                className="bg-transparent border-none outline-none text-xs text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
+                                autoFocus
+                            />
+                            <button
+                                onClick={() => { setShowTitleInput(false); setSessionTitle(''); }}
+                                className="text-zinc-500 hover:text-white transition-colors"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ) : (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowTitleInput(true);
+                            }}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-400 hover:text-white transition-all duration-150 h-8"
+                            title="Add session title"
+                        >
+                            <Type size={13} className="text-zinc-500" />
+                            <span className="hidden sm:inline">Title</span>
+                        </motion.button>
+                    )}
 
                     {/* Branch Selector Pill */}
                     <div className="relative branch-menu-trigger">
@@ -225,31 +287,27 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className={twMerge(
-                                "flex items-center gap-2 px-3 py-2 bg-[#27272A] hover:bg-[#323235] border border-white/5 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-colors h-9",
-                                !isExpanded && !input.trim() && 'bg-opacity-50'
-                            )}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-all duration-150 h-8"
                         >
-                            <GitBranch size={14} className="text-indigo-400" />
-                            <span className="max-w-[120px] truncate">{selectedBranch}</span>
-                            <ChevronDown size={12} className="text-zinc-500" />
+                            <GitBranch size={13} className="text-indigo-400 flex-shrink-0" />
+                            <span className="max-w-[70px] sm:max-w-[100px] truncate">{selectedBranch}</span>
+                            <ChevronDown size={11} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
 
                         <AnimatePresence>
                             {isBranchMenuOpen && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    transition={{ duration: 0.15 }}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
+                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
                                 >
                                     <div className="p-2 border-b border-white/5 bg-[#0e0e11]">
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
                                             <Search size={12} className="text-zinc-500" />
                                             <input
-                                                autoFocus
                                                 type="text"
                                                 placeholder="Find a branch..."
                                                 value={branchSearch}
@@ -258,7 +316,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                             />
                                         </div>
                                     </div>
-                                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar p-1">
+                                    <div className="max-h-[180px] overflow-y-auto p-1">
                                         {filteredBranches.map(branch => (
                                             <button
                                                 key={branch.displayName}
@@ -267,7 +325,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                                     setIsBranchMenuOpen(false);
                                                 }}
                                                 className={twMerge(
-                                                    "w-full flex items-center gap-2 px-3 py-2 text-xs font-mono text-left rounded-lg transition-colors",
+                                                    "w-full flex items-center gap-2 px-3 py-2 text-xs font-mono text-left rounded-lg transition-colors min-h-[36px]",
                                                     selectedBranch === branch.displayName ? 'bg-indigo-500/10 text-indigo-300' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                                                 )}
                                             >
@@ -286,8 +344,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 {/* Right: Mode & Send */}
                 <div className="flex items-center gap-2">
 
-                    {/* Mode Menu Trigger */}
-                    <div className="relative mode-menu-trigger">
+                    {/* Mode Menu Trigger - Hidden when collapsed */}
+                    <div className={twMerge(
+                        "relative mode-menu-trigger transition-all duration-200 ease-out",
+                        isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
+                    )}>
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -296,110 +357,88 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-2 px-3 py-2 rounded-xl transition-all border h-9",
+                                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all duration-150 border h-8",
                                 isModeMenuOpen
-                                    ? 'bg-[#3F3F46] text-white border-white/10'
-                                    : 'bg-[#27272A] hover:bg-[#323235] text-zinc-400 hover:text-white border-white/5',
-                                !isExpanded && !input.trim() && 'bg-opacity-50'
+                                    ? 'bg-[#2a2a2f] text-white border-white/15'
+                                    : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
                             )}
                         >
-                            <Rocket size={16} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
-                            <ChevronUp size={14} className={`transition-transform duration-200 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                            <Rocket size={14} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
+                            <ChevronUp size={12} className={`transition-transform duration-150 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                         </motion.button>
 
                         <AnimatePresence>
                             {isModeMenuOpen && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    transition={{ duration: 0.2 }}
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -8 }}
+                                    transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[85vw] sm:w-[340px] max-w-[340px] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 origin-top-right"
+                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[280px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80"
                                 >
-                                    <div className="p-2 space-y-1">
+                                    <div className="p-1.5 space-y-0.5">
                                         {['START', 'SCHEDULED', 'INTERACTIVE', 'REVIEW'].map((mode) => (
                                             <button
                                                 key={mode}
                                                 onClick={() => { setSelectedMode(mode as SessionMode); setIsModeMenuOpen(false); }}
-                                                className="w-full text-left p-3 rounded-xl hover:bg-white/5 group transition-colors flex items-start gap-4"
+                                                className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 group transition-colors flex items-start gap-3 min-h-[40px]"
                                             >
                                                 <div className="mt-0.5 text-zinc-400 group-hover:text-white transition-colors">
-                                                    {mode === 'START' && <Rocket size={18} />}
-                                                    {mode === 'SCHEDULED' && <Clock size={18} />}
-                                                    {mode === 'INTERACTIVE' && <MessageSquare size={18} />}
-                                                    {mode === 'REVIEW' && <FileSearch size={18} />}
+                                                    {mode === 'START' && <Rocket size={16} />}
+                                                    {mode === 'SCHEDULED' && <Clock size={16} />}
+                                                    {mode === 'INTERACTIVE' && <MessageSquare size={16} />}
+                                                    {mode === 'REVIEW' && <FileSearch size={16} />}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[14px] font-medium text-white">
+                                                        <span className="text-[13px] font-medium text-white">
                                                             {mode === 'START' ? 'Start immediately' :
                                                                 mode === 'SCHEDULED' ? 'Scheduled task' :
                                                                     mode === 'INTERACTIVE' ? 'Interactive plan' : 'Review plan'}
                                                         </span>
-                                                        {mode === 'SCHEDULED' && <span className="text-[10px] font-bold bg-[#6366F1]/20 text-[#818CF8] px-1.5 py-0.5 rounded-[4px] tracking-wide">NEW</span>}
+                                                        {mode === 'SCHEDULED' && <span className="text-[9px] font-bold bg-[#6366F1]/20 text-[#818CF8] px-1.5 py-0.5 rounded tracking-wide">NEW</span>}
                                                     </div>
-                                                    <p className="text-[13px] text-zinc-500 mt-0.5">
+                                                    <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
                                                         {mode === 'START' ? 'Begin execution without approval.' :
-                                                            mode === 'SCHEDULED' ? "Delegate work to Jules while you're away." :
-                                                                mode === 'INTERACTIVE' ? 'Discuss goals before executing plan.' :
+                                                            mode === 'SCHEDULED' ? "Delegate work while you're away." :
+                                                                mode === 'INTERACTIVE' ? 'Discuss goals before executing.' :
                                                                     'Generate plan and wait for approval.'}
                                                     </p>
                                                 </div>
-                                                {selectedMode === mode && <Check size={16} className="text-indigo-400 mt-1" />}
+                                                {selectedMode === mode && <Check size={14} className="text-indigo-400 mt-1" />}
                                             </button>
                                         ))}
-                                    </div>
-                                    <div className="p-3 bg-[#09090b]/50 border-t border-white/5 flex gap-2">
-                                        <FilterButton icon={<Zap size={14} />} label="Performance" active={filters.performance} onClick={() => setFilters(prev => ({ ...prev, performance: !prev.performance }))} />
-                                        <FilterButton icon={<Palette size={14} />} label="Design" active={filters.design} onClick={() => setFilters(prev => ({ ...prev, design: !prev.design }))} />
-                                        <FilterButton icon={<ShieldCheck size={14} />} label="Security" active={filters.security} onClick={() => setFilters(prev => ({ ...prev, security: !prev.security }))} />
                                     </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
 
-                    {/* Send Button */}
+                    {/* Send Button - Always visible */}
                     <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.92 }}
                         onClick={(e) => {
                             e.stopPropagation();
                             handleSubmit();
                         }}
                         disabled={!input.trim() || isLoading}
                         className={twMerge(
-                            "w-9 h-9 flex items-center justify-center rounded-full border transition-all flex-shrink-0",
+                            "w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150 flex-shrink-0",
                             input.trim()
-                                ? 'bg-indigo-600 text-white border-transparent hover:bg-indigo-500 shadow-lg shadow-indigo-500/20'
-                                : 'bg-[#3F3F46] text-zinc-500 border-white/5 cursor-not-allowed bg-opacity-50'
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
+                                : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
                         )}
                     >
                         {isLoading ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <ArrowRight size={18} />
+                            <ArrowRight size={16} />
                         )}
                     </motion.button>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
-
-const FilterButton: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => (
-    <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
-        className={twMerge(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors border",
-            active
-                ? 'bg-[#3F3F46] text-white border-zinc-600'
-                : 'bg-transparent text-zinc-500 border-zinc-700 hover:text-zinc-300 hover:border-zinc-600'
-        )}
-    >
-        {icon} {label}
-    </motion.button>
-);

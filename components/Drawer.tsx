@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp } from 'lucide-react';
-import { JulesSession, JulesSource } from '../types';
+import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock } from 'lucide-react';
+import { JulesSession, JulesSource, formatRelativeTime } from '../types';
+
+// Helper to get session status icon with appropriate styling
+const getSessionStatusIcon = (state?: JulesSession['state'], isActive?: boolean) => {
+    const baseClass = "flex-shrink-0 transition-colors";
+    const activeColor = "text-indigo-400";
+    const inactiveColor = "text-zinc-600 group-hover:text-zinc-500";
+
+    switch (state) {
+        case 'IN_PROGRESS':
+        case 'PLANNING':
+            return <Loader2 size={16} className={`${baseClass} text-blue-400 animate-spin`} />;
+        case 'QUEUED':
+            return <Clock size={16} className={`${baseClass} text-yellow-500`} />;
+        case 'AWAITING_PLAN_APPROVAL':
+        case 'AWAITING_USER_FEEDBACK':
+            return <MessageCircle size={16} className={`${baseClass} text-amber-400`} />;
+        case 'PAUSED':
+            return <Pause size={16} className={`${baseClass} text-zinc-400`} />;
+        case 'FAILED':
+            return <XCircle size={16} className={`${baseClass} text-red-500`} />;
+        case 'COMPLETED':
+            return <CheckCircle2 size={16} className={`${baseClass} text-green-500`} />;
+        default:
+            return <AlertCircle size={16} className={`${baseClass} ${isActive ? activeColor : inactiveColor}`} />;
+    }
+};
 
 interface DrawerProps {
     isOpen: boolean;
@@ -60,7 +86,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             <div className="fixed inset-y-0 left-0 w-[320px] bg-[#0E0E11] z-50 flex flex-col border-r border-white/5 animate-in slide-in-from-left duration-300">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                <div className="flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-white/5">
                     <Link to="/" onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <img src="https://jules.google/squid.png" alt="Logo" className="w-6 h-6 object-contain opacity-80" />
                         <span className="font-semibold text-lg text-white tracking-tight">jules</span>
@@ -121,10 +147,15 @@ export const Drawer: React.FC<DrawerProps> = ({
                                     >
                                         {({ isActive }) => (
                                             <>
-                                                <CheckCircle2 size={16} className={`${isActive ? 'text-indigo-400' : 'text-zinc-600 group-hover:text-zinc-500'} flex-shrink-0 transition-colors`} />
-                                                <span className={`text-sm truncate text-left flex-1 font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
-                                                    {session.title || session.prompt}
-                                                </span>
+                                                {getSessionStatusIcon(session.state, isActive)}
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <span className={`text-sm truncate text-left font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                                                        {session.title || session.prompt}
+                                                    </span>
+                                                    <span className="text-[10px] text-zinc-600 font-mono">
+                                                        {formatRelativeTime(session.createTime)}
+                                                    </span>
+                                                </div>
                                             </>
                                         )}
                                     </NavLink>
@@ -169,9 +200,19 @@ export const Drawer: React.FC<DrawerProps> = ({
                                             <>
                                                 <Github size={16} className={`${isActive ? 'text-white' : 'text-zinc-400'} flex-shrink-0`} />
                                                 <div className="flex flex-col items-start flex-1 min-w-0">
-                                                    <span className={`text-sm truncate w-full ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>
-                                                        {source.displayName || source.name.split('/').slice(-2).join('/')}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 w-full">
+                                                        <span className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>
+                                                            {source.displayName || source.name.split('/').slice(-2).join('/')}
+                                                        </span>
+                                                        {source.githubRepo?.isPrivate && (
+                                                            <Lock size={10} className="text-zinc-500 flex-shrink-0" />
+                                                        )}
+                                                    </div>
+                                                    {source.githubRepo?.defaultBranch?.displayName && (
+                                                        <span className="text-[10px] text-zinc-600 font-mono">
+                                                            {source.githubRepo.defaultBranch.displayName}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {isActive && (
                                                     <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[10px] font-bold">
