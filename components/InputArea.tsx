@@ -1,14 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { JulesSource } from '../types';
+import { JulesSource, AutomationMode } from '../types';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export type SessionMode = 'SCHEDULED' | 'INTERACTIVE' | 'REVIEW' | 'START';
 
+export interface SessionCreateOptions {
+    mode: SessionMode;
+    branch?: string;
+    title?: string;
+    automationMode?: AutomationMode;
+}
+
 interface InputAreaProps {
-    onSendMessage: (text: string, mode: SessionMode, branch?: string) => void;
+    onSendMessage: (text: string, options: SessionCreateOptions) => void;
     isLoading: boolean;
     variant?: 'default' | 'chat';
     placeholder?: string;
@@ -34,8 +41,16 @@ export const InputArea: React.FC<InputAreaProps> = ({
     const [branchSearch, setBranchSearch] = useState('');
     const [selectedBranch, setSelectedBranch] = useState<string>('main');
 
+    // Session title (optional)
+    const [sessionTitle, setSessionTitle] = useState('');
+    const [showTitleInput, setShowTitleInput] = useState(false);
+
+    // Automation mode
+    const [automationMode, setAutomationMode] = useState<AutomationMode>('AUTO_CREATE_PR');
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const titleInputRef = useRef<HTMLInputElement>(null);
 
     // Initialize selected branch
     useEffect(() => {
@@ -48,8 +63,15 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
     const handleSubmit = () => {
         if (!input.trim() || isLoading) return;
-        onSendMessage(input, selectedMode, selectedBranch);
+        onSendMessage(input, {
+            mode: selectedMode,
+            branch: selectedBranch,
+            title: sessionTitle.trim() || undefined,
+            automationMode
+        });
         setInput('');
+        setSessionTitle('');
+        setShowTitleInput(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             if (variant === 'default') {
@@ -206,7 +228,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 isExpanded ? 'px-4 pb-4 pt-1 opacity-100' : 'px-3 pb-3 opacity-100'
             )}>
 
-                {/* Left: Attach & Branch - Hidden when collapsed */}
+                {/* Left: Attach, Title & Branch - Hidden when collapsed */}
                 <div className={twMerge(
                     "flex items-center gap-2 transition-all duration-200 ease-out",
                     isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
@@ -219,6 +241,42 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     >
                         <Plus size={16} />
                     </motion.button>
+
+                    {/* Session Title Toggle/Input */}
+                    {showTitleInput ? (
+                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-xl px-2.5 py-1.5 h-8">
+                            <Type size={13} className="text-indigo-400 flex-shrink-0" />
+                            <input
+                                ref={titleInputRef}
+                                type="text"
+                                value={sessionTitle}
+                                onChange={(e) => setSessionTitle(e.target.value)}
+                                placeholder="Session title..."
+                                className="bg-transparent border-none outline-none text-xs text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
+                                autoFocus
+                            />
+                            <button
+                                onClick={() => { setShowTitleInput(false); setSessionTitle(''); }}
+                                className="text-zinc-500 hover:text-white transition-colors"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ) : (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowTitleInput(true);
+                            }}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-400 hover:text-white transition-all duration-150 h-8"
+                            title="Add session title"
+                        >
+                            <Type size={13} className="text-zinc-500" />
+                            <span className="hidden sm:inline">Title</span>
+                        </motion.button>
+                    )}
 
                     {/* Branch Selector Pill */}
                     <div className="relative branch-menu-trigger">

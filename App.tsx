@@ -6,9 +6,9 @@ import { SessionView } from './components/SessionView';
 import { RepositoryView } from './components/RepositoryView';
 import { Drawer } from './components/Drawer';
 import * as JulesApi from './services/geminiService';
-import { JulesActivity, JulesSource, JulesSession } from './types';
+import { JulesActivity, JulesSource, JulesSession, AutomationMode } from './types';
 import { AlertCircle, Key, ChevronRight } from 'lucide-react';
-import { SessionMode } from './components/InputArea';
+import { SessionMode, SessionCreateOptions } from './components/InputArea';
 
 export default function App() {
     const [apiKey, setApiKey] = useState<string>('');
@@ -83,10 +83,10 @@ export default function App() {
 
     const fetchSources = async () => {
         try {
-            const list = await JulesApi.listSources();
-            setSources(list);
-            if (list.length > 0 && !currentSource) {
-                setCurrentSource(list[0]);
+            const response = await JulesApi.listSources();
+            setSources(response.sources);
+            if (response.sources.length > 0 && !currentSource) {
+                setCurrentSource(response.sources[0]);
             }
         } catch (e) {
             console.error(e);
@@ -98,24 +98,24 @@ export default function App() {
     };
 
     const fetchSessions = async () => {
-        const list = await JulesApi.listSessions();
-        setSessions(list);
+        const response = await JulesApi.listSessions();
+        setSessions(response.sessions);
     };
 
     const startPolling = useCallback((sessionName: string) => {
         if (pollInterval.current) clearInterval(pollInterval.current);
 
         // Immediate fetch
-        JulesApi.listActivities(sessionName).then(acts => {
-            activitiesRef.current = acts;
-            setActivities(acts);
+        JulesApi.listActivities(sessionName).then(response => {
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
         });
 
         // Poll every 2s
         pollInterval.current = window.setInterval(async () => {
-            const acts = await JulesApi.listActivities(sessionName);
-            activitiesRef.current = acts;
-            setActivities(acts);
+            const response = await JulesApi.listActivities(sessionName);
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
 
             // Also check session status for outputs and state
             const sess = await JulesApi.getSession(sessionName);
@@ -130,7 +130,7 @@ export default function App() {
         }, 2000);
     }, []);
 
-    const handleSendMessage = async (text: string, mode: SessionMode = 'START', branch: string = 'main') => {
+    const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
         setError(null);
         setIsProcessing(true);
 
@@ -142,11 +142,13 @@ export default function App() {
                 }
 
                 // Map UI Mode to API Options
-                const requireApproval = mode === 'REVIEW' || mode === 'SCHEDULED' || mode === 'INTERACTIVE';
+                const requireApproval = options.mode === 'REVIEW' || options.mode === 'SCHEDULED' || options.mode === 'INTERACTIVE';
 
                 const session = await JulesApi.createSession(text, currentSource.name, {
+                    title: options.title,
                     requirePlanApproval: requireApproval,
-                    startingBranch: branch
+                    startingBranch: options.branch || 'main',
+                    automationMode: options.automationMode || 'AUTO_CREATE_PR'
                 });
 
                 setCurrentSession(session);
@@ -157,8 +159,8 @@ export default function App() {
                 // SEND MESSAGE TO EXISTING SESSION
                 await JulesApi.sendMessage(currentSession.name, text);
                 // Force immediate update - polling will set isProcessing based on API state
-                const acts = await JulesApi.listActivities(currentSession.name);
-                setActivities(acts);
+                const response = await JulesApi.listActivities(currentSession.name);
+                setActivities(response.activities);
                 // Polling will handle isProcessing based on session.state from API
             }
         } catch (e: any) {
@@ -279,7 +281,7 @@ export default function App() {
                             activities={activities}
                             isProcessing={isProcessing}
                             error={error}
-                            onSendMessage={(text) => handleSendMessage(text, 'START')}
+                            onSendMessage={(text) => handleSendMessage(text, { mode: 'START' })}
                             onApprovePlan={handleApprovePlan}
                         />
                     ) : (

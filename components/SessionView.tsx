@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChatHistory } from './ChatHistory';
-import { InputArea } from './InputArea';
+import { InputArea, SessionCreateOptions } from './InputArea';
 import { JulesActivity, JulesSession } from '../types';
 import { AlertCircle } from 'lucide-react';
 
@@ -30,6 +30,11 @@ export const SessionView: React.FC<SessionViewProps> = ({
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [activities.length, isProcessing]);
+
+    // Wrapper to adapt simple text callback to SessionCreateOptions signature
+    const handleSendMessage = (text: string, _options: SessionCreateOptions) => {
+        onSendMessage(text);
+    };
 
     return (
         <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-background">
@@ -77,7 +82,7 @@ export const SessionView: React.FC<SessionViewProps> = ({
                 {/* Actual Input Container */}
                 <div className="relative pointer-events-auto px-2 sm:px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4">
                     <InputArea
-                        onSendMessage={onSendMessage}
+                        onSendMessage={handleSendMessage}
                         isLoading={isProcessing}
                         variant="chat"
                     />

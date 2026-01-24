@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { JulesActivity, Step } from '../types';
+import { JulesActivity, Step, formatRelativeTime } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Command, Clock, Bot, Download, ArrowRight, MoreVertical, XCircle
+    Command, Clock, Bot, Download, ArrowRight, MoreVertical, XCircle, GitBranch
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
@@ -424,6 +424,28 @@ const CompactSessionCompleted: React.FC<{ timestamp?: string }> = ({ timestamp }
     );
 };
 
+const CompactSessionFailed: React.FC<{ reason?: string }> = ({ reason }) => {
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex justify-center my-6"
+        >
+            <div className="flex flex-col items-center gap-2 px-5 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 shadow-lg shadow-red-500/10 backdrop-blur-sm max-w-md">
+                <div className="flex items-center gap-2">
+                    <XCircle size={16} className="text-red-400" />
+                    <span className="text-xs font-medium text-red-100">Session Failed</span>
+                </div>
+                {reason && (
+                    <p className="text-[11px] text-red-300/80 text-center leading-relaxed">
+                        {reason}
+                    </p>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
 const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: string; description: string; branch?: string } } }> = ({ output }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pr = output.pullRequest;
@@ -511,6 +533,14 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                         <p className="text-[11px] sm:text-xs text-zinc-400 leading-relaxed line-clamp-2 sm:line-clamp-3 break-words">
                             {pr.description}
                         </p>
+                    )}
+                    {pr.branch && (
+                        <div className="flex items-center gap-1.5 mt-2">
+                            <GitBranch size={11} className="text-zinc-500" />
+                            <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                                {pr.branch}
+                            </span>
+                        </div>
                     )}
                 </div>
 
@@ -813,6 +843,11 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                     // --- 6. Session Completed ---
                     if (act.sessionCompleted) {
                         items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
+                    }
+
+                    // --- 7. Session Failed ---
+                    if (act.sessionFailed) {
+                        items.push(<CompactSessionFailed key="failed" reason={act.sessionFailed.reason} />);
                     }
 
                     if (items.length === 0) return null;

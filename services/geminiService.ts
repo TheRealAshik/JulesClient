@@ -1,4 +1,12 @@
-import { JulesActivity, JulesSession, JulesSource } from "../types";
+import {
+  JulesActivity,
+  JulesSession,
+  JulesSource,
+  AutomationMode,
+  ListSourcesResponse,
+  ListSessionsResponse,
+  ListActivitiesResponse
+} from "../types";
 
 let API_KEY = "";
 const BASE_URL = "https://jules.googleapis.com/v1alpha";
@@ -7,6 +15,8 @@ export const setApiKey = (key: string) => {
   API_KEY = key;
 };
 
+export const getApiKey = () => API_KEY;
+
 const getHeaders = () => {
   return {
     "Content-Type": "application/json",
@@ -14,30 +24,69 @@ const getHeaders = () => {
   };
 };
 
-// --- Sources ---
+// ==================== SOURCES ====================
 
-export const listSources = async (): Promise<JulesSource[]> => {
+export interface ListSourcesOptions {
+  pageSize?: number;
+  pageToken?: string;
+}
+
+export const listSources = async (options?: ListSourcesOptions): Promise<ListSourcesResponse> => {
   try {
-    const res = await fetch(`${BASE_URL}/sources`, { headers: getHeaders() });
+    const params = new URLSearchParams();
+    if (options?.pageSize) params.append('pageSize', String(options.pageSize));
+    if (options?.pageToken) params.append('pageToken', options.pageToken);
+
+    const queryString = params.toString();
+    const url = `${BASE_URL}/sources${queryString ? `?${queryString}` : ''}`;
+
+    const res = await fetch(url, { headers: getHeaders() });
 
     if (res.status === 401) throw new Error("Invalid API Key");
     if (!res.ok) throw new Error("Failed to fetch sources");
 
     const data = await res.json();
 
-    // Map API source format to UI convenience, handling potential snake_case
-    return (data.sources || []).map((s: any) => {
+    const sources = (data.sources || []).map((s: any) => {
       const repo = s.githubRepo || s.github_repo;
       return {
         ...s,
-        githubRepo: repo,
+        id: s.id,
+        githubRepo: repo ? {
+          owner: repo.owner,
+          repo: repo.repo,
+          isPrivate: repo.isPrivate ?? repo.is_private ?? false,
+          defaultBranch: repo.defaultBranch || repo.default_branch,
+          branches: repo.branches || []
+        } : undefined,
         displayName: repo ? `${repo.owner}/${repo.repo}` : s.name.split('/').slice(-2).join('/')
       };
     });
+
+    return {
+      sources,
+      nextPageToken: data.nextPageToken || data.next_page_token
+    };
   } catch (error) {
     console.error("listSources error:", error);
     throw error;
   }
+};
+
+/**
+ * Fetch all sources with automatic pagination
+ */
+export const listAllSources = async (): Promise<JulesSource[]> => {
+  const allSources: JulesSource[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const response = await listSources({ pageSize: 50, pageToken });
+    allSources.push(...response.sources);
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return allSources;
 };
 
 export const getSource = async (sourceName: string): Promise<JulesSource> => {
@@ -56,7 +105,14 @@ export const getSource = async (sourceName: string): Promise<JulesSource> => {
 
     return {
       ...data,
-      githubRepo: repo,
+      id: data.id,
+      githubRepo: repo ? {
+        owner: repo.owner,
+        repo: repo.repo,
+        isPrivate: repo.isPrivate ?? repo.is_private ?? false,
+        defaultBranch: repo.defaultBranch || repo.default_branch,
+        branches: repo.branches || []
+      } : undefined,
       displayName: repo ? `${repo.owner}/${repo.repo}` : data.name.split('/').slice(-2).join('/')
     };
   } catch (error) {
@@ -65,38 +121,60 @@ export const getSource = async (sourceName: string): Promise<JulesSource> => {
   }
 };
 
-// --- Sessions ---
+// ==================== SESSIONS ====================
 
-export const listSessions = async (): Promise<JulesSession[]> => {
+export interface ListSessionsOptions {
+  pageSize?: number;
+  pageToken?: string;
+}
+
+export const listSessions = async (options?: ListSessionsOptions): Promise<ListSessionsResponse> => {
   try {
-    const res = await fetch(`${BASE_URL}/sessions?pageSize=20`, { headers: getHeaders() });
+    const params = new URLSearchParams();
+    params.append('pageSize', String(options?.pageSize ?? 20));
+    if (options?.pageToken) params.append('pageToken', options.pageToken);
+
+    const res = await fetch(`${BASE_URL}/sessions?${params.toString()}`, { headers: getHeaders() });
 
     if (!res.ok) {
-      // Allow failure gracefully for list
       console.warn("listSessions failed with status:", res.status);
-      return [];
+      return { sessions: [], nextPageToken: undefined };
     }
 
     const data = await res.json();
-    return (data.sessions || []).map((s: any) => ({
-      ...s,
-      state: s.state || 'QUEUED',
-      createTime: s.createTime || s.create_time,
-      updateTime: s.updateTime || s.update_time,
-      outputs: (s.outputs || []).map((o: any) => ({
-        ...o,
-        pullRequest: o.pullRequest || o.pull_request
-      }))
-    }));
+    const sessions = (data.sessions || []).map(mapSession);
+
+    return {
+      sessions,
+      nextPageToken: data.nextPageToken || data.next_page_token
+    };
   } catch (error) {
     console.error("listSessions network error:", error);
-    return [];
+    return { sessions: [], nextPageToken: undefined };
   }
 };
 
+/**
+ * Fetch all sessions with automatic pagination
+ */
+export const listAllSessions = async (): Promise<JulesSession[]> => {
+  const allSessions: JulesSession[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const response = await listSessions({ pageSize: 50, pageToken });
+    allSessions.push(...response.sessions);
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return allSessions;
+};
+
 export interface CreateSessionOptions {
+  title?: string;
   requirePlanApproval?: boolean;
   startingBranch?: string;
+  automationMode?: AutomationMode;
 }
 
 export const createSession = async (
@@ -104,10 +182,10 @@ export const createSession = async (
   sourceName: string,
   options?: CreateSessionOptions
 ): Promise<JulesSession> => {
-  const payload = {
+  const payload: Record<string, any> = {
     prompt,
     requirePlanApproval: options?.requirePlanApproval ?? true,
-    automationMode: "AUTO_CREATE_PR",
+    automationMode: options?.automationMode ?? "AUTO_CREATE_PR",
     sourceContext: {
       source: sourceName,
       githubRepoContext: {
@@ -115,6 +193,11 @@ export const createSession = async (
       }
     }
   };
+
+  // Add optional title if provided
+  if (options?.title) {
+    payload.title = options.title;
+  }
 
   const res = await fetch(`${BASE_URL}/sessions`, {
     method: "POST",
@@ -126,65 +209,99 @@ export const createSession = async (
     const err = await res.text();
     throw new Error(`Failed to create session: ${err}`);
   }
+
   const data = await res.json();
-  return {
-    ...data,
-    state: data.state || 'QUEUED',
-    prompt: data.prompt || prompt,
-    createTime: data.createTime || data.create_time,
-    updateTime: data.updateTime || data.update_time,
-    outputs: (data.outputs || []).map((o: any) => ({
-      ...o,
-      pullRequest: o.pullRequest || o.pull_request
-    }))
-  };
+  return mapSession(data, prompt);
 };
 
 export const getSession = async (sessionId: string): Promise<JulesSession> => {
-  const url = sessionId.startsWith('sessions/') ? `${BASE_URL}/${sessionId}` : `${BASE_URL}/sessions/${sessionId}`;
+  const url = sessionId.startsWith('sessions/')
+    ? `${BASE_URL}/${sessionId}`
+    : `${BASE_URL}/sessions/${sessionId}`;
+
   const res = await fetch(url, { headers: getHeaders() });
   if (!res.ok) throw new Error("Failed to get session");
+
   const data = await res.json();
+  return mapSession(data);
+};
+
+// Helper to map API session response to our interface
+const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
   return {
     ...data,
     state: data.state || 'QUEUED',
+    prompt: data.prompt || fallbackPrompt || '',
+    title: data.title,
     createTime: data.createTime || data.create_time,
     updateTime: data.updateTime || data.update_time,
+    sourceContext: data.sourceContext || data.source_context,
+    automationMode: data.automationMode || data.automation_mode,
+    requirePlanApproval: data.requirePlanApproval ?? data.require_plan_approval,
     outputs: (data.outputs || []).map((o: any) => ({
       ...o,
-      pullRequest: o.pullRequest || o.pull_request
+      pullRequest: o.pullRequest || o.pull_request ? {
+        url: (o.pullRequest || o.pull_request)?.url,
+        title: (o.pullRequest || o.pull_request)?.title,
+        description: (o.pullRequest || o.pull_request)?.description,
+        branch: (o.pullRequest || o.pull_request)?.branch
+      } : undefined
     }))
   };
 };
 
-// --- Activities & Interaction ---
+// ==================== ACTIVITIES ====================
 
-export const listActivities = async (sessionName: string): Promise<JulesActivity[]> => {
+export interface ListActivitiesOptions {
+  pageSize?: number;
+  pageToken?: string;
+}
+
+export const listActivities = async (
+  sessionName: string,
+  options?: ListActivitiesOptions
+): Promise<ListActivitiesResponse> => {
   try {
-    const res = await fetch(`${BASE_URL}/${sessionName}/activities?pageSize=50`, { headers: getHeaders() });
-    if (!res.ok) return [];
-    const data = await res.json();
+    const params = new URLSearchParams();
+    params.append('pageSize', String(options?.pageSize ?? 50));
+    if (options?.pageToken) params.append('pageToken', options.pageToken);
 
-    return (data.activities || []).map((a: any) => ({
-      ...a,
-      id: a.id,
-      originator: a.originator,
-      description: a.description,
-      createTime: a.createTime || a.create_time,
-      userMessaged: a.userMessaged || a.user_messaged,
-      userMessage: a.userMessage || a.user_message,
-      agentMessaged: a.agentMessaged || a.agent_messaged,
-      agentMessage: a.agentMessage || a.agent_message,
-      planGenerated: a.planGenerated || a.plan_generated,
-      planApproved: a.planApproved || a.plan_approved,
-      progressUpdated: a.progressUpdated || a.progress_updated,
-      sessionCompleted: a.sessionCompleted || a.session_completed,
-      sessionFailed: a.sessionFailed || a.session_failed
-    }));
+    const res = await fetch(
+      `${BASE_URL}/${sessionName}/activities?${params.toString()}`,
+      { headers: getHeaders() }
+    );
+
+    if (!res.ok) {
+      return { activities: [], nextPageToken: undefined };
+    }
+
+    const data = await res.json();
+    const activities = (data.activities || []).map(mapActivity);
+
+    return {
+      activities,
+      nextPageToken: data.nextPageToken || data.next_page_token
+    };
   } catch (error) {
     console.warn("listActivities network error:", error);
-    return [];
+    return { activities: [], nextPageToken: undefined };
   }
+};
+
+/**
+ * Fetch all activities for a session with automatic pagination
+ */
+export const listAllActivities = async (sessionName: string): Promise<JulesActivity[]> => {
+  const allActivities: JulesActivity[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const response = await listActivities(sessionName, { pageSize: 100, pageToken });
+    allActivities.push(...response.activities);
+    pageToken = response.nextPageToken;
+  } while (pageToken);
+
+  return allActivities;
 };
 
 export const getActivity = async (activityName: string): Promise<JulesActivity> => {
@@ -196,49 +313,65 @@ export const getActivity = async (activityName: string): Promise<JulesActivity> 
     const res = await fetch(url, { headers: getHeaders() });
     if (!res.ok) throw new Error("Failed to get activity");
 
-    const a = await res.json();
-
-    return {
-      ...a,
-      id: a.id,
-      originator: a.originator,
-      description: a.description,
-      createTime: a.createTime || a.create_time,
-      userMessaged: a.userMessaged || a.user_messaged,
-      userMessage: a.userMessage || a.user_message,
-      agentMessaged: a.agentMessaged || a.agent_messaged,
-      agentMessage: a.agentMessage || a.agent_message,
-      planGenerated: a.planGenerated || a.plan_generated,
-      planApproved: a.planApproved || a.plan_approved,
-      progressUpdated: a.progressUpdated || a.progress_updated,
-      sessionCompleted: a.sessionCompleted || a.session_completed,
-      sessionFailed: a.sessionFailed || a.session_failed,
-      artifacts: a.artifacts
-    };
+    const data = await res.json();
+    return mapActivity(data);
   } catch (error) {
     console.error("getActivity error:", error);
     throw error;
   }
 };
 
-export const sendMessage = async (sessionName: string, prompt: string) => {
+// Helper to map API activity response to our interface
+const mapActivity = (a: any): JulesActivity => {
+  return {
+    ...a,
+    id: a.id,
+    originator: a.originator,
+    description: a.description,
+    createTime: a.createTime || a.create_time,
+    userMessaged: a.userMessaged || a.user_messaged,
+    userMessage: a.userMessage || a.user_message,
+    agentMessaged: a.agentMessaged || a.agent_messaged,
+    agentMessage: a.agentMessage || a.agent_message,
+    planGenerated: a.planGenerated || a.plan_generated,
+    planApproved: a.planApproved || a.plan_approved ? {
+      planId: (a.planApproved || a.plan_approved)?.planId ||
+        (a.planApproved || a.plan_approved)?.plan_id
+    } : undefined,
+    progressUpdated: a.progressUpdated || a.progress_updated,
+    sessionCompleted: a.sessionCompleted || a.session_completed,
+    sessionFailed: a.sessionFailed || a.session_failed ? {
+      reason: (a.sessionFailed || a.session_failed)?.reason
+    } : undefined,
+    artifacts: a.artifacts
+  };
+};
+
+// ==================== SESSION ACTIONS ====================
+
+export const sendMessage = async (sessionName: string, prompt: string): Promise<boolean> => {
   const res = await fetch(`${BASE_URL}/${sessionName}:sendMessage`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({ prompt }),
   });
+
   if (!res.ok) throw new Error("Failed to send message");
-  // The API returns an empty 200 OK for sendMessage
   return true;
 };
 
-export const approvePlan = async (sessionName: string) => {
+export const approvePlan = async (sessionName: string, planId?: string): Promise<boolean> => {
+  const body: Record<string, any> = {};
+  if (planId) {
+    body.planId = planId;
+  }
+
   const res = await fetch(`${BASE_URL}/${sessionName}:approvePlan`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({}), // Empty body
+    body: JSON.stringify(body),
   });
+
   if (!res.ok) throw new Error("Failed to approve plan");
-  // The API returns an empty 200 OK for approvePlan
   return true;
 };

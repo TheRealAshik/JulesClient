@@ -1,11 +1,11 @@
 import React from 'react';
-import { InputArea, SessionMode } from './InputArea';
+import { InputArea, SessionCreateOptions } from './InputArea';
 import { ProactiveSection } from './ProactiveSection';
 import { Box, Terminal, Code, AlertCircle } from 'lucide-react';
 import { JulesSource, JulesSession } from '../types';
 
 interface HomeViewProps {
-    onSendMessage: (text: string, mode: SessionMode, branch?: string) => void;
+    onSendMessage: (text: string, options: SessionCreateOptions) => void;
     isProcessing: boolean;
     error: string | null;
     currentSource: JulesSource | null;
