@@ -249,7 +249,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
                                             <Search size={12} className="text-zinc-500" />
                                             <input
-                                                autoFocus
                                                 type="text"
                                                 placeholder="Find a branch..."
                                                 value={branchSearch}
@@ -315,7 +314,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[85vw] sm:w-[340px] max-w-[340px] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 origin-top-right"
+                                    className="mode-menu-dropdown absolute top-full -right-3 sm:right-0 mt-2 w-[300px] max-w-[90vw] sm:w-[340px] sm:max-w-[340px] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 origin-top-right"
                                 >
                                     <div className="p-2 space-y-1">
                                         {['START', 'SCHEDULED', 'INTERACTIVE', 'REVIEW'].map((mode) => (

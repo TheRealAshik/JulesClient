@@ -640,38 +640,63 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         className="flex gap-4 sm:gap-5 justify-start"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
-                        <div className="w-full max-w-lg bg-[#121215] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                            {/* ... (Existing PR Card Content) ... */}
-                            <div className="bg-[#18181B] px-4 py-3 border-b border-white/5 flex items-center justify-between">
+                        <div className="w-full max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card">
+                            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5">
+                                        <GitPullRequest size={16} className="text-green-400" />
+                                    </div>
+                                    <div>
+                                        <div className="text-zinc-200 font-medium text-sm tracking-wide">Pull Request Ready</div>
+                                        <div className="text-[10px] text-zinc-500 font-medium">Click to review</div>
+                                    </div>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="relative flex h-2 w-2">
+                                    <span className="relative flex h-2 w-2">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                    </div>
-                                    <span className="text-zinc-200 font-medium text-sm">Pull Request Ready</span>
+                                    </span>
                                 </div>
                             </div>
-                            <div className="p-4 space-y-4">
-                                <a href={out.pullRequest?.url} target="_blank" rel="noreferrer" className="block group">
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors">
-                                            <GitPullRequest size={18} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-zinc-100 group-hover:text-white transition-colors leading-snug break-words">
-                                                {out.pullRequest?.title || "Untitled Pull Request"}
-                                            </div>
-                                            {out.pullRequest?.description && (
-                                                <div className="text-xs text-zinc-400 mt-1 line-clamp-2">
-                                                    {out.pullRequest.description}
-                                                </div>
-                                            )}
-                                            <div className="text-xs text-zinc-500 truncate mt-1 font-mono flex items-center gap-1">
-                                                <span>#{out.pullRequest?.url.split('/').pop()}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
+
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <h3 className="text-base font-semibold text-white leading-snug mb-2 flex items-start justify-between gap-4">
+                                        <span className="break-words">{out.pullRequest?.title || "Untitled Pull Request"}</span>
+                                    </h3>
+                                    {out.pullRequest?.description && (
+                                        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">
+                                            {out.pullRequest.description}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-3 pt-2">
+                                    <a
+                                        href={out.pullRequest?.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98]"
+                                    >
+                                        <ExternalLink size={14} />
+                                        View Pull Request
+                                    </a>
+                                    <button
+                                        onClick={() => {
+                                            if (out.pullRequest?.url) {
+                                                navigator.clipboard.writeText(out.pullRequest.url);
+                                            }
+                                        }}
+                                        className="p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors"
+                                        title="Copy URL"
+                                    >
+                                        <Copy size={16} />
+                                    </button>
+                                </div>
+
+                                <div className="text-[10px] font-mono text-zinc-600/70 text-center truncate px-4 select-all">
+                                    {out.pullRequest?.url}
+                                </div>
                             </div>
                         </div>
                     </motion.div>

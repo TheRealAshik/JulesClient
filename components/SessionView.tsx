@@ -72,7 +72,7 @@ export const SessionView: React.FC<SessionViewProps> = ({
             {/* Floating Bottom Input Area - Overlay */}
             <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
                 {/* Gradient fade to seamlessly blend scrolling content */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505] to-transparent" style={{ top: '-40px' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0c0c0c] via-[#0c0c0c] to-transparent" style={{ top: '-40px' }} />
 
                 {/* Actual Input Container */}
                 <div className="relative pointer-events-auto px-2 sm:px-4 pb-4 sm:pb-6 pt-4">
