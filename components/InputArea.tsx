@@ -55,9 +55,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
     // Initialize selected branch
     useEffect(() => {
         if (currentSource?.githubRepo?.defaultBranch?.displayName) {
-            setSelectedBranch(currentSource.githubRepo.defaultBranch.displayName);
+            // eslint-disable-next-line
+            setSelectedBranch(currentSource.githubRepo.defaultBranch.displayName); // Sync state with prop
         } else {
-            setSelectedBranch('main');
+            // eslint-disable-next-line
+            setSelectedBranch('main'); // Default to main
         }
     }, [currentSource]);
 

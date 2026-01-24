@@ -281,7 +281,14 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
 
 // --- Sub Components ---
 
-const TabItem = ({ label, icon, isActive, onClick }: any) => (
+interface TabItemProps {
+    label: string;
+    icon: React.ReactNode;
+    isActive: boolean;
+    onClick: () => void;
+}
+
+const TabItem = ({ label, icon, isActive, onClick }: TabItemProps) => (
     <button
         onClick={onClick}
         className={`
@@ -296,7 +303,16 @@ const TabItem = ({ label, icon, isActive, onClick }: any) => (
     </button>
 );
 
-const StatCard = ({ label, value, icon, color, bg, border }: any) => (
+interface StatCardProps {
+    label: string;
+    value: number;
+    icon: React.ReactNode;
+    color: string;
+    bg: string;
+    border: string;
+}
+
+const StatCard = ({ label, value, icon, color, bg, border }: StatCardProps) => (
     <div className={`flex flex-col p-4 md:p-5 rounded-2xl bg-[#0E0E11] border border-white/5 relative overflow-hidden group hover:border-white/10 transition-colors shadow-sm`}>
         <div className="flex justify-between items-start mb-3 md:mb-4 relative z-10">
             <span className="text-zinc-500 text-xs md:text-sm font-medium">{label}</span>
@@ -311,7 +327,13 @@ const StatCard = ({ label, value, icon, color, bg, border }: any) => (
     </div>
 );
 
-const FilterTab = ({ label, active, onClick }: any) => (
+interface FilterTabProps {
+    label: string;
+    active: boolean;
+    onClick: () => void;
+}
+
+const FilterTab = ({ label, active, onClick }: FilterTabProps) => (
     <button
         onClick={onClick}
         className={`
@@ -404,14 +426,24 @@ const StatusBadge = ({ state }: { state: string }) => {
     );
 };
 
-const InfoRow = ({ label, value }: any) => (
+interface InfoRowProps {
+    label: string;
+    value: string;
+}
+
+const InfoRow = ({ label, value }: InfoRowProps) => (
     <div className="flex justify-between items-center py-2 border-b border-white/5 last:border-0 relative font-light">
         <span className="text-sm text-zinc-500">{label}</span>
         <span className="text-sm text-zinc-300 font-mono tracking-tight">{value}</span>
     </div>
 );
 
-const CapabilityItem = ({ label, enabled }: any) => (
+interface CapabilityItemProps {
+    label: string;
+    enabled: boolean;
+}
+
+const CapabilityItem = ({ label, enabled }: CapabilityItemProps) => (
     <div className="flex items-center justify-between p-2 pl-0">
         <span className={`text-sm font-light ${enabled ? 'text-zinc-300' : 'text-zinc-600'}`}>{label}</span>
         {enabled ? (

@@ -150,7 +150,7 @@ export interface JulesActivity {
     planApproved?: {
         planId?: string;
     };
-    sessionCompleted?: {};
+    sessionCompleted?: Record<string, never>;
     sessionFailed?: {
         reason?: string;
     };

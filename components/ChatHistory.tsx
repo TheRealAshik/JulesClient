@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { JulesActivity, Step, formatRelativeTime } from '../types';
+import { JulesActivity, Step, formatRelativeTime, MessageContent, ChangeSetArtifact } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
@@ -30,7 +30,7 @@ const formatTime = (isoString?: string) => {
     }
 };
 
-const getTextContent = (msg: any): string => {
+const getTextContent = (msg: MessageContent | string | undefined | null): string => {
     if (!msg) return "";
     if (typeof msg === 'string') return msg;
     // Handle nested message fields and their snake_case variants
@@ -43,12 +43,13 @@ const getTextContent = (msg: any): string => {
     if (content) return content;
 
     if (msg.parts && Array.isArray(msg.parts)) {
-        return msg.parts.map((p: any) => p.text || "").join("");
+        return msg.parts.map((p) => p.text || "").join("");
     }
     return "";
 };
 
 const MarkdownComponents = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     code({ node, className, children, ...props }: any) {
         const match = /language-(\w+)/.exec(className || '')
         // If there is a language match, treat as block code
@@ -73,17 +74,26 @@ const MarkdownComponents = {
             </code>
         )
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     a({ node, children, ...props }: any) {
         return <a target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors break-words" {...props}>{children}</a>
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ul({ children }: any) { return <ul className="list-disc pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ul> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ol({ children }: any) { return <ol className="list-decimal pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ol> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     h1({ children }: any) { return <h1 className="text-lg font-semibold mt-4 mb-2 text-zinc-100">{children}</h1> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     h2({ children }: any) { return <h2 className="text-base font-medium mt-3 mb-2 text-zinc-100">{children}</h2> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     h3({ children }: any) { return <h3 className="text-sm font-medium mt-3 mb-1 text-zinc-200">{children}</h3> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     p({ children }: any) { return <p className="mb-2 last:mb-0 leading-relaxed break-words">{children}</p> },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     li({ children }: any) { return <li className="pl-1 break-words leading-relaxed">{children}</li> },
     // Use fragment for pre to avoid nested pre tags when we render block code
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pre({ children }: any) { return <>{children}</> }
 };
 
@@ -272,7 +282,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
     );
 };
 
-const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
+const CodeChangeArtifact: React.FC<{ changeSet?: ChangeSetArtifact }> = ({ changeSet }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;

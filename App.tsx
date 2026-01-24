@@ -26,7 +26,8 @@ export default function App() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     // Polling ref
-    const pollInterval = useRef<number | null>(null);
+    const pollTimeout = useRef<number | null>(null);
+    const activePollingSession = useRef<string | null>(null);
     const activitiesRef = useRef<JulesActivity[]>([]);
 
     useEffect(() => {
@@ -52,7 +53,7 @@ export default function App() {
                         const sess = await JulesApi.getSession(sessName);
                         setCurrentSession(sess);
                         startPolling(sess.name);
-                    } catch (e) {
+                    } catch (e: unknown) {
                         console.error("Failed to load session from URL", e);
                     }
                 }
@@ -88,7 +89,7 @@ export default function App() {
             if (response.sources.length > 0 && !currentSource) {
                 setCurrentSource(response.sources[0]);
             }
-        } catch (e) {
+        } catch (e: unknown) {
             console.error(e);
             // If 401, reset key
             if (e instanceof Error && e.message.includes('Invalid API Key')) {
@@ -103,31 +104,41 @@ export default function App() {
     };
 
     const startPolling = useCallback((sessionName: string) => {
-        if (pollInterval.current) clearInterval(pollInterval.current);
+        if (pollTimeout.current) clearTimeout(pollTimeout.current);
+        activePollingSession.current = sessionName;
 
-        // Immediate fetch
-        JulesApi.listActivities(sessionName).then(response => {
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
-        });
+        const poll = async () => {
+            if (activePollingSession.current !== sessionName) return;
 
-        // Poll every 2s
-        pollInterval.current = window.setInterval(async () => {
-            const response = await JulesApi.listActivities(sessionName);
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
+            try {
+                const response = await JulesApi.listActivities(sessionName);
+                if (activePollingSession.current !== sessionName) return;
 
-            // Also check session status for outputs and state
-            const sess = await JulesApi.getSession(sessionName);
-            setCurrentSession(sess);
+                activitiesRef.current = response.activities;
+                setActivities(response.activities);
 
-            // Use API state to determine if processing
-            // Active states: QUEUED, PLANNING, IN_PROGRESS
-            // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
-            // Terminal states: COMPLETED, FAILED
-            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
-            setIsProcessing(isActive);
-        }, 2000);
+                // Also check session status for outputs and state
+                const sess = await JulesApi.getSession(sessionName);
+                if (activePollingSession.current !== sessionName) return;
+
+                setCurrentSession(sess);
+
+                // Use API state to determine if processing
+                // Active states: QUEUED, PLANNING, IN_PROGRESS
+                // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
+                // Terminal states: COMPLETED, FAILED
+                const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+                setIsProcessing(isActive);
+            } catch (e: unknown) {
+                console.error("Polling error", e);
+            }
+
+            if (activePollingSession.current === sessionName) {
+                pollTimeout.current = window.setTimeout(poll, 2000);
+            }
+        };
+
+        poll();
     }, []);
 
     const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
@@ -163,8 +174,8 @@ export default function App() {
                 setActivities(response.activities);
                 // Polling will handle isProcessing based on session.state from API
             }
-        } catch (e: any) {
-            setError(e.message || "An error occurred");
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : "An error occurred");
             setIsProcessing(false);
         }
     };
@@ -174,8 +185,8 @@ export default function App() {
         setIsProcessing(true);
         try {
             await JulesApi.approvePlan(currentSession.name);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : "An error occurred");
         } finally {
             setIsProcessing(false);
         }
@@ -191,7 +202,8 @@ export default function App() {
     // Cleanup polling on unmount or session switch
     useEffect(() => {
         return () => {
-            if (pollInterval.current) clearInterval(pollInterval.current);
+            if (pollTimeout.current) clearTimeout(pollTimeout.current);
+            activePollingSession.current = null;
         };
     }, []);
 

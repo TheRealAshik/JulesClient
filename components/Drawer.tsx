@@ -70,8 +70,10 @@ export const Drawer: React.FC<DrawerProps> = ({
     // Auto-expand on search
     useEffect(() => {
         if (searchQuery) {
-            setIsSessionsOpen(true);
-            setIsCodebasesOpen(true);
+            // eslint-disable-next-line
+            setIsSessionsOpen(true); // Auto-expand when searching
+            // eslint-disable-next-line
+            setIsCodebasesOpen(true); // Auto-expand when searching
         }
     }, [searchQuery]);
 

@@ -47,6 +47,7 @@ export const listSources = async (options?: ListSourcesOptions): Promise<ListSou
 
     const data = await res.json();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sources = (data.sources || []).map((s: any) => {
       const repo = s.githubRepo || s.github_repo;
       return {
@@ -182,6 +183,7 @@ export const createSession = async (
   sourceName: string,
   options?: CreateSessionOptions
 ): Promise<JulesSession> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload: Record<string, any> = {
     prompt,
     requirePlanApproval: options?.requirePlanApproval ?? true,
@@ -227,6 +229,7 @@ export const getSession = async (sessionId: string): Promise<JulesSession> => {
 };
 
 // Helper to map API session response to our interface
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
   return {
     ...data,
@@ -238,6 +241,7 @@ const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
     sourceContext: data.sourceContext || data.source_context,
     automationMode: data.automationMode || data.automation_mode,
     requirePlanApproval: data.requirePlanApproval ?? data.require_plan_approval,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     outputs: (data.outputs || []).map((o: any) => ({
       ...o,
       pullRequest: o.pullRequest || o.pull_request ? {
@@ -322,6 +326,7 @@ export const getActivity = async (activityName: string): Promise<JulesActivity> 
 };
 
 // Helper to map API activity response to our interface
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapActivity = (a: any): JulesActivity => {
   return {
     ...a,
@@ -361,6 +366,7 @@ export const sendMessage = async (sessionName: string, prompt: string): Promise<
 };
 
 export const approvePlan = async (sessionName: string, planId?: string): Promise<boolean> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const body: Record<string, any> = {};
   if (planId) {
     body.planId = planId;
