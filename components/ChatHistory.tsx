@@ -182,7 +182,7 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
 };
 
 const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = ({ command, output, exitCode }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     const isFailed = exitCode !== undefined && exitCode !== 0;
 
     return (
@@ -250,7 +250,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
                             className="w-full overflow-hidden"
                         >
                             <div className={twMerge(
-                                "p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t w-full",
+                                "p-3.5 overflow-x-auto overflow-y-auto custom-scrollbar max-h-[300px] border-t w-full",
                                 isFailed ? "border-red-500/10 bg-red-500/[0.02]" : "border-white/5 bg-black/20"
                             )}>
                                 {output ? (
@@ -273,7 +273,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
 };
 
 const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
 
@@ -484,49 +484,12 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        >
-                            <MoreVertical size={16} />
-                        </button>
-
-                        {isMenuOpen && (
-                            <>
-                                <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                                <div className="absolute right-0 top-full mt-2 w-48 max-w-[calc(100vw-2rem)] bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
-                                    <a
-                                        href={pr.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        <ExternalLink size={14} /> View Pull Request
-                                    </a>
-                                    {branchUrl && (
-                                        <a
-                                            href={branchUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
-                                            onClick={() => setIsMenuOpen(false)}
-                                        >
-                                            <GitMerge size={14} /> View Branch
-                                        </a>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
                 </div>
             </div>
 
-            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 rounded-b-xl">
+            <div className="p-5 sm:p-6 space-y-4 sm:space-y-5 rounded-b-xl">
                 <div className="min-w-0 overflow-hidden">
-                    <h3 className="text-sm sm:text-base font-semibold text-white leading-snug mb-1.5 sm:mb-2">
+                    <h3 className="text-sm sm:text-base font-semibold text-white leading-snug mb-2 sm:mb-2.5">
                         <span className="line-clamp-2 break-words">{pr.title || "Untitled Pull Request"}</span>
                     </h3>
                     {pr.description && (
@@ -535,21 +498,21 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                         </p>
                     )}
                     {pr.branch && (
-                        <div className="flex items-center gap-1.5 mt-2">
+                        <div className="flex items-center gap-1.5 mt-3">
                             <GitBranch size={11} className="text-zinc-500" />
-                            <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                            <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-1 rounded border border-white/5">
                                 {pr.branch}
                             </span>
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
+                <div className="flex items-center gap-2 sm:gap-3 pt-2 sm:pt-3">
                     <a
                         href={pr.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs sm:text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98] min-h-[40px]"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs sm:text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98] min-h-[44px]"
                     >
                         <ExternalLink size={14} />
                         <span className="truncate">View PR</span>
@@ -560,7 +523,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                                 navigator.clipboard.writeText(pr.url);
                             }
                         }}
-                        className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center flex-shrink-0"
+                        className="p-2.5 sm:p-3 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                         title="Copy URL"
                     >
                         <Copy size={16} />

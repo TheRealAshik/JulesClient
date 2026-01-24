@@ -141,11 +141,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 <motion.div
                     layout
                     className={twMerge(
-                        "relative flex items-end gap-2 bg-[#1c1c1f]/90 backdrop-blur-md border rounded-[26px] p-2 transition-colors duration-200",
+                        "relative flex items-end gap-2 bg-[#1c1c1f]/90 backdrop-blur-md border rounded-xl p-2 transition-colors duration-200",
                         isFocused ? 'border-zinc-500/50 ring-1 ring-zinc-500/20 shadow-2xl' : 'border-white/10 shadow-lg'
                     )}
                 >
-                    <button className="p-2.5 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
+                    <button className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 flex-shrink-0">
                         <Plus size={20} />
                     </button>
 
@@ -166,7 +166,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onClick={handleSubmit}
                         disabled={!input.trim() || isLoading}
                         className={twMerge(
-                            "p-2 rounded-full transition-all mb-1 flex-shrink-0 duration-300",
+                            "w-10 h-10 flex items-center justify-center rounded-lg transition-all mb-1 flex-shrink-0 duration-300",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-white/5 text-zinc-600 cursor-not-allowed'
@@ -186,8 +186,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
             className={twMerge(
                 "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out",
                 isExpanded
-                    ? 'rounded-[28px] min-h-[180px] border-indigo-500/30 shadow-[0_0_40px_-12px_rgba(99,102,241,0.2)] ring-1 ring-indigo-500/20'
-                    : 'rounded-[22px] min-h-[64px] border-white/8 shadow-lg hover:border-white/12 hover:bg-[#161619]'
+                    ? 'rounded-xl min-h-[160px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
+                    : 'rounded-xl min-h-[60px] border-white/10 shadow-sm hover:border-white/20 hover:bg-[#18181b]'
             )}
             onClick={() => {
                 if (!isFocused) {
@@ -209,7 +209,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onFocus={() => setIsFocused(true)}
                     placeholder={placeholder}
                     className={twMerge(
-                        "w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-[#52525B] resize-none font-normal leading-relaxed transition-all duration-200",
+                        "w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30",
                         isExpanded ? 'text-[16px]' : 'text-[15px]'
                     )}
                     rows={1}
@@ -224,8 +224,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
             {/* Footer Controls - Animated appearance */}
             <div className={twMerge(
-                "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out",
-                isExpanded ? 'px-4 pb-4 pt-1 opacity-100' : 'px-3 pb-3 opacity-100'
+                "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out bg-[#141417]/50 rounded-b-xl",
+                isExpanded ? 'px-4 pb-4 pt-2 opacity-100 border-t border-white/5' : 'px-3 pb-3 opacity-100'
             )}>
 
                 {/* Left: Attach, Title & Branch - Hidden when collapsed */}
@@ -237,22 +237,22 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
-                        <Plus size={16} />
+                        <Plus size={15} />
                     </motion.button>
 
                     {/* Session Title Toggle/Input */}
                     {showTitleInput ? (
-                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-xl px-2.5 py-1.5 h-8">
-                            <Type size={13} className="text-indigo-400 flex-shrink-0" />
+                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-lg px-2 py-1 h-7">
+                            <Type size={12} className="text-indigo-400 flex-shrink-0" />
                             <input
                                 ref={titleInputRef}
                                 type="text"
                                 value={sessionTitle}
                                 onChange={(e) => setSessionTitle(e.target.value)}
                                 placeholder="Session title..."
-                                className="bg-transparent border-none outline-none text-xs text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
+                                className="bg-transparent border-none outline-none text-[11px] text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
                                 autoFocus
                             />
                             <button
@@ -270,10 +270,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setShowTitleInput(true);
                             }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-400 hover:text-white transition-all duration-150 h-8"
+                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-400 hover:text-white transition-all duration-150 h-7"
                             title="Add session title"
                         >
-                            <Type size={13} className="text-zinc-500" />
+                            <Type size={12} className="text-zinc-500" />
                             <span className="hidden sm:inline">Title</span>
                         </motion.button>
                     )}
@@ -287,11 +287,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-all duration-150 h-8"
+                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-7"
                         >
-                            <GitBranch size={13} className="text-indigo-400 flex-shrink-0" />
+                            <GitBranch size={12} className="text-indigo-400 flex-shrink-0" />
                             <span className="max-w-[70px] sm:max-w-[100px] truncate">{selectedBranch}</span>
-                            <ChevronDown size={11} className="text-zinc-500 flex-shrink-0" />
+                            <ChevronDown size={10} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
 
                         <AnimatePresence>
@@ -357,14 +357,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all duration-150 border h-8",
+                                "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-150 border h-7",
                                 isModeMenuOpen
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
                             )}
                         >
-                            <Rocket size={14} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
-                            <ChevronUp size={12} className={`transition-transform duration-150 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                            <Rocket size={13} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
+                            <ChevronUp size={11} className={`transition-transform duration-150 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
                         </motion.button>
 
                         <AnimatePresence>
@@ -425,7 +425,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         }}
                         disabled={!input.trim() || isLoading}
                         className={twMerge(
-                            "w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150 flex-shrink-0",
+                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
@@ -434,7 +434,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         {isLoading ? (
                             <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <ArrowRight size={16} />
+                            <ArrowRight size={15} />
                         )}
                     </motion.button>
                 </div>

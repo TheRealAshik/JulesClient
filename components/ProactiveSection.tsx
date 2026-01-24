@@ -59,20 +59,22 @@ export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [
 
                 <div className="flex items-center gap-3">
                     <span className="text-xs font-mono text-zinc-600 hidden sm:block">0/5</span>
-                    <button
+                    <div
                         onClick={() => setIsEnabled(!isEnabled)}
                         className={`
-                  w-11 h-6 rounded-full relative transition-colors duration-300 ease-in-out focus:outline-none 
-                  ${isEnabled ? 'bg-indigo-600' : 'bg-[#27272a]'}
-               `}
+                            w-[44px] h-[24px] rounded-full relative transition-colors duration-300 ease-in-out cursor-pointer flex-shrink-0
+                            ${isEnabled ? 'bg-indigo-600' : 'bg-zinc-700'}
+                        `}
+                        role="switch"
+                        aria-checked={isEnabled}
                     >
                         <span
                             className={`
-                        absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300
-                        ${isEnabled ? 'translate-x-5' : 'translate-x-0'}
-                    `}
+                                absolute top-[2px] left-[2px] bg-white w-[20px] h-[20px] rounded-full shadow-sm transform transition-transform duration-300
+                                ${isEnabled ? 'translate-x-[20px]' : 'translate-x-0'}
+                            `}
                         />
-                    </button>
+                    </div>
                 </div>
             </div>
 
