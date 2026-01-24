@@ -18,6 +18,8 @@ export default function App() {
     const [currentSession, setCurrentSession] = useState<JulesSession | null>(null);
     const [sessions, setSessions] = useState<JulesSession[]>([]);
     const [activities, setActivities] = useState<JulesActivity[]>([]);
+    const [sessionsUsed, setSessionsUsed] = useState(0);
+    const [dailyLimit] = useState(100); // Default to Pro plan
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -98,8 +100,17 @@ export default function App() {
     };
 
     const fetchSessions = async () => {
-        const response = await JulesApi.listSessions();
-        setSessions(response.sessions);
+        const allSessions = await JulesApi.listAllSessions();
+        setSessions(allSessions);
+
+        // Calculate sessions in last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const usedCount = allSessions.filter(s => {
+            const createDate = new Date(s.createTime);
+            return createDate > twentyFourHoursAgo;
+        }).length;
+
+        setSessionsUsed(usedCount);
     };
 
     const startPolling = useCallback((sessionName: string) => {
@@ -170,6 +181,7 @@ export default function App() {
 
                 setCurrentSession(session);
                 setSessions(prev => [session, ...prev]);
+                setSessionsUsed(prev => prev + 1);
                 navigate(`/session/${session.name.replace('sessions/', '')}`);
                 startPolling(session.name);
             } else {
@@ -203,6 +215,34 @@ export default function App() {
         navigate(`/session/${session.name.replace('sessions/', '')}`);
         setIsDrawerOpen(false);
         startPolling(session.name);
+    };
+
+    const handleDeleteSession = async (sessionName: string) => {
+        try {
+            await JulesApi.deleteSession(sessionName);
+            setSessions(prev => prev.filter(s => s.name !== sessionName));
+
+            // If the deleted session is the current one, redirect to home
+            if (currentSession?.name === sessionName) {
+                setCurrentSession(null);
+                setActivities([]);
+                navigate('/');
+            }
+        } catch (e: any) {
+            setError(e.message || "Failed to delete session");
+        }
+    };
+
+    const handleUpdateSession = async (sessionName: string, updates: Partial<JulesSession>, updateMask: string[]) => {
+        try {
+            const updated = await JulesApi.updateSession(sessionName, updates, updateMask);
+            setSessions(prev => prev.map(s => s.name === sessionName ? updated : s));
+            if (currentSession?.name === sessionName) {
+                setCurrentSession(updated);
+            }
+        } catch (e: any) {
+            setError(e.message || "Failed to update session");
+        }
     };
 
     // Cleanup polling on unmount or session switch
@@ -268,11 +308,15 @@ export default function App() {
                 currentSessionId={currentSession?.name}
                 currentSourceId={currentSource?.name}
                 onSelectSession={handleSelectSession}
+                onDeleteSession={handleDeleteSession}
+                onUpdateSession={handleUpdateSession}
                 onSelectSource={(source) => {
                     setCurrentSource(source);
                     navigate(`/repository/${source.name.replace('sources/', '')}`);
                     setIsDrawerOpen(false);
                 }}
+                sessionsUsed={sessionsUsed}
+                dailyLimit={dailyLimit}
             />
 
             <Routes>
