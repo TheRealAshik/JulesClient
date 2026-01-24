@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { JulesActivity, Step, formatRelativeTime } from '../types';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
@@ -19,6 +20,7 @@ interface ChatHistoryProps {
     sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string; branch?: string } }>;
     sessionPrompt?: string;
     sessionCreateTime?: string;
+    error?: string | null;
 }
 
 const formatTime = (isoString?: string) => {
@@ -577,315 +579,473 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
 
 
 
-export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
-    // Check if the initial prompt is already represented in activities
+type RenderItem =
+  | { type: 'initial-prompt', text: string, time: string, key: string }
+  | { type: 'system', description: string, key: string }
+  | { type: 'user', text: string, time: string, key: string }
+  | { type: 'agent', text: string, time: string, key: string }
+  | { type: 'plan', plan: any, isApproved: boolean, activityId: string, activityName: string, key: string }
+  | { type: 'artifact-bash', command: string, output: string, exitCode: number, key: string }
+  | { type: 'artifact-media', media: any, index: number, key: string }
+  | { type: 'artifact-diff', changeSet: any, key: string }
+  | { type: 'progress', title: string, description: string, isCurrentlyActive: boolean, key: string }
+  | { type: 'session-completed', timestamp: string, key: string }
+  | { type: 'session-failed', reason: string, key: string }
+  | { type: 'session-output', output: any, index: number, key: string }
+  | { type: 'streaming-indicator', key: string }
+  | { type: 'error', message: string, key: string };
+
+const flattenActivities = (
+    activities: JulesActivity[],
+    sessionPrompt: string | undefined,
+    sessionCreateTime: string | undefined,
+    sessionOutputs: any[] | undefined,
+    isStreaming: boolean,
+    error: string | null | undefined
+): RenderItem[] => {
+    const items: RenderItem[] = [];
+
+    // Check if initial prompt is in activities
     const hasInitialPromptInActivities = activities.some(act => {
         const userText = act.userMessaged ? getTextContent(act.userMessaged) : (act.userMessage ? getTextContent(act.userMessage) : "");
         return userText && sessionPrompt && (userText.trim() === sessionPrompt.trim() || sessionPrompt.trim().includes(userText.trim()));
     });
 
-    return (
-        <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
-            <AnimatePresence initial={false}>
-                {/* 0. Initial Prompt (if not in activities) */}
-                {sessionPrompt && !hasInitialPromptInActivities && (
-                    <UserMessageBubble
-                        key="initial-prompt"
-                        text={sessionPrompt}
-                        time={formatTime(sessionCreateTime)}
+    if (sessionPrompt && !hasInitialPromptInActivities) {
+        items.push({
+            type: 'initial-prompt',
+            text: sessionPrompt,
+            time: formatTime(sessionCreateTime),
+            key: 'initial-prompt'
+        });
+    }
+
+    activities.forEach((act) => {
+        const timeString = formatTime(act.createTime);
+
+        // System
+        if (act.originator === 'system' && !act.planGenerated && !act.userMessaged && !act.agentMessaged && act.description) {
+            items.push({
+                type: 'system',
+                description: act.description,
+                key: `${act.name}-system`
+            });
+        }
+
+        // User
+        if (act.userMessaged || act.userMessage) {
+            const userText = getTextContent(act.userMessaged || act.userMessage);
+            if (userText) {
+                items.push({
+                    type: 'user',
+                    text: userText,
+                    time: timeString,
+                    key: `${act.name}-user`
+                });
+            }
+        }
+
+        // Agent
+        if (act.agentMessaged || act.agentMessage) {
+            const agentText = getTextContent(act.agentMessaged || act.agentMessage) || "Thinking...";
+            items.push({
+                type: 'agent',
+                text: agentText,
+                time: timeString,
+                key: `${act.name}-agent`
+            });
+        }
+
+        // Plan
+        if (act.planGenerated) {
+            const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
+            items.push({
+                type: 'plan',
+                plan: act.planGenerated.plan,
+                isApproved,
+                activityId: act.name,
+                activityName: act.name,
+                key: `${act.name}-plan`
+            });
+        }
+
+        // Artifacts
+        if (act.artifacts && act.artifacts.length > 0) {
+            act.artifacts.forEach((artifact, i) => {
+                if (artifact.bashOutput) {
+                    items.push({
+                        type: 'artifact-bash',
+                        command: artifact.bashOutput.command,
+                        output: artifact.bashOutput.output,
+                        exitCode: artifact.bashOutput.exitCode,
+                        key: `${act.name}-art-${i}-bash`
+                    });
+                }
+                if (artifact.media) {
+                     items.push({
+                        type: 'artifact-media',
+                        media: artifact.media,
+                        index: i,
+                        key: `${act.name}-art-${i}-media`
+                    });
+                }
+                if (artifact.changeSet) {
+                     items.push({
+                        type: 'artifact-diff',
+                        changeSet: artifact.changeSet,
+                        key: `${act.name}-art-${i}-diff`
+                    });
+                }
+            });
+        }
+
+        // Progress
+        if (act.progressUpdated) {
+            const progress = act.progressUpdated;
+            const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || "Processing";
+            const description = progress.description || progress.progress_description || progress.text || progress.message;
+            const cleanTitle = title.trim().toLowerCase();
+            const cleanDesc = description ? description.trim().toLowerCase() : "";
+            const isRedundant = !description || cleanTitle === cleanDesc || cleanTitle.includes(cleanDesc);
+
+            // Only spin if this is the most recent progress/agent action
+            const activitiesAfter = activities.slice(activities.indexOf(act) + 1);
+            const isCurrentlyActive = !activitiesAfter.some(a =>
+                a.progressUpdated || a.agentMessage || a.agentMessaged ||
+                a.planGenerated || a.sessionCompleted || a.sessionFailed
+            );
+
+            items.push({
+                type: 'progress',
+                title,
+                description,
+                isCurrentlyActive,
+                key: `${act.name}-progress`
+            });
+        }
+
+        // Session Completed
+        if (act.sessionCompleted) {
+            items.push({
+                type: 'session-completed',
+                timestamp: act.createTime,
+                key: `${act.name}-completed`
+            });
+        }
+
+        // Session Failed
+        if (act.sessionFailed) {
+            items.push({
+                type: 'session-failed',
+                reason: act.sessionFailed.reason,
+                key: `${act.name}-failed`
+            });
+        }
+    });
+
+    // Session Outputs
+    if (sessionOutputs) {
+        sessionOutputs.forEach((out, i) => {
+            items.push({
+                type: 'session-output',
+                output: out,
+                index: i,
+                key: `out-${i}`
+            });
+        });
+    }
+
+    // Streaming Indicator
+    if (isStreaming) {
+        items.push({
+            type: 'streaming-indicator',
+            key: 'streaming-indicator'
+        });
+    }
+
+    // Error
+    if (error) {
+        items.push({
+            type: 'error',
+            message: error,
+            key: 'error'
+        });
+    }
+
+    return items;
+};
+
+const ItemRenderer: React.FC<{ item: RenderItem, onApprovePlan: (id: string) => void }> = ({ item, onApprovePlan }) => {
+    switch (item.type) {
+        case 'initial-prompt':
+            return <UserMessageBubble text={item.text} time={item.time} />;
+        case 'system':
+            return (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex justify-center my-6"
+                >
+                    <span className="text-[11px] text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5 font-medium tracking-wide text-center">
+                        {item.description}
+                    </span>
+                </motion.div>
+            );
+        case 'user':
+             return <UserMessageBubble text={item.text} time={item.time} />;
+        case 'agent':
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
+                >
+                    <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
+                        <Bot size={18} className="text-indigo-400" />
+                    </div>
+                    <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
+                        <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={MarkdownComponents}
+                            >
+                                {item.text}
+                            </ReactMarkdown>
+                        </div>
+                        {item.time && (
+                            <div className="text-[10px] text-zinc-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                                Jules • {item.time}
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            );
+        case 'plan':
+             return (
+                <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+                >
+                    <div className="w-8 h-8 flex-shrink-0" />
+                    <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+                        <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
+                            <span className="text-sm font-medium text-white flex items-center gap-2">
+                                <ListTodo size={16} className="text-indigo-400" />
+                                Execution Plan
+                            </span>
+                            <span className="text-xs text-zinc-500 font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                                {item.plan?.steps?.length || 0} steps
+                            </span>
+                        </div>
+                        <div className="p-2 space-y-1">
+                            {item.plan?.steps ? (
+                                item.plan.steps.map((step: any, i: number) => (
+                                    <PlanStepItem key={i} step={step} index={i} />
+                                ))
+                            ) : (
+                                <div className="p-4 text-sm italic text-zinc-500">Generating plan details...</div>
+                            )}
+                        </div>
+                        <div className="p-4 bg-black/20 border-t border-white/5 flex justify-between items-center gap-4">
+                            <span className="text-xs text-zinc-500 hidden sm:block">Review the plan before continuing.</span>
+                            <div className="ml-auto w-full sm:w-auto">
+                                {item.isApproved ? (
+                                    <div className="flex justify-center sm:justify-end">
+                                        <span className="flex items-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                                            <Check size={12} /> Plan approved
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => onApprovePlan(item.activityName)}
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/25 active:scale-95"
+                                    >
+                                        Start Coding <ChevronRight size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        case 'artifact-bash':
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+                >
+                    <div className="w-8 h-8 flex-shrink-0" />
+                    <CommandArtifact
+                        command={item.command}
+                        output={item.output}
+                        exitCode={item.exitCode}
                     />
-                )}
-
-                {activities.map((act) => {
-                    const timeString = formatTime(act.createTime);
-                    const items: React.ReactNode[] = [];
-
-                    // --- 0. System Messages ---
-                    if (act.originator === 'system' && !act.planGenerated && !act.userMessaged && !act.agentMessaged && act.description) {
-                        items.push(
-                            <motion.div
-                                key="system"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex justify-center my-6"
-                            >
-                                <span className="text-[11px] text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5 font-medium tracking-wide text-center">
-                                    {act.description}
-                                </span>
-                            </motion.div>
-                        );
-                    }
-
-                    // --- 1. User Message ---
-                    if (act.userMessaged || act.userMessage) {
-                        const userText = getTextContent(act.userMessaged || act.userMessage);
-                        if (userText) {
-                            items.push(<UserMessageBubble key="user" text={userText} time={timeString} />);
-                        }
-                    }
-
-                    // --- 2. Agent Message ---
-                    if (act.agentMessaged || act.agentMessage) {
-                        const agentText = getTextContent(act.agentMessaged || act.agentMessage) || "Thinking...";
-                        items.push(
-                            <motion.div
-                                key="agent"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                                className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
-                                    <Bot size={18} className="text-indigo-400" />
-                                </div>
-                                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
-                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={MarkdownComponents}
-                                        >
-                                            {agentText}
-                                        </ReactMarkdown>
-                                    </div>
-                                    {timeString && (
-                                        <div className="text-[10px] text-zinc-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Jules • {timeString}
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
-                        );
-                    }
-
-                    // --- 3. Plan Generated ---
-                    if (act.planGenerated) {
-                        const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
-                        items.push(
-                            <motion.div
-                                key="plan"
-                                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                            >
-                                <div className="w-8 h-8 flex-shrink-0" />
-                                <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                                    <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-white flex items-center gap-2">
-                                            <ListTodo size={16} className="text-indigo-400" />
-                                            Execution Plan
-                                        </span>
-                                        <span className="text-xs text-zinc-500 font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                                            {act.planGenerated.plan?.steps?.length || 0} steps
-                                        </span>
-                                    </div>
-                                    <div className="p-2 space-y-1">
-                                        {act.planGenerated.plan?.steps ? (
-                                            act.planGenerated.plan.steps.map((step, i) => (
-                                                <PlanStepItem key={i} step={step} index={i} />
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-sm italic text-zinc-500">Generating plan details...</div>
-                                        )}
-                                    </div>
-                                    <div className="p-4 bg-black/20 border-t border-white/5 flex justify-between items-center gap-4">
-                                        <span className="text-xs text-zinc-500 hidden sm:block">Review the plan before continuing.</span>
-                                        <div className="ml-auto w-full sm:w-auto">
-                                            {isApproved ? (
-                                                <div className="flex justify-center sm:justify-end">
-                                                    <span className="flex items-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
-                                                        <Check size={12} /> Plan approved
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => onApprovePlan(act.name)}
-                                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/25 active:scale-95"
-                                                >
-                                                    Start Coding <ChevronRight size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    }
-
-                    // --- 4. Artifacts ---
-                    if (act.artifacts && act.artifacts.length > 0) {
-                        act.artifacts.forEach((artifact, i) => {
-                            if (artifact.bashOutput) {
-                                items.push(
-                                    <motion.div
-                                        key={`art-${i}-bash`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <CommandArtifact
-                                            command={artifact.bashOutput.command}
-                                            output={artifact.bashOutput.output}
-                                            exitCode={artifact.bashOutput.exitCode}
-                                        />
-                                    </motion.div>
-                                );
-                            }
-
-                            if (artifact.media) {
-                                items.push(
-                                    <motion.div
-                                        key={`art-${i}-media`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
-                                            <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
-                                                <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                                    <ImageIcon size={12} />
-                                                    <span>Generated Artifact</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <a
-                                                        href={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
-                                                        download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
-                                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
-                                                        title="Download"
-                                                    >
-                                                        <Download size={14} />
-                                                    </a>
-                                                    <a
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            const win = window.open();
-                                                            win?.document.write(
-                                                                `<iframe src="data:${artifact.media.mimeType};base64,${artifact.media.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
-                                                            );
-                                                        }}
-                                                        href="#"
-                                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
-                                                        title="Open in new window"
-                                                    >
-                                                        <ExternalLink size={14} />
-                                                    </a>
-                                                </div>
-                                            </div>
-                                            <div className="relative bg-[#18181b] flex justify-center p-2">
-                                                <img
-                                                    src={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
-                                                    alt="Jules generated artifact"
-                                                    className="w-full h-auto object-contain max-h-[400px]"
-                                                />
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            }
-
-                            if (artifact.changeSet) {
-                                items.push(
-                                    <motion.div
-                                        key={`art-${i}-diff`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <CodeChangeArtifact changeSet={artifact.changeSet} />
-                                    </motion.div>
-                                );
-                            }
-                        });
-                    }
-
-                    // --- 5. Progress Updates ---
-                    if (act.progressUpdated) {
-                        const progress = act.progressUpdated;
-                        const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || "Processing";
-                        const description = progress.description || progress.progress_description || progress.text || progress.message;
-                        const cleanTitle = title.trim().toLowerCase();
-                        const cleanDesc = description ? description.trim().toLowerCase() : "";
-                        const isRedundant = !description || cleanTitle === cleanDesc || cleanTitle.includes(cleanDesc);
-
-                        // Only spin if this is the most recent progress/agent action
-                        const activitiesAfter = activities.slice(activities.indexOf(act) + 1);
-                        const isCurrentlyActive = !activitiesAfter.some(a =>
-                            a.progressUpdated || a.agentMessage || a.agentMessaged ||
-                            a.planGenerated || a.sessionCompleted || a.sessionFailed
-                        );
-
-                        items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
-                                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
-                                    <Loader2
-                                        size={14}
-                                        className={twMerge(
-                                            "text-indigo-500 flex-shrink-0",
-                                            isCurrentlyActive && "animate-spin"
-                                        )}
-                                    />
-                                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
-                                        <span className="font-medium text-zinc-300 transition-colors truncate">
-                                            {title}
-                                        </span>
-                                        {!isRedundant && (
-                                            <span className="text-zinc-500 font-sans truncate text-[10px] mt-0.5 opacity-80">{description}</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </motion.div>
-                        );
-                    }
-
-                    // --- 6. Session Completed ---
-                    if (act.sessionCompleted) {
-                        items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
-                    }
-
-                    // --- 7. Session Failed ---
-                    if (act.sessionFailed) {
-                        items.push(<CompactSessionFailed key="failed" reason={act.sessionFailed.reason} />);
-                    }
-
-                    if (items.length === 0) return null;
-                    return <React.Fragment key={act.name}>{items}</React.Fragment>;
-                })}
-
-                {/* Session Outputs */}
-                {sessionOutputs && sessionOutputs.map((out, i) => (
-                    <motion.div
-                        key={`out-${i}`}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="flex gap-4 sm:gap-5 justify-start w-full min-w-0"
-                    >
-                        <div className="w-8 h-8 flex-shrink-0" />
-                        <PullRequestCard output={out} />
-                    </motion.div>
-                ))}
-
-                {isStreaming && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="flex gap-3 sm:gap-5 justify-start w-full"
-                    >
-                        <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 border border-white/10 flex items-center justify-center mt-1">
-                            <Bot size={18} className="text-indigo-400 opacity-70" />
+                </motion.div>
+            );
+        case 'artifact-media':
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3 sm:gap-5 justify-start"
+                >
+                    <div className="w-8 h-8 flex-shrink-0" />
+                    <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
+                        <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
+                            <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                <ImageIcon size={12} />
+                                <span>Generated Artifact</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={`data:${item.media.mimeType};base64,${item.media.data}`}
+                                    download={`artifact-${item.index}.${item.media.mimeType.split('/')[1] || 'png'}`}
+                                    className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
+                                    title="Download"
+                                >
+                                    <Download size={14} />
+                                </a>
+                                <a
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        const win = window.open();
+                                        win?.document.write(
+                                            `<iframe src="data:${item.media.mimeType};base64,${item.media.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+                                        );
+                                    }}
+                                    href="#"
+                                    className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
+                                    title="Open in new window"
+                                >
+                                    <ExternalLink size={14} />
+                                </a>
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-3 w-full max-w-[90%] sm:max-w-[75%] pt-1.5">
-                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[90%]" />
-                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[70%]" />
-                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[80%]" />
+                        <div className="relative bg-[#18181b] flex justify-center p-2">
+                            <img
+                                src={`data:${item.media.mimeType};base64,${item.media.data}`}
+                                alt="Jules generated artifact"
+                                className="w-full h-auto object-contain max-h-[400px]"
+                            />
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
+                    </div>
+                </motion.div>
+            );
+        case 'artifact-diff':
+             return (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+                >
+                    <div className="w-8 h-8 flex-shrink-0" />
+                    <CodeChangeArtifact changeSet={item.changeSet} />
+                </motion.div>
+            );
+        case 'progress':
+            return (
+                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
+                    <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
+                    <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
+                        <Loader2
+                            size={14}
+                            className={twMerge(
+                                "text-indigo-500 flex-shrink-0",
+                                item.isCurrentlyActive && "animate-spin"
+                            )}
+                        />
+                        <div className="flex flex-col min-w-0 overflow-hidden flex-1">
+                            <span className="font-medium text-zinc-300 transition-colors truncate">
+                                {item.title}
+                            </span>
+                            {!(!item.description || item.title.trim().toLowerCase() === item.description.trim().toLowerCase() || item.title.trim().toLowerCase().includes(item.description.trim().toLowerCase())) && (
+                                <span className="text-zinc-500 font-sans truncate text-[10px] mt-0.5 opacity-80">{item.description}</span>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        case 'session-completed':
+            return <CompactSessionCompleted timestamp={item.timestamp} />;
+        case 'session-failed':
+            return <CompactSessionFailed reason={item.reason} />;
+        case 'session-output':
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex gap-4 sm:gap-5 justify-start w-full min-w-0"
+                >
+                    <div className="w-8 h-8 flex-shrink-0" />
+                    <PullRequestCard output={item.output} />
+                </motion.div>
+            );
+        case 'streaming-indicator':
+             return (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex gap-3 sm:gap-5 justify-start w-full"
+                >
+                    <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 border border-white/10 flex items-center justify-center mt-1">
+                        <Bot size={18} className="text-indigo-400 opacity-70" />
+                    </div>
+                    <div className="flex flex-col gap-3 w-full max-w-[90%] sm:max-w-[75%] pt-1.5">
+                        <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[90%]" />
+                        <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[70%]" />
+                        <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[80%]" />
+                    </div>
+                </motion.div>
+            );
+        case 'error':
+            return (
+                <div className="mx-4 sm:mx-0 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    {item.message}
+                </div>
+            );
+        default:
+            return null;
+    }
+}
+
+export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime, error }) => {
+    const items = React.useMemo(() => flattenActivities(
+        activities, sessionPrompt, sessionCreateTime, sessionOutputs, isStreaming, error
+    ), [activities, sessionPrompt, sessionCreateTime, sessionOutputs, isStreaming, error]);
+
+    const virtuosoRef = React.useRef<VirtuosoHandle>(null);
+    const hasScrolledRef = React.useRef(false);
+
+    React.useEffect(() => {
+        // If we have items and haven't scrolled to bottom yet, do it once.
+        if (items.length > 0 && !hasScrolledRef.current) {
+            // Use a small timeout to ensure Virtuoso has calculated sizes
+            setTimeout(() => {
+                virtuosoRef.current?.scrollToIndex({ index: items.length - 1, align: 'end' });
+                hasScrolledRef.current = true;
+            }, 100);
+        }
+    }, [items.length]);
+
+    return (
+        <Virtuoso
+            ref={virtuosoRef}
+            style={{ height: '100%', width: '100%' }}
+            data={items}
+            followOutput="smooth"
+            initialTopMostItemIndex={items.length - 1}
+            components={{ Footer: () => <div style={{ height: 160 }} /> }}
+            itemContent={(index, item) => (
+                <div className="py-2 px-2 sm:px-4">
+                    <ItemRenderer item={item} onApprovePlan={onApprovePlan} />
+                </div>
+            )}
+        />
     );
 };

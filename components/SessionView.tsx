@@ -22,15 +22,6 @@ export const SessionView: React.FC<SessionViewProps> = ({
     onSendMessage,
     onApprovePlan
 }) => {
-    const scrollRef = useRef<HTMLDivElement>(null);
-
-    // Auto-scroll to bottom on new activities
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [activities.length, isProcessing]);
-
     // Wrapper to adapt simple text callback to SessionCreateOptions signature
     const handleSendMessage = (text: string, _options: SessionCreateOptions) => {
         onSendMessage(text);
@@ -46,16 +37,8 @@ export const SessionView: React.FC<SessionViewProps> = ({
             </div>
 
             {/* Scrollable Chat Area */}
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto px-4 sm:px-0 scroll-smooth"
-            >
-                {/* 
-                  Extra bottom padding ensures the last message can be scrolled 
-                  above the floating input area. 
-                  Input Area ~50-80px + spacing.
-                */}
-                <div className="max-w-4xl mx-auto py-6" style={{ paddingBottom: '160px' }}>
+            <div className="flex-1 overflow-hidden px-4 sm:px-0 relative">
+                <div className="max-w-4xl mx-auto h-full py-6">
                     <ChatHistory
                         activities={activities}
                         isStreaming={isProcessing}
@@ -63,14 +46,8 @@ export const SessionView: React.FC<SessionViewProps> = ({
                         sessionOutputs={session.outputs}
                         sessionPrompt={session.prompt}
                         sessionCreateTime={session.createTime}
+                        error={error}
                     />
-
-                    {error && (
-                        <div className="mx-4 sm:mx-0 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
-                            <AlertCircle size={16} />
-                            {error}
-                        </div>
-                    )}
                 </div>
             </div>
 
