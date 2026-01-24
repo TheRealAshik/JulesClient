@@ -96,13 +96,13 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex gap-4 justify-end w-full"
+            className="flex gap-3 sm:gap-4 justify-end w-full"
         >
-            <div className="flex flex-col items-end gap-1 max-w-full sm:max-w-[75%]">
+            <div className="flex flex-col items-end gap-1 max-w-[90%] sm:max-w-[75%]">
                 <div
                     onClick={() => isLong && setIsExpanded(!isExpanded)}
                     className={twMerge(
-                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[24px] px-5 py-3.5 text-[15px] leading-relaxed shadow-lg",
+                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg",
                         isLong && "cursor-pointer hover:bg-[#323236] transition-colors pr-10"
                     )}
                 >
@@ -415,7 +415,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className="flex gap-4 sm:gap-5 justify-start group w-full"
+                                className="flex gap-3 sm:gap-5 justify-start group w-full"
                             >
                                 <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
                                     <Bot size={18} className="text-indigo-400" />
@@ -447,7 +447,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 key="plan"
                                 initial={{ opacity: 0, y: 20, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className="flex gap-4 sm:gap-5 justify-start"
+                                className="flex gap-3 sm:gap-5 justify-start"
                             >
                                 <div className="w-8 h-8 flex-shrink-0" />
                                 <div className="w-full max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
@@ -502,7 +502,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-bash`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-4 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CommandArtifact
@@ -519,7 +519,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-media`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-4 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <div className="max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
@@ -571,7 +571,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-diff`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-4 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CodeChangeArtifact changeSet={artifact.changeSet} />
@@ -598,9 +598,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         );
 
                         items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 sm:gap-5 justify-start items-start">
+                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[85%] sm:max-w-xl hover:border-white/10 transition-colors">
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[90%] sm:max-w-xl hover:border-white/10 transition-colors">
                                     <Loader2
                                         size={14}
                                         className={twMerge(
