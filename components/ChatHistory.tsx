@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { JulesActivity, Step, formatRelativeTime } from '../types';
@@ -87,7 +87,7 @@ const MarkdownComponents = {
     pre({ children }: any) { return <>{children}</> }
 };
 
-const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, time }) => {
+const UserMessageBubble: React.FC<{ text: string, time?: string }> = memo(({ text, time }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const lineCount = text.split('\n').length;
     const isLong = text.length > 500 || lineCount > 8;
@@ -141,9 +141,10 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
             </div>
         </motion.div>
     );
-};
+});
+UserMessageBubble.displayName = 'UserMessageBubble';
 
-const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) => {
+const PlanStepItem: React.FC<{ step: Step, index: number }> = memo(({ step, index }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -179,9 +180,10 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
             </AnimatePresence>
         </motion.div>
     );
-};
+});
+PlanStepItem.displayName = 'PlanStepItem';
 
-const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = ({ command, output, exitCode }) => {
+const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = memo(({ command, output, exitCode }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const isFailed = exitCode !== undefined && exitCode !== 0;
 
@@ -270,9 +272,10 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
             </div>
         </div>
     );
-};
+});
+CommandArtifact.displayName = 'CommandArtifact';
 
-const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
+const CodeChangeArtifact: React.FC<{ changeSet?: any }> = memo(({ changeSet }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
@@ -372,9 +375,10 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
             </div>
         </div>
     );
-};
+});
+CodeChangeArtifact.displayName = 'CodeChangeArtifact';
 
-const CompactSessionCompleted: React.FC<{ timestamp?: string }> = ({ timestamp }) => {
+const CompactSessionCompleted: React.FC<{ timestamp?: string }> = memo(({ timestamp }) => {
     React.useEffect(() => {
         // Only trigger confetti if the completion event is recent (within last 10 seconds)
         // This prevents confetti from showing when viewing old history
@@ -422,9 +426,10 @@ const CompactSessionCompleted: React.FC<{ timestamp?: string }> = ({ timestamp }
             </div>
         </motion.div>
     );
-};
+});
+CompactSessionCompleted.displayName = 'CompactSessionCompleted';
 
-const CompactSessionFailed: React.FC<{ reason?: string }> = ({ reason }) => {
+const CompactSessionFailed: React.FC<{ reason?: string }> = memo(({ reason }) => {
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -444,9 +449,10 @@ const CompactSessionFailed: React.FC<{ reason?: string }> = ({ reason }) => {
             </div>
         </motion.div>
     );
-};
+});
+CompactSessionFailed.displayName = 'CompactSessionFailed';
 
-const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: string; description: string; branch?: string } } }> = ({ output }) => {
+const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: string; description: string; branch?: string } } }> = memo(({ output }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pr = output.pullRequest;
 
@@ -536,16 +542,20 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
             </div>
         </div>
     );
-};
+});
+PullRequestCard.displayName = 'PullRequestCard';
 
 
 
-export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
-    // Check if the initial prompt is already represented in activities
-    const hasInitialPromptInActivities = activities.some(act => {
-        const userText = act.userMessaged ? getTextContent(act.userMessaged) : (act.userMessage ? getTextContent(act.userMessage) : "");
-        return userText && sessionPrompt && (userText.trim() === sessionPrompt.trim() || sessionPrompt.trim().includes(userText.trim()));
-    });
+export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
+    // Memoize the expensive initial prompt check
+    const hasInitialPromptInActivities = useMemo(() => {
+        if (!sessionPrompt) return false;
+        return activities.some(act => {
+            const userText = act.userMessaged ? getTextContent(act.userMessaged) : (act.userMessage ? getTextContent(act.userMessage) : "");
+            return userText && (userText.trim() === sessionPrompt.trim() || sessionPrompt.trim().includes(userText.trim()));
+        });
+    }, [activities, sessionPrompt]);
 
     return (
         <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
@@ -851,4 +861,5 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
             </AnimatePresence>
         </div>
     );
-};
+});
+ChatHistory.displayName = 'ChatHistory';

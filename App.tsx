@@ -114,12 +114,29 @@ export default function App() {
         // Poll every 2s
         pollInterval.current = window.setInterval(async () => {
             const response = await JulesApi.listActivities(sessionName);
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
+
+            // Only update activities if they've changed (compare by length and last item name)
+            const newActivities = response.activities;
+            const prevActivities = activitiesRef.current;
+            const hasChanged =
+                newActivities.length !== prevActivities.length ||
+                (newActivities.length > 0 && prevActivities.length > 0 &&
+                    newActivities[newActivities.length - 1]?.name !== prevActivities[prevActivities.length - 1]?.name);
+
+            if (hasChanged) {
+                activitiesRef.current = newActivities;
+                setActivities(newActivities);
+            }
 
             // Also check session status for outputs and state
             const sess = await JulesApi.getSession(sessionName);
-            setCurrentSession(sess);
+            setCurrentSession(prev => {
+                // Only update if state has changed to avoid unnecessary re-renders
+                if (!prev || prev.state !== sess.state || prev.outputs?.length !== sess.outputs?.length) {
+                    return sess;
+                }
+                return prev;
+            });
 
             // Use API state to determine if processing
             // Active states: QUEUED, PLANNING, IN_PROGRESS
