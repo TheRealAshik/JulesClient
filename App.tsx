@@ -152,7 +152,7 @@ export default function App() {
                   <div className="flex justify-center mb-6">
                        <img src="https://jules.google/squid.png" alt="Jules" className="w-12 h-12 opacity-80" />
                   </div>
-                  <h2 className="text-xl font-medium text-center text-white mb-2">Welcome to Jules Clone</h2>
+                  <h2 className="text-xl font-medium text-center text-white mb-2">Welcome to Jules Client</h2>
                   <p className="text-zinc-500 text-center text-sm mb-6">Enter your API Key to access your Jules agent.</p>
                   
                   <form onSubmit={(e) => {
