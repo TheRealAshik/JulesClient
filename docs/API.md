@@ -251,3 +251,52 @@ curl 'https://jules.googleapis.com/v1alpha/sessions/SESSION_ID:sendMessage' \
   ]
 }
 ```
+
+## Additional API Methods
+
+### Get Source
+Retrieve a single source by its name.
+
+**Request:**
+```bash
+curl 'https://jules.googleapis.com/v1alpha/sources/github/owner/repo' \
+  -H 'X-Goog-Api-Key: YOUR_API_KEY'
+```
+
+**Response:**
+```json
+{
+  "name": "sources/github/bobalover/boba",
+  "id": "github/bobalover/boba",
+  "githubRepo": {
+    "owner": "bobalover",
+    "repo": "boba"
+  }
+}
+```
+
+### Get Activity
+Retrieve a single activity by its name.
+
+**Request:**
+```bash
+curl 'https://jules.googleapis.com/v1alpha/sessions/SESSION_ID/activities/ACTIVITY_ID' \
+  -H 'X-Goog-Api-Key: YOUR_API_KEY'
+```
+
+**Response:**
+```json
+{
+  "name": "sessions/31415926535897932384/activities/abc123",
+  "id": "abc123",
+  "createTime": "2025-10-03T05:43:42.801654Z",
+  "originator": "agent",
+  "planGenerated": {
+    "plan": {
+      "id": "5103d604240042cd9f59a4cb2355643a",
+      "steps": [...]
+    }
+  }
+}
+```
+

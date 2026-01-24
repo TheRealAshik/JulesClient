@@ -40,6 +40,31 @@ export const listSources = async (): Promise<JulesSource[]> => {
   }
 };
 
+export const getSource = async (sourceName: string): Promise<JulesSource> => {
+  try {
+    const url = sourceName.startsWith('sources/')
+      ? `${BASE_URL}/${sourceName}`
+      : `${BASE_URL}/sources/${sourceName}`;
+
+    const res = await fetch(url, { headers: getHeaders() });
+
+    if (res.status === 401) throw new Error("Invalid API Key");
+    if (!res.ok) throw new Error("Failed to fetch source");
+
+    const data = await res.json();
+    const repo = data.githubRepo || data.github_repo;
+
+    return {
+      ...data,
+      githubRepo: repo,
+      displayName: repo ? `${repo.owner}/${repo.repo}` : data.name.split('/').slice(-2).join('/')
+    };
+  } catch (error) {
+    console.error("getSource error:", error);
+    throw error;
+  }
+};
+
 // --- Sessions ---
 
 export const listSessions = async (): Promise<JulesSession[]> => {
@@ -156,6 +181,40 @@ export const listActivities = async (sessionName: string): Promise<JulesActivity
   } catch (error) {
     console.warn("listActivities network error:", error);
     return [];
+  }
+};
+
+export const getActivity = async (activityName: string): Promise<JulesActivity> => {
+  try {
+    const url = activityName.startsWith('sessions/')
+      ? `${BASE_URL}/${activityName}`
+      : activityName;
+
+    const res = await fetch(url, { headers: getHeaders() });
+    if (!res.ok) throw new Error("Failed to get activity");
+
+    const a = await res.json();
+
+    return {
+      ...a,
+      id: a.id,
+      originator: a.originator,
+      description: a.description,
+      createTime: a.createTime || a.create_time,
+      userMessaged: a.userMessaged || a.user_messaged,
+      userMessage: a.userMessage || a.user_message,
+      agentMessaged: a.agentMessaged || a.agent_messaged,
+      agentMessage: a.agentMessage || a.agent_message,
+      planGenerated: a.planGenerated || a.plan_generated,
+      planApproved: a.planApproved || a.plan_approved,
+      progressUpdated: a.progressUpdated || a.progress_updated,
+      sessionCompleted: a.sessionCompleted || a.session_completed,
+      sessionFailed: a.sessionFailed || a.session_failed,
+      artifacts: a.artifacts
+    };
+  } catch (error) {
+    console.error("getActivity error:", error);
+    throw error;
   }
 };
 
