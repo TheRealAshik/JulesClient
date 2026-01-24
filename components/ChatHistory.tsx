@@ -7,7 +7,7 @@ import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Command, Clock, Bot, Download, ArrowRight, MoreVertical
+    Command, Clock, Bot, Download, ArrowRight, MoreVertical, XCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
@@ -181,40 +181,58 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
     );
 };
 
-const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ command, output }) => {
+const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = ({ command, output, exitCode }) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const isFailed = exitCode !== undefined && exitCode !== 0;
 
     return (
-        <div className="w-full max-w-full sm:max-w-xl md:max-w-2xl">
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl md:max-w-2xl box-border">
             <div
                 className={twMerge(
-                    "font-mono text-xs bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
-                    isExpanded ? "border-white/20" : ""
+                    "font-mono text-xs bg-[#09090b] border rounded-xl overflow-hidden shadow-lg ring-1 transition-all w-full",
+                    isFailed
+                        ? "border-red-500/30 ring-red-500/10 hover:border-red-500/50"
+                        : "border-white/10 ring-white/5 hover:border-white/20",
+                    isExpanded ? (isFailed ? "border-red-500/50" : "border-white/20") : ""
                 )}
             >
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px]"
+                    className={twMerge(
+                        "flex items-center justify-between px-3 py-2.5 border-b cursor-pointer transition-colors group min-h-[44px] w-full",
+                        isFailed
+                            ? "bg-red-500/[0.03] border-red-500/10 hover:bg-red-500/[0.06]"
+                            : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
+                    )}
                 >
-                    <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-                        <Terminal size={14} className="text-zinc-500 flex-shrink-0" />
-                        <div className="flex items-center gap-2 min-w-0 truncate">
-                            <span className="text-green-500 font-bold">➜</span>
-                            <span className="font-medium text-zinc-300 truncate">{command}</span>
+                    <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                        <Terminal size={14} className={isFailed ? "text-red-400 flex-shrink-0" : "text-zinc-500 flex-shrink-0"} />
+                        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                            <span className={twMerge("flex-shrink-0", isFailed ? "text-red-400 font-bold" : "text-green-500 font-bold")}>
+                                {isFailed ? "✕" : "➜"}
+                            </span>
+                            <span className="font-medium text-zinc-300 truncate min-w-0">{command}</span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pl-3 flex-shrink-0">
-                        {!isExpanded && output && (
-                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                    <div className="flex items-center gap-2 pl-2 flex-shrink-0">
+                        {isFailed && (
+                            <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                                <XCircle size={10} />
+                                Failed
+                            </span>
+                        )}
+                        {!isExpanded && output && !isFailed && (
+                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hidden sm:inline">
                                 Output
                             </span>
                         )}
                         <ChevronDown
                             size={14}
                             className={twMerge(
-                                "text-zinc-500 transition-transform duration-200",
+                                "transition-transform duration-200 flex-shrink-0",
+                                isFailed ? "text-red-400" : "text-zinc-500",
                                 isExpanded && "rotate-180"
                             )}
                         />
@@ -229,10 +247,17 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
+                            className="w-full overflow-hidden"
                         >
-                            <div className="p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t border-white/5 bg-black/20">
+                            <div className={twMerge(
+                                "p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t w-full",
+                                isFailed ? "border-red-500/10 bg-red-500/[0.02]" : "border-white/5 bg-black/20"
+                            )}>
                                 {output ? (
-                                    <div className="text-zinc-400/90 whitespace-pre-wrap break-words leading-relaxed font-mono text-xs max-w-full overflow-hidden">
+                                    <div className={twMerge(
+                                        "whitespace-pre-wrap break-all leading-relaxed font-mono text-xs w-full overflow-hidden",
+                                        isFailed ? "text-red-300/90" : "text-zinc-400/90"
+                                    )}>
                                         {output}
                                     </div>
                                 ) : (
@@ -265,45 +290,42 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
     const fileName = getFileName(changeSet.gitPatch.unidiffPatch);
 
     return (
-        <div className="w-full max-w-full sm:max-w-xl md:max-w-2xl">
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl md:max-w-2xl box-border">
             <div
                 className={twMerge(
-                    "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
+                    "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20 w-full",
                     isExpanded ? "border-white/20" : ""
                 )}
             >
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px]"
+                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px] w-full"
                 >
-                    <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                         <FileDiff size={14} className="text-zinc-500 flex-shrink-0" />
-                        <div className="flex items-center gap-2 min-w-0 truncate">
-                            <span className="font-medium text-zinc-300 truncate font-mono text-xs">
+                        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                            <span className="font-medium text-zinc-300 truncate font-mono text-xs min-w-0">
                                 {changeSet.gitPatch?.suggestedCommitMessage || "Code Changes Proposed"}
                             </span>
                             {fileName && (
-                                <>
-                                    <span className="text-zinc-600 text-[10px]">•</span>
-                                    <span className="text-zinc-500 text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 truncate font-mono">
-                                        {fileName}
-                                    </span>
-                                </>
+                                <span className="text-zinc-500 text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 truncate font-mono flex-shrink-0 max-w-[100px] sm:max-w-[150px] hidden sm:inline">
+                                    {fileName}
+                                </span>
                             )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 pl-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 pl-2 flex-shrink-0">
                         {!isExpanded && (
-                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                            <span className="text-[10px] text-zinc-600 bg-white/5 px-1.5 py-0.5 rounded border border-white/5 hidden sm:inline">
                                 View Diff
                             </span>
                         )}
                         <ChevronDown
                             size={14}
                             className={twMerge(
-                                "text-zinc-500 transition-transform duration-200",
+                                "text-zinc-500 transition-transform duration-200 flex-shrink-0",
                                 isExpanded && "rotate-180"
                             )}
                         />
@@ -318,9 +340,10 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
+                            className="w-full overflow-hidden"
                         >
-                            <div className="p-0 overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-[#0d0d10]">
-                                <pre className="p-3 font-mono text-xs leading-relaxed max-w-full">
+                            <div className="overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-[#0d0d10] w-full">
+                                <pre className="p-3 font-mono text-xs leading-relaxed w-max min-w-full">
                                     {changeSet.gitPatch.unidiffPatch.split('\n').map((line: string, i: number) => {
                                         let color = "text-zinc-400";
                                         let bg = "transparent";
@@ -336,8 +359,8 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                                         }
 
                                         return (
-                                            <div key={i} className={`${bg} px-2 -mx-2 w-full`}>
-                                                <span className={`${color} inline-block min-w-full`}>{line}</span>
+                                            <div key={i} className={`${bg} px-2 -mx-2`}>
+                                                <span className={`${color} whitespace-pre`}>{line}</span>
                                             </div>
                                         );
                                     })}
@@ -422,19 +445,19 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
     const branchUrl = getBranchUrl();
 
     return (
-        <div className="w-full max-w-full sm:max-w-md md:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-visible shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative">
-            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] rounded-t-xl">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5">
-                        <GitPullRequest size={16} className="text-green-400" />
+        <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-md md:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative box-border">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] rounded-t-xl gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5 flex-shrink-0">
+                        <GitPullRequest size={14} className="text-green-400 sm:w-4 sm:h-4" />
                     </div>
-                    <div>
-                        <div className="text-zinc-200 font-medium text-sm tracking-wide">Pull Request Ready</div>
-                        <div className="text-[10px] text-zinc-500 font-medium">Click to review</div>
+                    <div className="min-w-0">
+                        <div className="text-zinc-200 font-medium text-xs sm:text-sm tracking-wide truncate">Pull Request Ready</div>
+                        <div className="text-[10px] text-zinc-500 font-medium hidden sm:block">Click to review</div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                     <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -479,27 +502,27 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                 </div>
             </div>
 
-            <div className="p-4 sm:p-5 space-y-4 rounded-b-xl">
-                <div className="overflow-hidden">
-                    <h3 className="text-base font-semibold text-white leading-snug mb-2 flex items-start justify-between gap-4">
-                        <span className="break-words overflow-wrap-anywhere pr-2">{pr.title || "Untitled Pull Request"}</span>
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 rounded-b-xl">
+                <div className="min-w-0 overflow-hidden">
+                    <h3 className="text-sm sm:text-base font-semibold text-white leading-snug mb-1.5 sm:mb-2">
+                        <span className="line-clamp-2 break-words">{pr.title || "Untitled Pull Request"}</span>
                     </h3>
                     {pr.description && (
-                        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 break-words">
+                        <p className="text-[11px] sm:text-xs text-zinc-400 leading-relaxed line-clamp-2 sm:line-clamp-3 break-words">
                             {pr.description}
                         </p>
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 sm:gap-3 pt-1 sm:pt-2">
                     <a
                         href={pr.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98]"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs sm:text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98] min-h-[40px]"
                     >
                         <ExternalLink size={14} />
-                        View Pull Request
+                        <span className="truncate">View PR</span>
                     </a>
                     <button
                         onClick={() => {
@@ -507,15 +530,15 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                                 navigator.clipboard.writeText(pr.url);
                             }
                         }}
-                        className="p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors"
+                        className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center flex-shrink-0"
                         title="Copy URL"
                     >
                         <Copy size={16} />
                     </button>
                 </div>
 
-                <div className="text-[10px] font-mono text-zinc-600/70 text-center px-2 sm:px-4 select-all overflow-hidden">
-                    <div className="truncate max-w-full break-all">{pr.url}</div>
+                <div className="text-[9px] sm:text-[10px] font-mono text-zinc-600/70 text-center select-all overflow-hidden">
+                    <div className="truncate">{pr.url}</div>
                 </div>
             </div>
         </div>
@@ -612,10 +635,10 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 key="plan"
                                 initial={{ opacity: 0, y: 20, scale: 0.98 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                                className="flex gap-3 sm:gap-5 justify-start"
+                                className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                             >
                                 <div className="w-8 h-8 flex-shrink-0" />
-                                <div className="w-full max-w-full sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+                                <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
                                     <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
                                         <span className="text-sm font-medium text-white flex items-center gap-2">
                                             <ListTodo size={16} className="text-indigo-400" />
@@ -667,12 +690,13 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-bash`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CommandArtifact
                                             command={artifact.bashOutput.command}
                                             output={artifact.bashOutput.output}
+                                            exitCode={artifact.bashOutput.exitCode}
                                         />
                                     </motion.div>
                                 );
@@ -736,7 +760,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         key={`art-${i}-diff`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="flex gap-3 sm:gap-5 justify-start"
+                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CodeChangeArtifact changeSet={artifact.changeSet} />
@@ -763,9 +787,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         );
 
                         items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full overflow-hidden">
+                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-full sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
                                     <Loader2
                                         size={14}
                                         className={twMerge(
@@ -802,7 +826,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="flex gap-4 sm:gap-5 justify-start"
+                        className="flex gap-4 sm:gap-5 justify-start w-full min-w-0"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
                         <PullRequestCard output={out} />

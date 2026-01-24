@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp } from 'lucide-react';
+import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle } from 'lucide-react';
 import { JulesSession, JulesSource } from '../types';
+
+// Helper to get session status icon with appropriate styling
+const getSessionStatusIcon = (state?: JulesSession['state'], isActive?: boolean) => {
+    const baseClass = "flex-shrink-0 transition-colors";
+    const activeColor = "text-indigo-400";
+    const inactiveColor = "text-zinc-600 group-hover:text-zinc-500";
+
+    switch (state) {
+        case 'IN_PROGRESS':
+        case 'PLANNING':
+            return <Loader2 size={16} className={`${baseClass} text-blue-400 animate-spin`} />;
+        case 'QUEUED':
+            return <Clock size={16} className={`${baseClass} text-yellow-500`} />;
+        case 'AWAITING_PLAN_APPROVAL':
+        case 'AWAITING_USER_FEEDBACK':
+            return <MessageCircle size={16} className={`${baseClass} text-amber-400`} />;
+        case 'PAUSED':
+            return <Pause size={16} className={`${baseClass} text-zinc-400`} />;
+        case 'FAILED':
+            return <XCircle size={16} className={`${baseClass} text-red-500`} />;
+        case 'COMPLETED':
+            return <CheckCircle2 size={16} className={`${baseClass} text-green-500`} />;
+        default:
+            return <AlertCircle size={16} className={`${baseClass} ${isActive ? activeColor : inactiveColor}`} />;
+    }
+};
 
 interface DrawerProps {
     isOpen: boolean;
@@ -121,7 +147,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                                     >
                                         {({ isActive }) => (
                                             <>
-                                                <CheckCircle2 size={16} className={`${isActive ? 'text-indigo-400' : 'text-zinc-600 group-hover:text-zinc-500'} flex-shrink-0 transition-colors`} />
+                                                {getSessionStatusIcon(session.state, isActive)}
                                                 <span className={`text-sm truncate text-left flex-1 font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
                                                     {session.title || session.prompt}
                                                 </span>
