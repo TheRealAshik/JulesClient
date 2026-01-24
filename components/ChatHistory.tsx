@@ -7,7 +7,7 @@ import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Command, Clock, Bot, Download, ArrowRight
+    Command, Clock, Bot, Download, ArrowRight, MoreVertical
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
@@ -16,7 +16,7 @@ interface ChatHistoryProps {
     activities: JulesActivity[];
     isStreaming: boolean;
     onApprovePlan: (activityId: string) => void;
-    sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string } }>;
+    sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string; branch?: string } }>;
     sessionPrompt?: string;
     sessionCreateTime?: string;
 }
@@ -58,7 +58,7 @@ const MarkdownComponents = {
                     <div className="flex items-center justify-between px-3 py-1.5 bg-white/5 border-b border-white/5">
                         <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">{match[1]}</span>
                     </div>
-                    <pre className="p-3 overflow-x-auto text-sm text-zinc-300 font-mono custom-scrollbar">
+                    <pre className="p-3 overflow-x-auto text-sm text-zinc-300 font-mono custom-scrollbar max-w-full">
                         <code className={className} {...props}>
                             {children}
                         </code>
@@ -68,13 +68,13 @@ const MarkdownComponents = {
         }
         // Otherwise treat as inline code
         return (
-            <code className={twMerge("bg-white/10 rounded px-1.5 py-0.5 text-[0.9em] font-mono text-zinc-200 break-all", className)} {...props}>
+            <code className={twMerge("bg-white/10 rounded px-1.5 py-0.5 text-[0.9em] font-mono text-zinc-200 break-words", className)} {...props}>
                 {children}
             </code>
         )
     },
     a({ node, children, ...props }: any) {
-        return <a target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors break-all" {...props}>{children}</a>
+        return <a target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors break-words" {...props}>{children}</a>
     },
     ul({ children }: any) { return <ul className="list-disc pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ul> },
     ol({ children }: any) { return <ol className="list-decimal pl-5 space-y-1 my-2 marker:text-zinc-500">{children}</ol> },
@@ -98,7 +98,7 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
             transition={{ duration: 0.3 }}
             className="flex gap-3 sm:gap-4 justify-end w-full"
         >
-            <div className="flex flex-col items-end gap-1 max-w-[90%] sm:max-w-[75%]">
+            <div className="flex flex-col items-end gap-1 max-w-[85%] sm:max-w-[75%]">
                 <div
                     onClick={() => isLong && setIsExpanded(!isExpanded)}
                     className={twMerge(
@@ -172,7 +172,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-full sm:max-w-2xl">
             <div
                 className={twMerge(
                     "font-mono text-xs bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
@@ -219,7 +219,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
                         >
                             <div className="p-3.5 overflow-x-auto custom-scrollbar max-h-[400px] border-t border-white/5 bg-black/20">
                                 {output ? (
-                                    <div className="text-zinc-400/90 whitespace-pre-wrap break-all leading-relaxed font-mono text-xs">
+                                    <div className="text-zinc-400/90 whitespace-pre-wrap break-words leading-relaxed font-mono text-xs max-w-full overflow-hidden">
                                         {output}
                                     </div>
                                 ) : (
@@ -239,8 +239,20 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
 
+    const getFileName = (patch: string) => {
+        const match = patch.match(/^\+\+\+\s+(?:b\/)?(.+)$/m);
+        if (match) {
+            const fullPath = match[1].trim();
+            const parts = fullPath.split('/');
+            return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : fullPath;
+        }
+        return null;
+    };
+
+    const fileName = getFileName(changeSet.gitPatch.unidiffPatch);
+
     return (
-        <div className="w-full max-w-2xl">
+        <div className="w-full max-w-full sm:max-w-2xl">
             <div
                 className={twMerge(
                     "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
@@ -258,6 +270,14 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                             <span className="font-medium text-zinc-300 truncate font-mono text-xs">
                                 {changeSet.gitPatch?.suggestedCommitMessage || "Code Changes Proposed"}
                             </span>
+                            {fileName && (
+                                <>
+                                    <span className="text-zinc-600 text-[10px]">•</span>
+                                    <span className="text-zinc-500 text-[10px] bg-white/5 px-1.5 py-0.5 rounded border border-white/5 truncate font-mono">
+                                        {fileName}
+                                    </span>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -287,7 +307,7 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                             transition={{ duration: 0.2 }}
                         >
                             <div className="p-0 overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-[#0d0d10]">
-                                <pre className="p-3 font-mono text-xs leading-relaxed">
+                                <pre className="p-3 font-mono text-xs leading-relaxed max-w-full">
                                     {changeSet.gitPatch.unidiffPatch.split('\n').map((line: string, i: number) => {
                                         let color = "text-zinc-400";
                                         let bg = "transparent";
@@ -318,8 +338,17 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
     );
 };
 
-const CompactSessionCompleted: React.FC = () => {
+const CompactSessionCompleted: React.FC<{ timestamp?: string }> = ({ timestamp }) => {
     React.useEffect(() => {
+        // Only trigger confetti if the completion event is recent (within last 10 seconds)
+        // This prevents confetti from showing when viewing old history
+        if (!timestamp) return;
+
+        const eventTime = new Date(timestamp).getTime();
+        // Allow a small window for clock skew/network delay, but generally we want "fresh" events
+        // If the event is older than 10 seconds, assume it's history loading
+        if (Date.now() - eventTime > 10000) return;
+
         const end = Date.now() + 1000;
         const colors = ['#a786ff', '#fd8bbc', '#eca184', '#f8deb1'];
 
@@ -343,7 +372,7 @@ const CompactSessionCompleted: React.FC = () => {
                 requestAnimationFrame(frame);
             }
         }());
-    }, []);
+    }, [timestamp]);
 
     return (
         <motion.div
@@ -358,6 +387,129 @@ const CompactSessionCompleted: React.FC = () => {
         </motion.div>
     );
 };
+
+const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: string; description: string; branch?: string } } }> = ({ output }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const pr = output.pullRequest;
+
+    if (!pr) return null;
+
+    const getBranchUrl = () => {
+        if (!pr.branch || !pr.url) return null;
+        try {
+            const urlParts = pr.url.split('/');
+            if (urlParts.length >= 5) {
+                const baseUrl = urlParts.slice(0, 5).join('/');
+                return `${baseUrl}/tree/${pr.branch}`;
+            }
+        } catch (e) { return null; }
+        return null; // Fallback or unable to parse
+    };
+
+    const branchUrl = getBranchUrl();
+
+    return (
+        <div className="w-full max-w-full sm:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-visible shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative">
+            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] rounded-t-xl">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5">
+                        <GitPullRequest size={16} className="text-green-400" />
+                    </div>
+                    <div>
+                        <div className="text-zinc-200 font-medium text-sm tracking-wide">Pull Request Ready</div>
+                        <div className="text-[10px] text-zinc-500 font-medium">Click to review</div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="p-1.5 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors"
+                        >
+                            <MoreVertical size={16} />
+                        </button>
+
+                        {isMenuOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
+                                <div className="absolute right-0 top-full mt-2 w-48 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                    <a
+                                        href={pr.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <ExternalLink size={14} /> View Pull Request
+                                    </a>
+                                    {branchUrl && (
+                                        <a
+                                            href={branchUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            <GitMerge size={14} /> View Branch
+                                        </a>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="p-5 space-y-4 rounded-b-xl">
+                <div className="overflow-hidden">
+                    <h3 className="text-base font-semibold text-white leading-snug mb-2 flex items-start justify-between gap-4">
+                        <span className="break-words overflow-wrap-anywhere">{pr.title || "Untitled Pull Request"}</span>
+                    </h3>
+                    {pr.description && (
+                        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 break-words">
+                            {pr.description}
+                        </p>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                    <a
+                        href={pr.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98]"
+                    >
+                        <ExternalLink size={14} />
+                        View Pull Request
+                    </a>
+                    <button
+                        onClick={() => {
+                            if (pr.url) {
+                                navigator.clipboard.writeText(pr.url);
+                            }
+                        }}
+                        className="p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors"
+                        title="Copy URL"
+                    >
+                        <Copy size={16} />
+                    </button>
+                </div>
+
+                <div className="text-[10px] font-mono text-zinc-600/70 text-center px-4 select-all overflow-hidden">
+                    <div className="truncate max-w-full">{pr.url}</div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 
 export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
     // Check if the initial prompt is already represented in activities
@@ -420,7 +572,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
                                     <Bot size={18} className="text-indigo-400" />
                                 </div>
-                                <div className="max-w-full sm:max-w-[90%] flex flex-col gap-1">
+                                <div className="max-w-[calc(100%-3rem)] sm:max-w-[90%] flex flex-col gap-1">
                                     <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
@@ -450,7 +602,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 className="flex gap-3 sm:gap-5 justify-start"
                             >
                                 <div className="w-8 h-8 flex-shrink-0" />
-                                <div className="w-full max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+                                <div className="w-full max-w-full sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
                                     <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
                                         <span className="text-sm font-medium text-white flex items-center gap-2">
                                             <ListTodo size={16} className="text-indigo-400" />
@@ -522,7 +674,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                         className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
-                                        <div className="max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
+                                        <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
                                             <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
                                                 <div className="flex items-center gap-2 text-xs text-zinc-400">
                                                     <ImageIcon size={12} />
@@ -600,7 +752,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         items.push(
                             <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[90%] sm:max-w-xl hover:border-white/10 transition-colors">
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[calc(100%-3rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
                                     <Loader2
                                         size={14}
                                         className={twMerge(
@@ -608,8 +760,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                             isCurrentlyActive && "animate-spin"
                                         )}
                                     />
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-medium text-zinc-300 transition-colors">
+                                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
+                                        <span className="font-medium text-zinc-300 transition-colors truncate">
                                             {title}
                                         </span>
                                         {!isRedundant && (
@@ -623,7 +775,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
 
                     // --- 6. Session Completed ---
                     if (act.sessionCompleted) {
-                        items.push(<CompactSessionCompleted key="completed" />);
+                        items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
                     }
 
                     if (items.length === 0) return null;
@@ -640,82 +792,24 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         className="flex gap-4 sm:gap-5 justify-start"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
-                        <div className="w-full max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card">
-                            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5">
-                                        <GitPullRequest size={16} className="text-green-400" />
-                                    </div>
-                                    <div>
-                                        <div className="text-zinc-200 font-medium text-sm tracking-wide">Pull Request Ready</div>
-                                        <div className="text-[10px] text-zinc-500 font-medium">Click to review</div>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="p-5 space-y-4">
-                                <div>
-                                    <h3 className="text-base font-semibold text-white leading-snug mb-2 flex items-start justify-between gap-4">
-                                        <span className="break-words">{out.pullRequest?.title || "Untitled Pull Request"}</span>
-                                    </h3>
-                                    {out.pullRequest?.description && (
-                                        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3">
-                                            {out.pullRequest.description}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="flex items-center gap-3 pt-2">
-                                    <a
-                                        href={out.pullRequest?.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 active:scale-[0.98]"
-                                    >
-                                        <ExternalLink size={14} />
-                                        View Pull Request
-                                    </a>
-                                    <button
-                                        onClick={() => {
-                                            if (out.pullRequest?.url) {
-                                                navigator.clipboard.writeText(out.pullRequest.url);
-                                            }
-                                        }}
-                                        className="p-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors"
-                                        title="Copy URL"
-                                    >
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-
-                                <div className="text-[10px] font-mono text-zinc-600/70 text-center truncate px-4 select-all">
-                                    {out.pullRequest?.url}
-                                </div>
-                            </div>
-                        </div>
+                        <PullRequestCard output={out} />
                     </motion.div>
                 ))}
 
                 {isStreaming && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="flex gap-5"
+                        className="flex gap-3 sm:gap-5 justify-start w-full"
                     >
                         <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 border border-white/10 flex items-center justify-center mt-1">
                             <Bot size={18} className="text-indigo-400 opacity-70" />
                         </div>
-                        <div className="flex items-center gap-1.5 pt-3">
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                        <div className="flex flex-col gap-3 w-full max-w-[90%] sm:max-w-[75%] pt-1.5">
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[90%]" />
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[70%]" />
+                            <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[80%]" />
                         </div>
                     </motion.div>
                 )}

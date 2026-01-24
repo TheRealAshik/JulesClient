@@ -26,6 +26,7 @@ export interface JulesSession {
             url: string;
             title: string;
             description: string;
+            branch?: string;
         }
     }>;
 }

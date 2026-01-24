@@ -60,7 +60,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             <div className="fixed inset-y-0 left-0 w-[320px] bg-[#0E0E11] z-50 flex flex-col border-r border-white/5 animate-in slide-in-from-left duration-300">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/5">
+                <div className="flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-white/5">
                     <Link to="/" onClick={onClose} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <img src="https://jules.google/squid.png" alt="Logo" className="w-6 h-6 object-contain opacity-80" />
                         <span className="font-semibold text-lg text-white tracking-tight">jules</span>

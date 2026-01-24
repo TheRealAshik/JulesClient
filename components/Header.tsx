@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="flex items-center justify-between px-4 sm:px-6 py-2.5 sticky top-0 z-40 bg-[#0c0c0c]/80 backdrop-blur-xl border-b border-white/5 transition-all">
+    <header className="flex items-center justify-between px-4 sm:px-6 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/80 backdrop-blur-xl border-b border-white/5 transition-all">
       {/* Left Section: Sidebar Trigger & Repo Selector */}
       <div className="flex items-center gap-4">
         <button
