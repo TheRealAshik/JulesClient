@@ -559,7 +559,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
 
     return (
         <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
-            <AnimatePresence initial={false}>
+            {/* Removed AnimatePresence to fix lag - animations were too heavy during polling */}
+            <>
                 {/* 0. Initial Prompt (if not in activities) */}
                 {sessionPrompt && !hasInitialPromptInActivities && (
                     <UserMessageBubble
@@ -576,16 +577,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                     // --- 0. System Messages ---
                     if (act.originator === 'system' && !act.planGenerated && !act.userMessaged && !act.agentMessaged && act.description) {
                         items.push(
-                            <motion.div
+                            <div
                                 key="system"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
                                 className="flex justify-center my-6"
                             >
                                 <span className="text-[11px] text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5 font-medium tracking-wide text-center">
                                     {act.description}
                                 </span>
-                            </motion.div>
+                            </div>
                         );
                     }
 
@@ -601,11 +600,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                     if (act.agentMessaged || act.agentMessage) {
                         const agentText = getTextContent(act.agentMessaged || act.agentMessage) || "Thinking...";
                         items.push(
-                            <motion.div
+                            <div
                                 key="agent"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
                                 className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
                             >
                                 <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
@@ -626,7 +622,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                                         </div>
                                     )}
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     }
 
@@ -634,10 +630,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                     if (act.planGenerated) {
                         const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
                         items.push(
-                            <motion.div
+                            <div
                                 key="plan"
-                                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
                                 className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                             >
                                 <div className="w-8 h-8 flex-shrink-0" />
@@ -680,7 +674,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                                         </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     }
 
@@ -689,10 +683,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                         act.artifacts.forEach((artifact, i) => {
                             if (artifact.bashOutput) {
                                 items.push(
-                                    <motion.div
+                                    <div
                                         key={`art-${i}-bash`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
                                         className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
@@ -701,16 +693,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                                             output={artifact.bashOutput.output}
                                             exitCode={artifact.bashOutput.exitCode}
                                         />
-                                    </motion.div>
+                                    </div>
                                 );
                             }
 
                             if (artifact.media) {
                                 items.push(
-                                    <motion.div
+                                    <div
                                         key={`art-${i}-media`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
                                         className="flex gap-3 sm:gap-5 justify-start"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
@@ -753,21 +743,19 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                                                 />
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 );
                             }
 
                             if (artifact.changeSet) {
                                 items.push(
-                                    <motion.div
+                                    <div
                                         key={`art-${i}-diff`}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
                                         className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                                     >
                                         <div className="w-8 h-8 flex-shrink-0" />
                                         <CodeChangeArtifact changeSet={artifact.changeSet} />
-                                    </motion.div>
+                                    </div>
                                 );
                             }
                         });
@@ -790,7 +778,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                         );
 
                         items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
+                            <div key="progress" className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
                                 <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
                                     <Loader2
@@ -809,7 +797,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                                         )}
                                     </div>
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     }
 
@@ -829,25 +817,17 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
 
                 {/* Session Outputs */}
                 {sessionOutputs && sessionOutputs.map((out, i) => (
-                    <motion.div
+                    <div
                         key={`out-${i}`}
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
                         className="flex gap-4 sm:gap-5 justify-start w-full min-w-0"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
                         <PullRequestCard output={out} />
-                    </motion.div>
+                    </div>
                 ))}
 
                 {isStreaming && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="flex gap-3 sm:gap-5 justify-start w-full"
-                    >
+                    <div className="flex gap-3 sm:gap-5 justify-start w-full">
                         <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 border border-white/10 flex items-center justify-center mt-1">
                             <Bot size={18} className="text-indigo-400 opacity-70" />
                         </div>
@@ -856,9 +836,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                             <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[70%]" />
                             <div className="h-4 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-[length:200%_100%] animate-shimmer rounded w-[80%]" />
                         </div>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </>
         </div>
     );
 });
