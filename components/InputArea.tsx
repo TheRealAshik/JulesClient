@@ -139,7 +139,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder || "Reply to Jules..."}
-                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-[15px] leading-relaxed min-w-0 font-normal custom-scrollbar"
+                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal custom-scrollbar"
                         rows={1}
                     />
 
