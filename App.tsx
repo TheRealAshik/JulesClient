@@ -11,6 +11,7 @@ import { SessionMode } from './components/InputArea';
 
 export default function App() {
   const [apiKey, setApiKey] = useState<string>('');
+  const [loginInput, setLoginInput] = useState('');
   const [sources, setSources] = useState<JulesSource[]>([]);
   const [currentSource, setCurrentSource] = useState<JulesSource | null>(null);
   
@@ -157,21 +158,30 @@ export default function App() {
                   
                   <form onSubmit={(e) => {
                       e.preventDefault();
-                      const form = e.target as HTMLFormElement;
-                      const input = form.elements.namedItem('key') as HTMLInputElement;
-                      handleSetKey(input.value);
+                      handleSetKey(loginInput);
                   }}>
                       <div className="relative mb-4">
                           <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                           <input 
                               name="key"
                               type="password" 
+                              value={loginInput}
+                              onChange={(e) => setLoginInput(e.target.value)}
                               placeholder="sk-..." 
+                              aria-label="Jules API Key"
                               className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
                               autoFocus
                           />
                       </div>
-                      <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                      <button
+                          type="submit"
+                          disabled={!loginInput.trim()}
+                          className={`w-full font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                              !loginInput.trim()
+                                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                          }`}
+                      >
                           Enter App <ChevronRight size={16} />
                       </button>
                   </form>
