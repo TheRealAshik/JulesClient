@@ -18,7 +18,7 @@ export interface JulesSession {
     id?: string;
     title: string;
     prompt: string;
-    state: 'QUEUED' | 'PLANNING' | 'AWAITING_PLAN_APPROVAL' | 'AWAITING_USER_FEEDBACK' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+    state: 'QUEUED' | 'PLANNING' | 'AWAITING_PLAN_APPROVAL' | 'AWAITING_USER_FEEDBACK' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'FAILED';
     createTime: string;
     updateTime: string;
     outputs?: Array<{
@@ -49,13 +49,23 @@ export interface JulesActivity {
     originator?: 'system' | 'agent' | 'user';
     description?: string;
     createTime: string;
-    
+
     // Oneof fields
     userMessaged?: {
         prompt?: string;
         text?: string;
         message?: string;
         userMessage?: string;
+        user_message?: string;
+        content?: string;
+        parts?: { text: string }[];
+    } | string;
+    userMessage?: {
+        prompt?: string;
+        text?: string;
+        message?: string;
+        userMessage?: string;
+        user_message?: string;
         content?: string;
         parts?: { text: string }[];
     } | string;
@@ -63,6 +73,14 @@ export interface JulesActivity {
         text?: string;
         content?: string;
         agentMessage?: string;
+        agent_message?: string;
+        parts?: { text: string }[];
+    } | string;
+    agentMessage?: {
+        text?: string;
+        content?: string;
+        agentMessage?: string;
+        agent_message?: string;
         parts?: { text: string }[];
     } | string;
     planGenerated?: {
@@ -75,10 +93,15 @@ export interface JulesActivity {
     };
     progressUpdated?: {
         status?: string;
+        status_update?: string;
         title?: string;
+        progress_title?: string;
         description?: string;
+        progress_description?: string;
+        text?: string;
+        message?: string;
     };
-    
+
     // Artifacts
     artifacts?: {
         media?: {

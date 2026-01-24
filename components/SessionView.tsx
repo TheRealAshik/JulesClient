@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChatHistory } from './ChatHistory';
 import { InputArea } from './InputArea';
 import { JulesActivity, JulesSession } from '../types';
@@ -34,14 +35,14 @@ export const SessionView: React.FC<SessionViewProps> = ({
         <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-background">
             {/* Session Breadcrumbs / Header - Fixed top */}
             <div className="flex-shrink-0 px-6 py-3 border-b border-white/5 bg-[#0E0E11]/80 backdrop-blur-sm z-10 flex items-center gap-2 text-sm sticky top-0">
-                <span className="text-zinc-500">Chat</span>
+                <Link to="/" className="text-zinc-500 hover:text-white transition-colors">Chat</Link>
                 <span className="text-zinc-700">/</span>
                 <span className="text-zinc-300 font-mono truncate max-w-xl">{session.title || session.name}</span>
             </div>
 
             {/* Scrollable Chat Area */}
-            <div 
-                ref={scrollRef} 
+            <div
+                ref={scrollRef}
                 className="flex-1 overflow-y-auto px-4 sm:px-0 scroll-smooth"
             >
                 {/* 
@@ -50,13 +51,15 @@ export const SessionView: React.FC<SessionViewProps> = ({
                   Input Area ~50-80px + spacing.
                 */}
                 <div className="max-w-4xl mx-auto py-6" style={{ paddingBottom: '160px' }}>
-                    <ChatHistory 
-                        activities={activities} 
-                        isStreaming={isProcessing} 
+                    <ChatHistory
+                        activities={activities}
+                        isStreaming={isProcessing}
                         onApprovePlan={onApprovePlan}
                         sessionOutputs={session.outputs}
+                        sessionPrompt={session.prompt}
+                        sessionCreateTime={session.createTime}
                     />
-                    
+
                     {error && (
                         <div className="mx-4 sm:mx-0 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
                             <AlertCircle size={16} />
@@ -73,10 +76,10 @@ export const SessionView: React.FC<SessionViewProps> = ({
 
                 {/* Actual Input Container */}
                 <div className="relative pointer-events-auto px-2 sm:px-4 pb-4 sm:pb-6 pt-4">
-                    <InputArea 
-                        onSendMessage={onSendMessage} 
-                        isLoading={isProcessing} 
-                        variant="chat" 
+                    <InputArea
+                        onSendMessage={onSendMessage}
+                        isLoading={isProcessing}
+                        variant="chat"
                     />
                 </div>
             </div>
