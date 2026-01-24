@@ -36,34 +36,34 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="flex items-center justify-between px-4 sm:px-6 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/80 backdrop-blur-xl border-b border-white/5 transition-all">
+    <header className="flex items-center justify-between px-3 sm:px-6 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/80 backdrop-blur-xl border-b border-white/5 transition-all">
       {/* Left Section: Sidebar Trigger & Repo Selector */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <button
           onClick={onOpenDrawer}
           aria-label="Toggle sidebar"
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+          className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
         >
           <PanelLeft size={20} />
         </button>
 
         {/* Repo Pill (Matches Screenshot) */}
-        <div className="relative" ref={repoRef}>
+        <div className="relative min-w-0" ref={repoRef}>
           <button
             onClick={() => setIsRepoOpen(!isRepoOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#18181B] hover:bg-[#27272A] border border-white/5 rounded-full transition-all group"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-1.5 bg-[#18181B] hover:bg-[#27272A] border border-white/5 rounded-full transition-all group min-h-[44px] sm:min-h-[36px]"
           >
-            <div className="w-4 h-4 rounded-full bg-[#5b21b6] flex items-center justify-center text-white">
+            <div className="w-4 h-4 rounded-full bg-[#5b21b6] flex items-center justify-center text-white flex-shrink-0">
               <Command size={10} />
             </div>
-            <span className="font-medium text-xs text-zinc-200 group-hover:text-white truncate max-w-[120px] sm:max-w-[200px]">
+            <span className="font-medium text-xs text-zinc-200 group-hover:text-white truncate max-w-[100px] sm:max-w-[200px]">
               {currentSource ? (currentSource.displayName || currentSource.name.split('/').slice(-2).join('/')) : 'Select Repository'}
             </span>
-            <ChevronDown size={12} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+            <ChevronDown size={12} className="text-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0" />
           </button>
 
           {isRepoOpen && (
-            <div className="absolute top-full left-0 mt-2 w-[320px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 flex flex-col ring-1 ring-black/50">
+            <div className="absolute top-full left-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 flex flex-col ring-1 ring-black/50">
               <div className="p-3 border-b border-white/5">
                 <div className="flex items-center gap-2 bg-[#09090b] border border-white/5 rounded-lg px-3 py-2 focus-within:border-white/20 transition-colors">
                   <Search size={14} className="text-zinc-500" />
@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
                       setIsRepoOpen(false);
                     }}
                     className={`
-                                    w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left
+                                    w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left min-h-[44px]
                                     ${currentSource?.name === source.name
                         ? 'bg-white/5 text-white'
                         : 'text-zinc-400 hover:bg-white/5 hover:text-white'}
@@ -104,9 +104,9 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right Section: Configure */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <button
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+          className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
           aria-label="Configure"
         >
           <Settings size={20} />

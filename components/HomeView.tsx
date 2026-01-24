@@ -22,7 +22,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return (
         <div className="flex-1 flex flex-col w-full overflow-y-auto scroll-smooth">
             {/* Dynamic Centering Container with safe top margin */}
-            <div className="w-full max-w-[700px] m-auto flex flex-col items-center animate-in fade-in duration-500 px-4 pt-12 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:pt-20">
+            <div className="w-full max-w-[700px] m-auto flex flex-col items-center animate-in fade-in duration-500 px-4 pt-8 sm:pt-20 pb-[calc(3rem+env(safe-area-inset-bottom))]">
 
                 {!currentSource && (
                     <div className="w-full text-amber-500 mb-6 flex items-center gap-3 text-sm bg-amber-500/10 px-4 py-3 rounded-xl border border-amber-500/20">
@@ -56,8 +56,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="w-full mt-12 flex flex-wrap justify-between items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
-                    <div className="flex gap-2">
+                <div className="w-full mt-8 sm:mt-12 flex flex-wrap justify-between items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
+                    <div className="flex flex-wrap gap-2">
                         <ActionButton icon={<Box size={14} />} label="Render" />
                         <ActionButton icon={<Terminal size={14} />} label="CLI" />
                         <ActionButton icon={<Code size={14} />} label="API" />
@@ -65,7 +65,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                     <button
                         onClick={onResetKey}
-                        className="text-xs text-zinc-600 hover:text-zinc-400 underline underline-offset-2 decoration-zinc-800"
+                        className="text-xs text-zinc-600 hover:text-zinc-400 underline underline-offset-2 decoration-zinc-800 min-h-[44px] flex items-center"
                     >
                         Reset Key
                     </button>
@@ -76,7 +76,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 };
 
 const ActionButton: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-    <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1E1E22] hover:bg-[#27272A] border border-white/5 rounded-lg text-xs font-mono text-textMuted hover:text-white transition-all">
+    <button className="flex items-center gap-2 px-3 py-2 bg-[#1E1E22] hover:bg-[#27272A] border border-white/5 rounded-lg text-xs font-mono text-textMuted hover:text-white transition-all min-h-[44px]">
         {icon}
         <span>{label}</span>
     </button>

@@ -226,13 +226,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-2 px-3 py-2 bg-[#27272A] hover:bg-[#323235] border border-white/5 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-colors h-9",
+                                "flex items-center gap-2 px-3 py-2 bg-[#27272A] hover:bg-[#323235] border border-white/5 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-colors min-h-[44px] sm:h-9",
                                 !isExpanded && !input.trim() && 'bg-opacity-50'
                             )}
                         >
-                            <GitBranch size={14} className="text-indigo-400" />
-                            <span className="max-w-[120px] truncate">{selectedBranch}</span>
-                            <ChevronDown size={12} className="text-zinc-500" />
+                            <GitBranch size={14} className="text-indigo-400 flex-shrink-0" />
+                            <span className="max-w-[80px] sm:max-w-[120px] truncate">{selectedBranch}</span>
+                            <ChevronDown size={12} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
 
                         <AnimatePresence>
@@ -243,7 +243,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                     transition={{ duration: 0.15 }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
+                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[280px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
                                 >
                                     <div className="p-2 border-b border-white/5 bg-[#0e0e11]">
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
@@ -266,7 +266,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                                     setIsBranchMenuOpen(false);
                                                 }}
                                                 className={twMerge(
-                                                    "w-full flex items-center gap-2 px-3 py-2 text-xs font-mono text-left rounded-lg transition-colors",
+                                                    "w-full flex items-center gap-2 px-3 py-2 text-xs font-mono text-left rounded-lg transition-colors min-h-[44px]",
                                                     selectedBranch === branch.displayName ? 'bg-indigo-500/10 text-indigo-300' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                                                 )}
                                             >
@@ -295,7 +295,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-2 px-3 py-2 rounded-xl transition-all border h-9",
+                                "flex items-center gap-2 px-3 py-2 rounded-xl transition-all border min-h-[44px] sm:h-9",
                                 isModeMenuOpen
                                     ? 'bg-[#3F3F46] text-white border-white/10'
                                     : 'bg-[#27272A] hover:bg-[#323235] text-zinc-400 hover:text-white border-white/5',
@@ -314,14 +314,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full -right-3 sm:right-0 mt-2 w-[300px] max-w-[90vw] sm:w-[340px] sm:max-w-[340px] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 origin-top-right"
+                                    className="mode-menu-dropdown fixed sm:absolute bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 left-4 sm:top-full sm:bottom-auto sm:-right-3 lg:right-0 sm:left-auto sm:mt-2 w-auto sm:w-[340px] max-w-[calc(100vw-2rem)] sm:max-w-[340px] bg-[#121215] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 origin-bottom sm:origin-top-right"
                                 >
                                     <div className="p-2 space-y-1">
                                         {['START', 'SCHEDULED', 'INTERACTIVE', 'REVIEW'].map((mode) => (
                                             <button
                                                 key={mode}
                                                 onClick={() => { setSelectedMode(mode as SessionMode); setIsModeMenuOpen(false); }}
-                                                className="w-full text-left p-3 rounded-xl hover:bg-white/5 group transition-colors flex items-start gap-4"
+                                                className="w-full text-left p-3 rounded-xl hover:bg-white/5 group transition-colors flex items-start gap-4 min-h-[44px]"
                                             >
                                                 <div className="mt-0.5 text-zinc-400 group-hover:text-white transition-colors">
                                                     {mode === 'START' && <Rocket size={18} />}
@@ -349,7 +349,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="p-3 bg-[#09090b]/50 border-t border-white/5 flex gap-2">
+                                    <div className="p-3 bg-[#09090b]/50 border-t border-white/5 flex flex-wrap gap-2">
                                         <FilterButton icon={<Zap size={14} />} label="Performance" active={filters.performance} onClick={() => setFilters(prev => ({ ...prev, performance: !prev.performance }))} />
                                         <FilterButton icon={<Palette size={14} />} label="Design" active={filters.design} onClick={() => setFilters(prev => ({ ...prev, design: !prev.design }))} />
                                         <FilterButton icon={<ShieldCheck size={14} />} label="Security" active={filters.security} onClick={() => setFilters(prev => ({ ...prev, security: !prev.security }))} />

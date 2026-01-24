@@ -98,12 +98,12 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
             transition={{ duration: 0.3 }}
             className="flex gap-3 sm:gap-4 justify-end w-full"
         >
-            <div className="flex flex-col items-end gap-1 max-w-[85%] sm:max-w-[75%]">
+            <div className="flex flex-col items-end gap-1 max-w-[90%] sm:max-w-[80%] md:max-w-[75%]">
                 <div
                     onClick={() => isLong && setIsExpanded(!isExpanded)}
                     className={twMerge(
                         "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg",
-                        isLong && "cursor-pointer hover:bg-[#323236] transition-colors pr-10"
+                        isLong && "cursor-pointer hover:bg-[#323236] transition-colors pr-10 min-h-[44px]"
                     )}
                 >
                     <div className={twMerge(
@@ -137,7 +137,7 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = ({ step, index }) 
         <motion.div
             layout
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex flex-col gap-2 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-transparent hover:border-white/5 select-none"
+            className="flex flex-col gap-2 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group border border-transparent hover:border-white/5 select-none min-h-[44px]"
         >
             <div className="flex items-center gap-3">
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18181B] border border-white/10 flex items-center justify-center text-[10px] font-mono text-zinc-500 group-hover:border-indigo-500/50 group-hover:text-indigo-300 transition-colors">
@@ -172,7 +172,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="w-full max-w-full sm:max-w-2xl">
+        <div className="w-full max-w-full sm:max-w-xl md:max-w-2xl">
             <div
                 className={twMerge(
                     "font-mono text-xs bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
@@ -182,7 +182,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string }> = ({ comma
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group"
+                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px]"
                 >
                     <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                         <Terminal size={14} className="text-zinc-500 flex-shrink-0" />
@@ -252,7 +252,7 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
     const fileName = getFileName(changeSet.gitPatch.unidiffPatch);
 
     return (
-        <div className="w-full max-w-full sm:max-w-2xl">
+        <div className="w-full max-w-full sm:max-w-xl md:max-w-2xl">
             <div
                 className={twMerge(
                     "bg-[#09090b] border border-white/10 rounded-xl overflow-hidden shadow-lg ring-1 ring-white/5 transition-all hover:border-white/20",
@@ -262,7 +262,7 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any }> = ({ changeSet }) => {
                 {/* Header - Click to toggle */}
                 <div
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group"
+                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px]"
                 >
                     <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                         <FileDiff size={14} className="text-zinc-500 flex-shrink-0" />
@@ -409,7 +409,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
     const branchUrl = getBranchUrl();
 
     return (
-        <div className="w-full max-w-full sm:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-visible shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative">
+        <div className="w-full max-w-full sm:max-w-md md:max-w-lg bg-gradient-to-br from-[#18181b] to-[#0f0f12] border border-white/10 rounded-xl overflow-visible shadow-2xl ring-1 ring-white/5 hover:ring-indigo-500/20 hover:border-indigo-500/30 transition-all duration-300 group/card relative">
             <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] rounded-t-xl">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 shadow-inner shadow-green-500/5">
@@ -430,7 +430,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                     <div className="relative">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-1.5 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors"
+                            className="p-2 hover:bg-white/10 rounded-md text-zinc-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                         >
                             <MoreVertical size={16} />
                         </button>
@@ -438,12 +438,12 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                         {isMenuOpen && (
                             <>
                                 <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)} />
-                                <div className="absolute right-0 top-full mt-2 w-48 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                <div className="absolute right-0 top-full mt-2 w-48 max-w-[calc(100vw-2rem)] bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
                                     <a
                                         href={pr.url}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+                                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
                                         <ExternalLink size={14} /> View Pull Request
@@ -453,7 +453,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                                             href={branchUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left"
+                                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors w-full text-left min-h-[44px]"
                                             onClick={() => setIsMenuOpen(false)}
                                         >
                                             <GitMerge size={14} /> View Branch
@@ -466,10 +466,10 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                 </div>
             </div>
 
-            <div className="p-5 space-y-4 rounded-b-xl">
+            <div className="p-4 sm:p-5 space-y-4 rounded-b-xl">
                 <div className="overflow-hidden">
                     <h3 className="text-base font-semibold text-white leading-snug mb-2 flex items-start justify-between gap-4">
-                        <span className="break-words overflow-wrap-anywhere">{pr.title || "Untitled Pull Request"}</span>
+                        <span className="break-words overflow-wrap-anywhere pr-2">{pr.title || "Untitled Pull Request"}</span>
                     </h3>
                     {pr.description && (
                         <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 break-words">
@@ -501,8 +501,8 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                     </button>
                 </div>
 
-                <div className="text-[10px] font-mono text-zinc-600/70 text-center px-4 select-all overflow-hidden">
-                    <div className="truncate max-w-full">{pr.url}</div>
+                <div className="text-[10px] font-mono text-zinc-600/70 text-center px-2 sm:px-4 select-all overflow-hidden">
+                    <div className="truncate max-w-full break-all">{pr.url}</div>
                 </div>
             </div>
         </div>
