@@ -27,6 +27,7 @@ export default function App() {
 
     // Polling ref
     const pollInterval = useRef<number | null>(null);
+    const activePollingSession = useRef<string | null>(null);
     const activitiesRef = useRef<JulesActivity[]>([]);
 
     useEffect(() => {
@@ -103,31 +104,41 @@ export default function App() {
     };
 
     const startPolling = useCallback((sessionName: string) => {
-        if (pollInterval.current) clearInterval(pollInterval.current);
+        activePollingSession.current = sessionName;
+        if (pollInterval.current) window.clearTimeout(pollInterval.current);
 
-        // Immediate fetch
-        JulesApi.listActivities(sessionName).then(response => {
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
-        });
+        const poll = async () => {
+            if (activePollingSession.current !== sessionName) return;
 
-        // Poll every 2s
-        pollInterval.current = window.setInterval(async () => {
-            const response = await JulesApi.listActivities(sessionName);
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
+            try {
+                const response = await JulesApi.listActivities(sessionName);
+                if (activePollingSession.current !== sessionName) return;
 
-            // Also check session status for outputs and state
-            const sess = await JulesApi.getSession(sessionName);
-            setCurrentSession(sess);
+                activitiesRef.current = response.activities;
+                setActivities(response.activities);
 
-            // Use API state to determine if processing
-            // Active states: QUEUED, PLANNING, IN_PROGRESS
-            // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
-            // Terminal states: COMPLETED, FAILED
-            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
-            setIsProcessing(isActive);
-        }, 2000);
+                // Also check session status for outputs and state
+                const sess = await JulesApi.getSession(sessionName);
+                if (activePollingSession.current !== sessionName) return;
+
+                setCurrentSession(sess);
+
+                // Use API state to determine if processing
+                // Active states: QUEUED, PLANNING, IN_PROGRESS
+                // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
+                // Terminal states: COMPLETED, FAILED
+                const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+                setIsProcessing(isActive);
+            } catch (e) {
+                console.error("Polling error:", e);
+            }
+
+            if (activePollingSession.current === sessionName) {
+                pollInterval.current = window.setTimeout(poll, 2000);
+            }
+        };
+
+        poll();
     }, []);
 
     const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
@@ -191,7 +202,8 @@ export default function App() {
     // Cleanup polling on unmount or session switch
     useEffect(() => {
         return () => {
-            if (pollInterval.current) clearInterval(pollInterval.current);
+            activePollingSession.current = null;
+            if (pollInterval.current) window.clearTimeout(pollInterval.current);
         };
     }, []);
 
