@@ -36,30 +36,32 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="flex items-center justify-between px-3 sm:px-6 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/80 backdrop-blur-xl border-b border-white/5 transition-all">
+    <header className="flex items-center justify-between px-3 sm:px-4 py-1.5 pt-[calc(0.375rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/90 backdrop-blur-xl border-b border-white/5 transition-all">
       {/* Left Section: Sidebar Trigger & Repo Selector */}
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <button
           onClick={onOpenDrawer}
           aria-label="Toggle sidebar"
-          className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
         >
-          <PanelLeft size={20} />
+          <PanelLeft size={18} />
         </button>
 
-        {/* Repo Pill (Matches Screenshot) */}
+        {/* Repo Pill - Compact with scroll animation */}
         <div className="relative min-w-0" ref={repoRef}>
           <button
             onClick={() => setIsRepoOpen(!isRepoOpen)}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2 sm:py-1.5 bg-[#18181B] hover:bg-[#27272A] border border-white/5 rounded-full transition-all group min-h-[44px] sm:min-h-[36px]"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 bg-[#1a1a1d] hover:bg-[#232326] border border-white/8 rounded-xl transition-all duration-200 group min-h-[36px] sm:min-h-[32px] max-w-[160px] sm:max-w-[240px]"
           >
-            <div className="w-4 h-4 rounded-full bg-[#5b21b6] flex items-center justify-center text-white flex-shrink-0">
-              <Command size={10} />
+            <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#4f46e5] flex items-center justify-center text-white flex-shrink-0 shadow-sm">
+              <Command size={11} />
             </div>
-            <span className="font-medium text-xs text-zinc-200 group-hover:text-white truncate max-w-[100px] sm:max-w-[200px]">
-              {currentSource ? (currentSource.displayName || currentSource.name.split('/').slice(-2).join('/')) : 'Select Repository'}
-            </span>
-            <ChevronDown size={12} className="text-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0" />
+            <div className="overflow-hidden flex-1 min-w-0">
+              <span className="font-medium text-xs text-zinc-300 group-hover:text-white whitespace-nowrap inline-block animate-marquee-on-hover">
+                {currentSource ? (currentSource.displayName || currentSource.name.split('/').slice(-2).join('/')) : 'Select Repository'}
+              </span>
+            </div>
+            <ChevronDown size={11} className="text-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0" />
           </button>
 
           {isRepoOpen && (
@@ -104,12 +106,12 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right Section: Configure */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0">
         <button
-          className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
           aria-label="Configure"
         >
-          <Settings size={20} />
+          <Settings size={18} />
         </button>
       </div>
 

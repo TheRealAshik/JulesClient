@@ -2,7 +2,7 @@ import React from 'react';
 import { InputArea, SessionMode } from './InputArea';
 import { ProactiveSection } from './ProactiveSection';
 import { Box, Terminal, Code, AlertCircle } from 'lucide-react';
-import { JulesSource } from '../types';
+import { JulesSource, JulesSession } from '../types';
 
 interface HomeViewProps {
     onSendMessage: (text: string, mode: SessionMode, branch?: string) => void;
@@ -10,6 +10,8 @@ interface HomeViewProps {
     error: string | null;
     currentSource: JulesSource | null;
     onResetKey: () => void;
+    sessions?: JulesSession[];
+    onSelectSession?: (session: JulesSession) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -17,12 +19,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
     isProcessing,
     error,
     currentSource,
-    onResetKey
+    onResetKey,
+    sessions = [],
+    onSelectSession
 }) => {
     return (
         <div className="flex-1 flex flex-col w-full overflow-y-auto scroll-smooth">
-            {/* Dynamic Centering Container with safe top margin */}
-            <div className="w-full max-w-[700px] m-auto flex flex-col items-center animate-in fade-in duration-500 px-4 pt-8 sm:pt-20 pb-[calc(3rem+env(safe-area-inset-bottom))]">
+            {/* Dynamic Centering Container - full width on mobile, constrained on desktop */}
+            <div className="w-full max-w-[700px] md:max-w-2xl lg:max-w-3xl m-auto flex flex-col items-center animate-in fade-in duration-500 px-4 md:px-6 lg:px-8 pt-8 sm:pt-20 pb-[calc(3rem+env(safe-area-inset-bottom))]">
+
 
                 {!currentSource && (
                     <div className="w-full text-amber-500 mb-6 flex items-center gap-3 text-sm bg-amber-500/10 px-4 py-3 rounded-xl border border-amber-500/20">
@@ -52,7 +57,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                 {/* Proactive Section (Cards below) */}
                 <div className="w-full z-10">
-                    <ProactiveSection />
+                    <ProactiveSection sessions={sessions} onSelectSession={onSelectSession} />
                 </div>
 
                 {/* Footer Actions */}

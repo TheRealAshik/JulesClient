@@ -80,6 +80,7 @@ export const listSessions = async (): Promise<JulesSession[]> => {
     const data = await res.json();
     return (data.sessions || []).map((s: any) => ({
       ...s,
+      state: s.state || 'QUEUED',
       createTime: s.createTime || s.create_time,
       updateTime: s.updateTime || s.update_time,
       outputs: (s.outputs || []).map((o: any) => ({
@@ -128,6 +129,7 @@ export const createSession = async (
   const data = await res.json();
   return {
     ...data,
+    state: data.state || 'QUEUED',
     prompt: data.prompt || prompt,
     createTime: data.createTime || data.create_time,
     updateTime: data.updateTime || data.update_time,
@@ -145,6 +147,7 @@ export const getSession = async (sessionId: string): Promise<JulesSession> => {
   const data = await res.json();
   return {
     ...data,
+    state: data.state || 'QUEUED',
     createTime: data.createTime || data.create_time,
     updateTime: data.updateTime || data.update_time,
     outputs: (data.outputs || []).map((o: any) => ({

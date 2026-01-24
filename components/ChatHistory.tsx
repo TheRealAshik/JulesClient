@@ -89,26 +89,26 @@ const MarkdownComponents = {
 
 const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, time }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const isLong = text.length > 300 || text.split('\n').length > 5;
+    const lineCount = text.split('\n').length;
+    const isLong = text.length > 500 || lineCount > 8;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex gap-3 sm:gap-4 justify-end w-full"
+            className="flex gap-3 sm:gap-4 justify-end w-full overflow-hidden"
         >
-            <div className="flex flex-col items-end gap-1 max-w-[90%] sm:max-w-[80%] md:max-w-[75%]">
+            <div className="flex flex-col items-end gap-1.5 max-w-[92%] sm:max-w-[85%] md:max-w-[80%] min-w-0">
                 <div
-                    onClick={() => isLong && setIsExpanded(!isExpanded)}
                     className={twMerge(
-                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg",
-                        isLong && "cursor-pointer hover:bg-[#323236] transition-colors pr-10 min-h-[44px]"
+                        "group relative bg-[#27272A] text-white border border-white/5 rounded-[20px] sm:rounded-[24px] px-4 py-3 sm:px-5 sm:py-3.5 text-[15px] leading-relaxed shadow-lg w-full",
+                        isLong && !isExpanded && "pb-8"
                     )}
                 >
                     <div className={twMerge(
-                        !isExpanded && isLong && 'line-clamp-[8] overflow-hidden',
-                        "prose prose-invert prose-p:my-0 prose-pre:my-2 max-w-none break-words"
+                        "prose prose-invert prose-p:my-0 prose-pre:my-2 max-w-none break-words overflow-hidden",
+                        !isExpanded && isLong && 'line-clamp-[12]'
                     )}>
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -118,10 +118,23 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = ({ text, ti
                         </ReactMarkdown>
                     </div>
 
+                    {/* Gradient fade for truncated content */}
+                    {isLong && !isExpanded && (
+                        <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#27272A] to-transparent pointer-events-none rounded-b-[20px] sm:rounded-b-[24px]" />
+                    )}
+
+                    {/* Expand/Collapse button inside bubble at bottom */}
                     {isLong && (
-                        <div className="absolute top-4 right-4 text-zinc-400 group-hover:text-white transition-colors">
-                            <ChevronDown size={16} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                        </div>
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full border border-white/5 transition-all min-h-[28px]"
+                        >
+                            {isExpanded ? (
+                                <>Show less <ChevronDown size={12} className="rotate-180" /></>
+                            ) : (
+                                <>Show more <ChevronDown size={12} /></>
+                            )}
+                        </button>
                     )}
                 </div>
                 {time && <span className="text-[10px] text-zinc-600 font-mono px-1">{time}</span>}
@@ -519,7 +532,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
     });
 
     return (
-        <div className="space-y-6 sm:space-y-8 px-2 sm:px-4">
+        <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
             <AnimatePresence initial={false}>
                 {/* 0. Initial Prompt (if not in activities) */}
                 {sessionPrompt && !hasInitialPromptInActivities && (
@@ -567,13 +580,13 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className="flex gap-3 sm:gap-5 justify-start group w-full"
+                                className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
                             >
                                 <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
                                     <Bot size={18} className="text-indigo-400" />
                                 </div>
-                                <div className="max-w-[calc(100%-3rem)] sm:max-w-[90%] flex flex-col gap-1">
-                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light">
+                                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
+                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={MarkdownComponents}
@@ -750,9 +763,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ activities, isStreamin
                         );
 
                         items.push(
-                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start">
+                            <motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3 sm:gap-5 justify-start items-start w-full overflow-hidden">
                                 <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm max-w-[calc(100%-3rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
+                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-full sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
                                     <Loader2
                                         size={14}
                                         className={twMerge(
