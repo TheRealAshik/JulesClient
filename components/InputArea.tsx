@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JulesSource, AutomationMode } from '../types';
 import clsx from 'clsx';
@@ -228,7 +228,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 isExpanded ? 'px-4 pb-4 pt-2 opacity-100 border-t border-white/5' : 'px-3 pb-3 opacity-100'
             )}>
 
-                {/* Left: Attach, Title & Branch - Hidden when collapsed */}
+                {/* Left: Attach, Branch, Settings - Hidden when collapsed */}
                 <div className={twMerge(
                     "flex items-center gap-2 transition-all duration-200 ease-out",
                     isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
@@ -242,42 +242,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         <Plus size={15} />
                     </motion.button>
 
-                    {/* Session Title Toggle/Input */}
-                    {showTitleInput ? (
-                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-lg px-2 py-1 h-7">
-                            <Type size={12} className="text-indigo-400 flex-shrink-0" />
-                            <input
-                                ref={titleInputRef}
-                                type="text"
-                                value={sessionTitle}
-                                onChange={(e) => setSessionTitle(e.target.value)}
-                                placeholder="Session title..."
-                                className="bg-transparent border-none outline-none text-[11px] text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
-                                autoFocus
-                            />
-                            <button
-                                onClick={() => { setShowTitleInput(false); setSessionTitle(''); }}
-                                className="text-zinc-500 hover:text-white transition-colors"
-                            >
-                                ×
-                            </button>
-                        </div>
-                    ) : (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowTitleInput(true);
-                            }}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-400 hover:text-white transition-all duration-150 h-7"
-                            title="Add session title"
-                        >
-                            <Type size={12} className="text-zinc-500" />
-                            <span className="hidden sm:inline">Title</span>
-                        </motion.button>
-                    )}
-
                     {/* Branch Selector Pill */}
                     <div className="relative branch-menu-trigger">
                         <motion.button
@@ -287,10 +251,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-7"
+                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-7 max-w-[120px]"
                         >
                             <GitBranch size={12} className="text-indigo-400 flex-shrink-0" />
-                            <span className="max-w-[70px] sm:max-w-[100px] truncate">{selectedBranch}</span>
+                            <span className="truncate">{selectedBranch}</span>
                             <ChevronDown size={10} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
 
@@ -339,16 +303,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
-                </div>
 
-                {/* Right: Mode & Send */}
-                <div className="flex items-center gap-2">
-
-                    {/* Mode Menu Trigger - Hidden when collapsed */}
-                    <div className={twMerge(
-                        "relative mode-menu-trigger transition-all duration-200 ease-out",
-                        isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
-                    )}>
+                    {/* Compact Settings Trigger (Mode & Title) */}
+                    <div className="relative mode-menu-trigger">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -358,55 +315,72 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             }}
                             className={twMerge(
                                 "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-150 border h-7",
-                                isModeMenuOpen
+                                isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
                             )}
+                            title="Session Settings"
                         >
-                            <Rocket size={13} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
-                            <ChevronUp size={11} className={`transition-transform duration-150 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                            <Settings2 size={13} className={sessionTitle ? 'text-indigo-400' : ''} />
                         </motion.button>
 
                         <AnimatePresence>
                             {isModeMenuOpen && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -8 }}
+                                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[280px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80"
+                                    className="mode-menu-dropdown absolute top-full left-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
-                                    <div className="p-1.5 space-y-0.5">
+                                    {/* Section 1: Title Input */}
+                                    <div className="p-3 border-b border-white/5">
+                                        <label className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5 block tracking-wider">Session Title</label>
+                                        <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500/30 transition-colors">
+                                            <Type size={12} className="text-zinc-500" />
+                                            <input
+                                                type="text"
+                                                value={sessionTitle}
+                                                onChange={(e) => setSessionTitle(e.target.value)}
+                                                placeholder="Optional title..."
+                                                className="bg-transparent border-none outline-none text-xs text-white placeholder:text-zinc-600 w-full"
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Section 2: Mode Selection */}
+                                    <div className="p-1.5 space-y-0.5 max-h-[240px] overflow-y-auto">
+                                        <div className="px-2 py-1.5">
+                                            <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Session Mode</label>
+                                        </div>
                                         {['START', 'SCHEDULED', 'INTERACTIVE', 'REVIEW'].map((mode) => (
                                             <button
                                                 key={mode}
                                                 onClick={() => { setSelectedMode(mode as SessionMode); setIsModeMenuOpen(false); }}
-                                                className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 group transition-colors flex items-start gap-3 min-h-[40px]"
+                                                className={twMerge(
+                                                    "w-full text-left p-2 rounded-lg group transition-colors flex items-start gap-3 min-h-[36px]",
+                                                    selectedMode === mode ? 'bg-indigo-500/10' : 'hover:bg-white/5'
+                                                )}
                                             >
-                                                <div className="mt-0.5 text-zinc-400 group-hover:text-white transition-colors">
-                                                    {mode === 'START' && <Rocket size={16} />}
-                                                    {mode === 'SCHEDULED' && <Clock size={16} />}
-                                                    {mode === 'INTERACTIVE' && <MessageSquare size={16} />}
-                                                    {mode === 'REVIEW' && <FileSearch size={16} />}
+                                                <div className={twMerge("mt-0.5 transition-colors", selectedMode === mode ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300')}>
+                                                    {mode === 'START' && <Rocket size={14} />}
+                                                    {mode === 'SCHEDULED' && <Clock size={14} />}
+                                                    {mode === 'INTERACTIVE' && <MessageSquare size={14} />}
+                                                    {mode === 'REVIEW' && <FileSearch size={14} />}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[13px] font-medium text-white">
+                                                        <span className={twMerge("text-[12px] font-medium", selectedMode === mode ? 'text-indigo-200' : 'text-zinc-300')}>
                                                             {mode === 'START' ? 'Start immediately' :
                                                                 mode === 'SCHEDULED' ? 'Scheduled task' :
                                                                     mode === 'INTERACTIVE' ? 'Interactive plan' : 'Review plan'}
                                                         </span>
                                                         {mode === 'SCHEDULED' && <span className="text-[9px] font-bold bg-[#6366F1]/20 text-[#818CF8] px-1.5 py-0.5 rounded tracking-wide">NEW</span>}
                                                     </div>
-                                                    <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
-                                                        {mode === 'START' ? 'Begin execution without approval.' :
-                                                            mode === 'SCHEDULED' ? "Delegate work while you're away." :
-                                                                mode === 'INTERACTIVE' ? 'Discuss goals before executing.' :
-                                                                    'Generate plan and wait for approval.'}
-                                                    </p>
                                                 </div>
-                                                {selectedMode === mode && <Check size={14} className="text-indigo-400 mt-1" />}
+                                                {selectedMode === mode && <Check size={12} className="text-indigo-400 mt-1" />}
                                             </button>
                                         ))}
                                     </div>
@@ -414,8 +388,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
+                </div>
 
-                    {/* Send Button - Always visible */}
+                {/* Right: Send Button */}
+                <div className="flex items-center gap-2">
                     <motion.button
                         whileHover={{ scale: 1.08 }}
                         whileTap={{ scale: 0.92 }}

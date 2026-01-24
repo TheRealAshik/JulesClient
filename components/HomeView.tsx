@@ -61,7 +61,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="w-full mt-8 sm:mt-12 flex flex-wrap justify-between items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
+                <div className="w-full mt-8 sm:mt-12 flex flex-wrap justify-between items-center gap-4">
                     <div className="flex flex-wrap gap-2">
                         <ActionButton icon={<Box size={14} />} label="Render" />
                         <ActionButton icon={<Terminal size={14} />} label="CLI" />
@@ -70,7 +70,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                     <button
                         onClick={onResetKey}
-                        className="text-xs text-zinc-600 hover:text-zinc-400 underline underline-offset-2 decoration-zinc-800 min-h-[44px] flex items-center"
+                        className="text-xs text-zinc-600 hover:text-zinc-400 underline underline-offset-2 decoration-zinc-800 h-8 flex items-center"
                     >
                         Reset Key
                     </button>
@@ -81,7 +81,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 };
 
 const ActionButton: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-    <button className="flex items-center gap-2 px-3 py-2 bg-[#1E1E22] hover:bg-[#27272A] border border-white/5 rounded-lg text-xs font-mono text-textMuted hover:text-white transition-all min-h-[44px]">
+    <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1E1E22] hover:bg-[#27272A] border border-white/10 hover:border-white/20 rounded-lg text-xs font-mono text-zinc-400 hover:text-white transition-all h-8 shadow-sm">
         {icon}
         <span>{label}</span>
     </button>
