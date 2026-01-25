@@ -26,7 +26,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
     return (
         <div className="flex-1 flex flex-col w-full overflow-y-auto scroll-smooth">
             {/* Dynamic Centering Container - full width on mobile, constrained on desktop */}
-            <div className="w-full max-w-[700px] md:max-w-2xl lg:max-w-3xl m-auto flex flex-col items-center animate-in fade-in duration-500 px-4 md:px-6 lg:px-8 pt-8 sm:pt-20 pb-[calc(3rem+env(safe-area-inset-bottom))]">
+            <div className="w-full max-w-3xl mx-auto flex flex-col items-center animate-in fade-in duration-500 px-4 md:px-6 lg:px-8 pt-6 sm:pt-16 pb-[calc(3rem+env(safe-area-inset-bottom))]">
 
 
                 {!currentSource && (
@@ -61,11 +61,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="w-full mt-8 sm:mt-12 flex flex-wrap justify-between items-center gap-4">
-                    <div className="flex flex-wrap gap-2">
-                        <ActionButton icon={<Box size={14} />} label="Render" />
-                        <ActionButton icon={<Terminal size={14} />} label="CLI" />
-                        <ActionButton icon={<Code size={14} />} label="API" />
+                <div className="w-full mt-8 sm:mt-12 flex items-center justify-between gap-4">
+                    <div className="flex gap-2">
+                        <ActionButton icon={<Box size={14} />} label="Render" aria-label="Open Render Dashboard" />
+                        <ActionButton icon={<Terminal size={14} />} label="CLI" aria-label="Open CLI Tool" />
+                        <ActionButton icon={<Code size={14} />} label="API" aria-label="View API Documentation" />
                     </div>
 
                     <button
@@ -80,8 +80,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
     );
 };
 
-const ActionButton: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-    <button className="flex items-center gap-2 px-3 py-1.5 bg-[#1E1E22] hover:bg-[#27272A] border border-white/10 hover:border-white/20 rounded-lg text-xs font-mono text-zinc-400 hover:text-white transition-all h-8 shadow-sm">
+const ActionButton: React.FC<{ icon: React.ReactNode; label: string; 'aria-label'?: string }> = ({ icon, label, 'aria-label': ariaLabel }) => (
+    <button
+        aria-label={ariaLabel || label}
+        className="flex items-center gap-2 px-3 py-1.5 bg-[#1E1E22] hover:bg-[#27272A] border border-white/10 hover:border-white/20 rounded-lg text-xs font-mono text-zinc-400 hover:text-white transition-all h-8 shadow-sm"
+    >
         {icon}
         <span>{label}</span>
     </button>

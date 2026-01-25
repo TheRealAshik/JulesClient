@@ -208,10 +208,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
                     placeholder={placeholder}
-                    className={twMerge(
-                        "w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30",
-                        isExpanded ? 'text-[16px]' : 'text-[15px]'
-                    )}
+                    className="w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30 text-[15px]"
                     rows={1}
                     style={{
                         height: isExpanded ? 'auto' : '24px',
@@ -400,17 +397,18 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             handleSubmit();
                         }}
                         disabled={!input.trim() || isLoading}
+                        aria-label="Send message"
                         className={twMerge(
-                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                            "w-8 h-8 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
                         )}
                     >
                         {isLoading ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <ArrowRight size={15} />
+                            <ArrowRight size={16} />
                         )}
                     </motion.button>
                 </div>
