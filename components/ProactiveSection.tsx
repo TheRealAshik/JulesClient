@@ -35,7 +35,7 @@ export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [
         <div className="mt-4 space-y-6">
 
             {/* Tabs - Scrollable on mobile */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2 sm:mx-0 sm:px-0">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 <TabButton label="Repo overview" isActive={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
                 <TabButton label="Suggested" isActive={activeTab === 'suggested'} onClick={() => setActiveTab('suggested')} />
                 <TabButton label="Scheduled" isActive={activeTab === 'scheduled'} onClick={() => setActiveTab('scheduled')} />
