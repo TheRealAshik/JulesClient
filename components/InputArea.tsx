@@ -141,11 +141,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 <motion.div
                     layout
                     className={twMerge(
-                        "relative flex items-end gap-2 bg-[#1c1c1f]/90 backdrop-blur-md border rounded-xl p-2 transition-colors duration-200",
-                        isFocused ? 'border-zinc-500/50 ring-1 ring-zinc-500/20 shadow-2xl' : 'border-white/10 shadow-lg'
+                        "relative flex items-end gap-2 bg-[#1c1c1f]/95 backdrop-blur-xl border rounded-[26px] p-1.5 transition-all duration-200",
+                        isFocused ? 'border-zinc-500/40 ring-1 ring-zinc-500/10 shadow-2xl' : 'border-white/10 shadow-lg'
                     )}
                 >
-                    <button className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/5 flex-shrink-0">
+                    <button className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
                         <Plus size={20} />
                     </button>
 
@@ -157,7 +157,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder || "Reply to Jules..."}
-                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
+                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-500 resize-none py-2 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
                         rows={1}
                     />
 
@@ -166,10 +166,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onClick={handleSubmit}
                         disabled={!input.trim() || isLoading}
                         className={twMerge(
-                            "w-10 h-10 flex items-center justify-center rounded-lg transition-all mb-1 flex-shrink-0 duration-300",
+                            "w-10 h-10 flex items-center justify-center rounded-full transition-all flex-shrink-0 duration-300",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
-                                : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+                                : 'bg-[#27272a] text-zinc-500 cursor-not-allowed border border-white/5'
                         )}
                     >
                         {isLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ArrowRight size={18} />}
