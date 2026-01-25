@@ -274,13 +274,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-6 h-6 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-6 h-6 aspect-square flex-shrink-0 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
                         <Plus size={14} />
                     </motion.button>
 
                     {/* Branch Selector Pill */}
-                    <div ref={branchTriggerRef} className="relative branch-menu-trigger">
+                    <div ref={branchTriggerRef} className="relative branch-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -350,7 +350,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     </div>
 
                     {/* Tools/Settings Button: Square 1:1, h-6 w-6, Center content */}
-                    <div ref={modeTriggerRef} className="relative mode-menu-trigger">
+                    <div ref={modeTriggerRef} className="relative mode-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -359,7 +359,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6",
+                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
@@ -442,7 +442,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     </div>
 
                     {/* Right: Send Button - Square 1:1, w-6 h-6 */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.08 }}
                             whileTap={{ scale: 0.92 }}
@@ -453,7 +453,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             disabled={!input.trim() || isLoading}
                             aria-label="Send message"
                             className={twMerge(
-                                "w-6 h-6 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                                "w-6 h-6 aspect-square flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                                 input.trim()
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                     : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
