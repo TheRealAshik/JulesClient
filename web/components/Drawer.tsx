@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2 } from 'lucide-react';
+import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2, Settings } from 'lucide-react';
 import { JulesSession, JulesSource, formatRelativeTime } from '../types';
 import { sortSessions, getSessionDisplayInfo } from '../utils/session';
 
@@ -59,15 +59,34 @@ export const Drawer: React.FC<DrawerProps> = ({
         }
     }, [searchQuery]);
 
-    if (!isOpen) return null;
+    const [isRendered, setIsRendered] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            setIsRendered(true);
+            // Trigger animation after mount
+            const timer = setTimeout(() => setIsVisible(true), 10);
+            return () => clearTimeout(timer);
+        } else {
+            setIsVisible(false);
+            const timer = setTimeout(() => setIsRendered(false), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    if (!isRendered) return null;
 
     return (
         <>
             {/* Overlay */}
-            <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
+            <div
+                className={`fixed inset-0 bg-black/60 z-50 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onClose}
+            />
 
             {/* Drawer */}
-            <div className="fixed inset-y-0 left-0 w-[320px] bg-[#0E0E11] z-50 flex flex-col border-r border-white/5 animate-in slide-in-from-left duration-300">
+            <div className={`fixed inset-y-0 left-0 w-[320px] bg-[#0E0E11] z-50 flex flex-col border-r border-white/5 transition-transform duration-300 ease-in-out ${isVisible ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-white/5">
@@ -160,73 +179,73 @@ export const Drawer: React.FC<DrawerProps> = ({
                                                         <button
                                                             onClick={(e) => {
                                                                 e.preventDefault();
-                                                            e.stopPropagation();
-                                                            setMenuOpenId(menuOpenId === session.name ? null : session.name);
-                                                        }}
-                                                        className={`p-1.5 rounded-md transition-all ${menuOpenId === session.name ? 'opacity-100 bg-white/10 text-white' : 'opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-white hover:bg-white/10'}`}
-                                                    >
-                                                        <MoreHorizontal size={16} />
-                                                    </button>
+                                                                e.stopPropagation();
+                                                                setMenuOpenId(menuOpenId === session.name ? null : session.name);
+                                                            }}
+                                                            className={`p-1.5 rounded-md transition-all ${menuOpenId === session.name ? 'opacity-100 bg-white/10 text-white' : 'opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-white hover:bg-white/10'}`}
+                                                        >
+                                                            <MoreHorizontal size={16} />
+                                                        </button>
 
-                                                    {/* Dropdown Menu */}
-                                                    {menuOpenId === session.name && (
-                                                        <>
-                                                            <div
-                                                                className="fixed inset-0 z-40 bg-transparent"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setMenuOpenId(null);
-                                                                }}
-                                                            />
-                                                            <div className="absolute right-0 top-full mt-1 w-32 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
-                                                                {(session.state === 'IN_PROGRESS' || session.state === 'PLANNING') && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            onUpdateSession?.(session.name, { state: 'PAUSED' }, ['state']);
-                                                                            setMenuOpenId(null);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
-                                                                    >
-                                                                        <Pause size={12} /> Pause
-                                                                    </button>
-                                                                )}
-
-                                                                {session.state === 'PAUSED' && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            onUpdateSession?.(session.name, { state: 'IN_PROGRESS' }, ['state']);
-                                                                            setMenuOpenId(null);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
-                                                                    >
-                                                                        <Loader2 size={12} /> Resume
-                                                                    </button>
-                                                                )}
-
-                                                                <button
+                                                        {/* Dropdown Menu */}
+                                                        {menuOpenId === session.name && (
+                                                            <>
+                                                                <div
+                                                                    className="fixed inset-0 z-40 bg-transparent"
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
                                                                         e.stopPropagation();
-                                                                        if (window.confirm('Are you sure you want to delete this session?')) {
-                                                                            onDeleteSession?.(session.name);
-                                                                        }
                                                                         setMenuOpenId(null);
                                                                     }}
-                                                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2"
-                                                                >
-                                                                    <Trash2 size={12} /> Delete
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </>
-                                        )}
+                                                                />
+                                                                <div className="absolute right-0 top-full mt-1 w-32 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                                                    {(session.state === 'IN_PROGRESS' || session.state === 'PLANNING') && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                onUpdateSession?.(session.name, { state: 'PAUSED' }, ['state']);
+                                                                                setMenuOpenId(null);
+                                                                            }}
+                                                                            className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                                                                        >
+                                                                            <Pause size={12} /> Pause
+                                                                        </button>
+                                                                    )}
+
+                                                                    {session.state === 'PAUSED' && (
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                onUpdateSession?.(session.name, { state: 'IN_PROGRESS' }, ['state']);
+                                                                                setMenuOpenId(null);
+                                                                            }}
+                                                                            className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                                                                        >
+                                                                            <Loader2 size={12} /> Resume
+                                                                        </button>
+                                                                    )}
+
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            if (window.confirm('Are you sure you want to delete this session?')) {
+                                                                                onDeleteSession?.(session.name);
+                                                                            }
+                                                                            setMenuOpenId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2"
+                                                                    >
+                                                                        <Trash2 size={12} /> Delete
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
                                         </NavLink>
                                     );
                                 })}
@@ -314,15 +333,15 @@ export const Drawer: React.FC<DrawerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button className="flex-1 flex items-center justify-center gap-2 bg-[#161619] hover:bg-[#1E1E22] border border-white/5 py-2 rounded-lg text-sm text-zinc-300 transition-colors">
-                            <FileText size={14} />
-                            Docs
+                        <Link to="/settings" onClick={onClose} className="flex-1 flex items-center justify-center gap-2 bg-[#161619] hover:bg-[#1E1E22] border border-white/5 py-2 rounded-lg text-sm text-zinc-300 transition-colors">
+                            <Settings size={14} />
+                            Settings
+                        </Link>
+                        <button className="w-10 h-10 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Documentation">
+                            <FileText size={18} />
                         </button>
                         <button aria-label="Join Discord" className="w-10 h-10 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors">
                             <Disc size={18} />
-                        </button>
-                        <button onClick={onClose} aria-label="Close sidebar" className="w-10 h-10 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors">
-                            <X size={18} />
                         </button>
                     </div>
                 </div>

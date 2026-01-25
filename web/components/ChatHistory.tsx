@@ -19,6 +19,7 @@ interface ChatHistoryProps {
     sessionOutputs?: Array<{ pullRequest?: { url: string; title: string; description: string; branch?: string } }>;
     sessionPrompt?: string;
     sessionCreateTime?: string;
+    defaultCardCollapsed?: boolean;
 }
 
 const formatTime = (isoString?: string) => {
@@ -183,8 +184,8 @@ const PlanStepItem: React.FC<{ step: Step, index: number }> = memo(({ step, inde
 });
 PlanStepItem.displayName = 'PlanStepItem';
 
-const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number }> = memo(({ command, output, exitCode }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number, defaultCollapsed?: boolean }> = memo(({ command, output, exitCode, defaultCollapsed }) => {
+    const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
     const isFailed = exitCode !== undefined && exitCode !== 0;
 
     return (
@@ -275,8 +276,8 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
 });
 CommandArtifact.displayName = 'CommandArtifact';
 
-const CodeChangeArtifact: React.FC<{ changeSet?: any }> = memo(({ changeSet }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean }> = memo(({ changeSet, defaultCollapsed }) => {
+    const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
 
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
 
@@ -552,7 +553,8 @@ const ActivityItem: React.FC<{
     onApprovePlan: (activityId: string) => void;
     isApproved: boolean;
     isCurrentlyActive: boolean;
-}> = memo(({ act, onApprovePlan, isApproved, isCurrentlyActive }) => {
+    defaultCardCollapsed?: boolean;
+}> = memo(({ act, onApprovePlan, isApproved, isCurrentlyActive, defaultCardCollapsed }) => {
     const timeString = formatTime(act.createTime);
     const items: React.ReactNode[] = [];
 
@@ -673,6 +675,7 @@ const ActivityItem: React.FC<{
                             command={artifact.bashOutput.command}
                             output={artifact.bashOutput.output}
                             exitCode={artifact.bashOutput.exitCode}
+                            defaultCollapsed={defaultCardCollapsed}
                         />
                     </div>
                 );
@@ -735,7 +738,7 @@ const ActivityItem: React.FC<{
                         className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
                     >
                         <div className="w-8 h-8 flex-shrink-0" />
-                        <CodeChangeArtifact changeSet={artifact.changeSet} />
+                        <CodeChangeArtifact changeSet={artifact.changeSet} defaultCollapsed={defaultCardCollapsed} />
                     </div>
                 );
             }
@@ -745,29 +748,41 @@ const ActivityItem: React.FC<{
     // --- 5. Progress Updates ---
     if (act.progressUpdated) {
         const progress = act.progressUpdated;
-        const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || "Processing";
+        const defaultTitle = isCurrentlyActive ? "Processing" : "Processed";
+        const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || defaultTitle;
         const description = progress.description || progress.progress_description || progress.text || progress.message;
         const cleanTitle = title.trim().toLowerCase();
         const cleanDesc = description ? description.trim().toLowerCase() : "";
         const isRedundant = !description || cleanTitle === cleanDesc || cleanTitle.includes(cleanDesc);
 
         items.push(
-            <div key="progress" className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
-                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
-                    <Loader2
-                        size={14}
-                        className={twMerge(
-                            "text-indigo-500 flex-shrink-0",
-                            isCurrentlyActive && "animate-spin"
-                        )}
-                    />
-                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
-                        <span className="font-medium text-zinc-300 transition-colors truncate">
-                            {title}
-                        </span>
+            <div key="progress" className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
+                    <Bot size={18} className="text-indigo-400" />
+                </div>
+                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
+                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
+                        <div className="flex items-center gap-2">
+                            {(() => {
+                                if (isCurrentlyActive) {
+                                    return <Loader2 size={14} className="text-indigo-400 flex-shrink-0 animate-spin" />;
+                                }
+                                const lower = title.toLowerCase();
+                                if (lower.includes('read') || lower.includes('analyz') || lower.includes('scan')) {
+                                    return <FileText size={14} className="text-zinc-500 flex-shrink-0" />;
+                                }
+                                if (lower.includes('run') || lower.includes('exec') || lower.includes('command')) {
+                                    return <Terminal size={14} className="text-zinc-500 flex-shrink-0" />;
+                                }
+                                if (lower.includes('think') || lower.includes('plan')) {
+                                    return <Sparkles size={14} className="text-zinc-500 flex-shrink-0" />;
+                                }
+                                return <CheckCircle2 size={14} className="text-zinc-500 flex-shrink-0" />;
+                            })()}
+                            <span className={twMerge("font-medium", isCurrentlyActive ? "text-zinc-200" : "text-zinc-400")}>{title}</span>
+                        </div>
                         {!isRedundant && (
-                            <span className="text-zinc-500 font-sans truncate text-[10px] mt-0.5 opacity-80">{description}</span>
+                            <div className="text-zinc-400 text-sm mt-1 pl-6">{description}</div>
                         )}
                     </div>
                 </div>
@@ -790,7 +805,7 @@ const ActivityItem: React.FC<{
 });
 ActivityItem.displayName = 'ActivityItem';
 
-export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
+export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime, defaultCardCollapsed }) => {
     // Memoize the expensive initial prompt check
     const hasInitialPromptInActivities = useMemo(() => {
         if (!sessionPrompt) return false;
@@ -816,7 +831,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                 {activities.map((act, index) => {
                     const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
                     const activitiesAfter = activities.slice(index + 1);
-                    const isCurrentlyActive = !activitiesAfter.some(a =>
+                    const isCurrentlyActive = isStreaming && !activitiesAfter.some(a =>
                         a.progressUpdated || a.agentMessage || a.agentMessaged ||
                         a.planGenerated || a.sessionCompleted || a.sessionFailed
                     );
@@ -828,6 +843,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                             onApprovePlan={onApprovePlan}
                             isApproved={isApproved}
                             isCurrentlyActive={isCurrentlyActive}
+                            defaultCardCollapsed={defaultCardCollapsed}
                         />
                     );
                 })}

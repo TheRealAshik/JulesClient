@@ -54,7 +54,7 @@ fun Header(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = currentSource?.displayName ?: "Select Repository...",
+                        text = currentSource?.displayName ?: currentSource?.name ?: "Select Repository...",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
@@ -68,7 +68,7 @@ fun Header(
                 ) {
                     sources.forEach { source ->
                         DropdownMenuItem(
-                            text = { Text(source.displayName, color = Color.White) },
+                            text = { Text(source.displayName ?: source.name, color = Color.White) },
                             onClick = {
                                 onSourceChange(source)
                                 expanded = false
