@@ -43,7 +43,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                         onSendMessage={onSendMessage}
                         isLoading={isProcessing}
                         variant="default"
-                        placeholder="Describe a task or fix..."
                         currentSource={currentSource}
                     />
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JulesSource, AutomationMode } from '../types';
@@ -22,6 +22,13 @@ interface InputAreaProps {
     currentSource?: JulesSource | null;
 }
 
+const PLACEHOLDERS = [
+    "Describe a task or fix...",
+    "Refactor this function...",
+    "Fix CSS alignment issues...",
+    "Add a new API endpoint..."
+];
+
 export const InputArea: React.FC<InputAreaProps> = ({
     onSendMessage,
     isLoading,
@@ -31,6 +38,17 @@ export const InputArea: React.FC<InputAreaProps> = ({
 }) => {
     const [input, setInput] = useState('');
     const [isFocused, setIsFocused] = useState(false);
+
+    // Dynamic Placeholder
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const currentPlaceholder = placeholder || PLACEHOLDERS[placeholderIndex];
 
     // Modes
     const [selectedMode, setSelectedMode] = useState<SessionMode>('START');
@@ -51,6 +69,16 @@ export const InputArea: React.FC<InputAreaProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
+
+    // Refs for menu positioning
+    const branchTriggerRef = useRef<HTMLDivElement>(null);
+    const branchDropdownRef = useRef<HTMLDivElement>(null);
+    const modeTriggerRef = useRef<HTMLDivElement>(null);
+    const modeDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Viewport aware positioning hooks
+    const branchMenuStyles = useViewportAwarePosition(isBranchMenuOpen, branchTriggerRef, branchDropdownRef);
+    const modeMenuStyles = useViewportAwarePosition(isModeMenuOpen, modeTriggerRef, modeDropdownRef);
 
     // Initialize selected branch
     useEffect(() => {
@@ -156,7 +184,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onKeyDown={handleKeyDown}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
-                        placeholder={placeholder || "Reply to Jules..."}
+                        placeholder={currentPlaceholder}
                         className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
                         rows={1}
                     />
@@ -207,7 +235,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
-                    placeholder={placeholder}
+                    placeholder={currentPlaceholder}
                     className="w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30 text-[15px]"
                     rows={1}
                     style={{
@@ -234,13 +262,13 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-6 h-6 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
                         <Plus size={15} />
                     </motion.button>
 
                     {/* Branch Selector Pill */}
-                    <div className="relative branch-menu-trigger">
+                    <div ref={branchTriggerRef} className="relative branch-menu-trigger">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -248,7 +276,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-7 max-w-[120px]"
+                            className="flex items-center gap-1.5 px-2 py-0.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6 max-w-[120px]"
                         >
                             <GitBranch size={12} className="text-indigo-400 flex-shrink-0" />
                             <span className="truncate">{selectedBranch}</span>
@@ -258,12 +286,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         <AnimatePresence>
                             {isBranchMenuOpen && (
                                 <motion.div
+                                    ref={branchDropdownRef}
+                                    style={branchMenuStyles}
                                     initial={{ opacity: 0, y: -8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
+                                    className="branch-menu-dropdown absolute top-full mt-2 w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
                                 >
                                     <div className="p-2 border-b border-white/5 bg-[#0e0e11]">
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
@@ -302,7 +332,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     </div>
 
                     {/* Compact Settings Trigger (Mode & Title) */}
-                    <div className="relative mode-menu-trigger">
+                    <div ref={modeTriggerRef} className="relative mode-menu-trigger">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -311,7 +341,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-150 border h-7",
+                                "flex items-center gap-1.5 px-1.5 py-1 rounded-lg transition-all duration-150 border h-6",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
@@ -324,12 +354,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         <AnimatePresence>
                             {isModeMenuOpen && (
                                 <motion.div
+                                    ref={modeDropdownRef}
+                                    style={modeMenuStyles}
                                     initial={{ opacity: 0, scale: 0.95, y: -8 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full left-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
+                                    className="mode-menu-dropdown absolute top-full mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
                                     {/* Section 1: Title Input */}
                                     <div className="p-3 border-b border-white/5">
@@ -399,7 +431,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         disabled={!input.trim() || isLoading}
                         aria-label="Send message"
                         className={twMerge(
-                            "w-8 h-8 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
@@ -416,3 +448,48 @@ export const InputArea: React.FC<InputAreaProps> = ({
         </div>
     );
 };
+
+// Helper hook for menu positioning
+function useViewportAwarePosition(
+    isOpen: boolean,
+    triggerRef: React.RefObject<HTMLElement>,
+    dropdownRef: React.RefObject<HTMLElement>
+): React.CSSProperties {
+    const [style, setStyle] = useState<React.CSSProperties>({ left: 0 });
+
+    useLayoutEffect(() => {
+        if (!isOpen || !triggerRef.current || !dropdownRef.current) {
+            return;
+        }
+
+        const triggerRect = triggerRef.current.getBoundingClientRect();
+        const dropdownRect = dropdownRef.current.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const margin = 10;
+
+        // Default position is aligned to left edge of trigger (relative to trigger)
+        // Which means absolute left: 0.
+        // Screen X of dropdown left edge = triggerRect.left.
+        // Screen X of dropdown right edge = triggerRect.left + dropdownRect.width.
+
+        let leftAdjustment = 0;
+
+        // Check right overflow
+        if (triggerRect.left + dropdownRect.width > viewportWidth - margin) {
+            // Amount of overflow
+            // We want (triggerRect.left + leftAdjustment + dropdownRect.width) <= viewportWidth - margin
+            leftAdjustment = (viewportWidth - margin) - (triggerRect.left + dropdownRect.width);
+        }
+
+        // Check left overflow (if adjusted too far left)
+        if (triggerRect.left + leftAdjustment < margin) {
+            // We want (triggerRect.left + leftAdjustment) >= margin
+            leftAdjustment = margin - triggerRect.left;
+        }
+
+        setStyle({ left: leftAdjustment });
+
+    }, [isOpen]);
+
+    return style;
+}
