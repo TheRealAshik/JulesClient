@@ -1,68 +1,68 @@
-# Jules Client 🦑
+# Jules Client
 
-Jules Client is a sleek, AI-powered web interface designed to interact with **Jules**, a Google AI coding agent. It provides a modern and intuitive experience for managing repositories, starting AI sessions, and approving code-generation plans.
+This repository contains the source code for the Jules Client application.
 
-![Jules UI](https://jules.google/squid.png)
+## Mobile Application
 
-## ✨ Features
+This is a Kotlin Multiplatform project targeting Android, iOS, Desktop (JVM).
 
-- **🚀 Interactive Sessions**: Start AI-driven coding sessions with natural language prompts.
-- **📁 Repository Management**: Seamlessly browse and select repositories to work on.
-- **📝 Plan Approval**: Review and approve AI-generated plans before any code changes are applied.
-- **🔄 Real-time Updates**: Polling mechanism to keep track of AI activities and session status.
-- **🔑 Secure Configuration**: Easy API key setup with local persistence for quick access.
-- **🎨 Premium UI**: A dark-themed, responsive interface built with Inter typography and smooth transitions.
+* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
+  It contains several subfolders:
+  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
+  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
+    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
+    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
+    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
+    folder is the appropriate location.
 
-## 🛠️ Tech Stack
+* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
+  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
 
-- **Core**: [React 19](https://react.dev/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) (CDN)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Markdown**: [React Markdown](https://github.com/remarkjs/react-markdown)
-- **AI Integration**: [@google/genai](https://www.npmjs.com/package/@google/genai)
+### Build and Run Android Application
 
-## 🚀 Getting Started
+To build and run the development version of the Android app, use the run configuration from the run widget
+in your IDE’s toolbar or build it directly from the terminal:
+- on macOS/Linux
+  ```shell
+  ./gradlew :composeApp:assembleDebug
+  ```
+- on Windows
+  ```shell
+  .\gradlew.bat :composeApp:assembleDebug
+  ```
 
-### Prerequisites
+### Build and Run Desktop (JVM) Application
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+To build and run the development version of the desktop app, use the run configuration from the run widget
+in your IDE’s toolbar or run it directly from the terminal:
+- on macOS/Linux
+  ```shell
+  ./gradlew :composeApp:run
+  ```
+- on Windows
+  ```shell
+  .\gradlew.bat :composeApp:run
+  ```
 
-### Installation
+### Build and Run iOS Application
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/jules-client.git
-   cd jules-client
-   ```
+To build and run the development version of the iOS app, use the run configuration from the run widget
+in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+---
 
-3. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
 
-4. **Open in browser**:
-   Navigate to `http://localhost:5173` (or the port shown in your terminal).
+## Web Application
 
-## ⚙️ Configuration
+The web application is located in the `web/` directory.
 
-To use Jules Client, you will need an API key for the Jules agent.
+*   [Web Application README](web/README.md)
 
-1. Launch the application.
-2. Enter your **Jules API Key** in the welcome screen.
-3. The key is stored locally in your browser for future sessions.
+### Running the Web App
 
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open an issue or submit a pull request.
-
-## 📄 License
-
-This project is licensed under the MIT License.
+```bash
+cd web
+pnpm install
+pnpm dev
+```
