@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JulesSource, AutomationMode } from '../types';
-import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useViewportAwarePosition } from '../hooks/useViewportAwarePosition';
+import { useDynamicPlaceholder } from '../hooks/useDynamicPlaceholder';
 
 export type SessionMode = 'SCHEDULED' | 'INTERACTIVE' | 'REVIEW' | 'START';
 
@@ -21,6 +22,18 @@ interface InputAreaProps {
     placeholder?: string;
     currentSource?: JulesSource | null;
 }
+
+const DEFAULT_PLACEHOLDERS = [
+    "Refactor this function...",
+    "Fix CSS alignment issues...",
+    "Add a new API endpoint...",
+    "Optimize performance...",
+    "Write unit tests...",
+    "Explain this code..."
+];
+
+const PLACEHOLDER_CYCLE_INTERVAL = 3500;
+const BRANCH_BUTTON_MAX_WIDTH = '120px'; // For styles
 
 export const InputArea: React.FC<InputAreaProps> = ({
     onSendMessage,
@@ -43,14 +56,32 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
     // Session title (optional)
     const [sessionTitle, setSessionTitle] = useState('');
-    const [showTitleInput, setShowTitleInput] = useState(false);
 
     // Automation mode
     const [automationMode, setAutomationMode] = useState<AutomationMode>('AUTO_CREATE_PR');
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const titleInputRef = useRef<HTMLInputElement>(null);
+
+    // Positioning Refs
+    const branchTriggerRef = useRef<HTMLDivElement>(null);
+    const branchMenuRef = useRef<HTMLDivElement>(null);
+    const modeTriggerRef = useRef<HTMLDivElement>(null);
+    const modeMenuRef = useRef<HTMLDivElement>(null);
+
+    // Dynamic Placeholder
+    const dynamicPlaceholder = useDynamicPlaceholder(
+        DEFAULT_PLACEHOLDERS,
+        PLACEHOLDER_CYCLE_INTERVAL,
+        isFocused || input.length > 0
+    );
+
+    // Use dynamic placeholder if no static one provided
+    const effectivePlaceholder = placeholder || dynamicPlaceholder;
+
+    // Viewport Aware Positioning
+    const branchMenuPos = useViewportAwarePosition(branchTriggerRef, branchMenuRef, isBranchMenuOpen);
+    const modeMenuPos = useViewportAwarePosition(modeTriggerRef, modeMenuRef, isModeMenuOpen);
 
     // Initialize selected branch
     useEffect(() => {
@@ -71,7 +102,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
         });
         setInput('');
         setSessionTitle('');
-        setShowTitleInput(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             if (variant === 'default') {
@@ -108,24 +138,33 @@ export const InputArea: React.FC<InputAreaProps> = ({
     // Click outside handlers
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
+            // Check if clicking outside container to close focus
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 if (!input.trim()) {
                     setIsFocused(false);
                 }
-                const target = event.target as Element;
-                if (!target.closest('.branch-menu-trigger') && !target.closest('.branch-menu-dropdown')) {
-                    setIsBranchMenuOpen(false);
-                }
             }
 
+            // Close menus if clicking outside
             const target = event.target as Element;
-            if (!target.closest('.mode-menu-trigger') && !target.closest('.mode-menu-dropdown')) {
+
+            // Branch Menu
+            if (isBranchMenuOpen &&
+                branchTriggerRef.current && !branchTriggerRef.current.contains(target as Node) &&
+                branchMenuRef.current && !branchMenuRef.current.contains(target as Node)) {
+                setIsBranchMenuOpen(false);
+            }
+
+            // Mode Menu
+            if (isModeMenuOpen &&
+                modeTriggerRef.current && !modeTriggerRef.current.contains(target as Node) &&
+                modeMenuRef.current && !modeMenuRef.current.contains(target as Node)) {
                 setIsModeMenuOpen(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [input]);
+    }, [input, isBranchMenuOpen, isModeMenuOpen]);
 
     const branches = currentSource?.githubRepo?.branches || [];
     const filteredBranches = branches.filter(b =>
@@ -141,11 +180,11 @@ export const InputArea: React.FC<InputAreaProps> = ({
                 <motion.div
                     layout
                     className={twMerge(
-                        "relative flex items-end gap-2 bg-[#1c1c1f]/90 backdrop-blur-md border rounded-[26px] p-2 transition-colors duration-200",
-                        isFocused ? 'border-zinc-500/50 ring-1 ring-zinc-500/20 shadow-2xl' : 'border-white/10 shadow-lg'
+                        "relative flex items-end gap-2 bg-[#1c1c1f]/95 backdrop-blur-xl border rounded-[26px] p-1.5 transition-all duration-200",
+                        isFocused ? 'border-zinc-500/40 ring-1 ring-zinc-500/10 shadow-2xl' : 'border-white/10 shadow-lg'
                     )}
                 >
-                    <button className="p-2.5 text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
+                    <button className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors rounded-full hover:bg-white/5 flex-shrink-0">
                         <Plus size={20} />
                     </button>
 
@@ -156,8 +195,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onKeyDown={handleKeyDown}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
-                        placeholder={placeholder || "Reply to Jules..."}
-                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-600 resize-none py-3 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
+                        placeholder={effectivePlaceholder}
+                        className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-500 resize-none py-2 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
                         rows={1}
                     />
 
@@ -166,10 +205,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onClick={handleSubmit}
                         disabled={!input.trim() || isLoading}
                         className={twMerge(
-                            "p-2 rounded-full transition-all mb-1 flex-shrink-0 duration-300",
+                            "w-10 h-10 flex items-center justify-center rounded-full transition-all flex-shrink-0 duration-300",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
-                                : 'bg-white/5 text-zinc-600 cursor-not-allowed'
+                                : 'bg-[#27272a] text-zinc-500 cursor-not-allowed border border-white/5'
                         )}
                     >
                         {isLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ArrowRight size={18} />}
@@ -179,15 +218,15 @@ export const InputArea: React.FC<InputAreaProps> = ({
         );
     }
 
-    // --- DEFAULT VARIANT (Hero Card - Expandable with Linear Animation) ---
+    // --- DEFAULT VARIANT (Hero Card) ---
     return (
         <div
             ref={containerRef}
             className={twMerge(
                 "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out",
                 isExpanded
-                    ? 'rounded-[28px] min-h-[180px] border-indigo-500/30 shadow-[0_0_40px_-12px_rgba(99,102,241,0.2)] ring-1 ring-indigo-500/20'
-                    : 'rounded-[22px] min-h-[64px] border-white/8 shadow-lg hover:border-white/12 hover:bg-[#161619]'
+                    ? 'rounded-xl min-h-[140px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
+                    : 'rounded-xl min-h-[60px] border-white/10 shadow-sm hover:border-white/20 hover:bg-[#18181b]'
             )}
             onClick={() => {
                 if (!isFocused) {
@@ -198,7 +237,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         >
             <div className={twMerge(
                 "w-full transition-all duration-200 ease-out",
-                isExpanded ? 'p-5 pb-2' : 'p-3 px-4'
+                isExpanded ? 'p-3 pb-2' : 'p-3 px-4'
             )}>
                 <textarea
                     ref={textareaRef}
@@ -207,11 +246,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
-                    placeholder={placeholder}
-                    className={twMerge(
-                        "w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-[#52525B] resize-none font-normal leading-relaxed transition-all duration-200",
-                        isExpanded ? 'text-[16px]' : 'text-[15px]'
-                    )}
+                    placeholder={effectivePlaceholder}
+                    className="w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30 text-[15px]"
                     rows={1}
                     style={{
                         height: isExpanded ? 'auto' : '24px',
@@ -222,64 +258,29 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
             {isExpanded && <div className="flex-1" />}
 
-            {/* Footer Controls - Animated appearance */}
+            {/* Footer Controls */}
             <div className={twMerge(
-                "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out",
-                isExpanded ? 'px-4 pb-4 pt-1 opacity-100' : 'px-3 pb-3 opacity-100'
+                "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out bg-[#141417]/50 rounded-b-xl",
+                isExpanded ? 'px-3 pb-3 pt-2 opacity-100 border-t border-white/5' : 'px-3 pb-3 opacity-100'
             )}>
 
-                {/* Left: Attach, Title & Branch - Hidden when collapsed */}
+                {/* Left: Attach, Branch, Settings */}
                 <div className={twMerge(
                     "flex items-center gap-2 transition-all duration-200 ease-out",
                     isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
                 )}>
+                    {/* Plus Button: Square 1:1, h-6 w-6 */}
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-6 h-6 aspect-square flex-shrink-0 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
-                        <Plus size={16} />
+                        <Plus size={14} />
                     </motion.button>
 
-                    {/* Session Title Toggle/Input */}
-                    {showTitleInput ? (
-                        <div className="flex items-center gap-1.5 bg-[#1f1f23] border border-white/10 rounded-xl px-2.5 py-1.5 h-8">
-                            <Type size={13} className="text-indigo-400 flex-shrink-0" />
-                            <input
-                                ref={titleInputRef}
-                                type="text"
-                                value={sessionTitle}
-                                onChange={(e) => setSessionTitle(e.target.value)}
-                                placeholder="Session title..."
-                                className="bg-transparent border-none outline-none text-xs text-zinc-300 placeholder:text-zinc-600 w-24 sm:w-32 font-mono"
-                                autoFocus
-                            />
-                            <button
-                                onClick={() => { setShowTitleInput(false); setSessionTitle(''); }}
-                                className="text-zinc-500 hover:text-white transition-colors"
-                            >
-                                ×
-                            </button>
-                        </div>
-                    ) : (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowTitleInput(true);
-                            }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-400 hover:text-white transition-all duration-150 h-8"
-                            title="Add session title"
-                        >
-                            <Type size={13} className="text-zinc-500" />
-                            <span className="hidden sm:inline">Title</span>
-                        </motion.button>
-                    )}
-
                     {/* Branch Selector Pill */}
-                    <div className="relative branch-menu-trigger">
+                    <div ref={branchTriggerRef} className="relative branch-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -287,22 +288,30 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-xl text-xs font-mono text-zinc-300 hover:text-white transition-all duration-150 h-8"
+                            style={{ maxWidth: BRANCH_BUTTON_MAX_WIDTH }}
+                            className="flex items-center gap-1.5 px-2 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6"
                         >
-                            <GitBranch size={13} className="text-indigo-400 flex-shrink-0" />
-                            <span className="max-w-[70px] sm:max-w-[100px] truncate">{selectedBranch}</span>
-                            <ChevronDown size={11} className="text-zinc-500 flex-shrink-0" />
+                            <GitBranch size={11} className="text-indigo-400 flex-shrink-0" />
+                            <span className="truncate">{selectedBranch}</span>
+                            <ChevronDown size={10} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
 
                         <AnimatePresence>
                             {isBranchMenuOpen && (
                                 <motion.div
+                                    ref={branchMenuRef}
                                     initial={{ opacity: 0, y: -8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
+                                    style={{
+                                        position: 'fixed',
+                                        top: branchMenuPos.top,
+                                        left: branchMenuPos.left,
+                                        transformOrigin: branchMenuPos.transformOrigin
+                                    }}
+                                    className="branch-menu-dropdown w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
                                 >
                                     <div className="p-2 border-b border-white/5 bg-[#0e0e11]">
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
@@ -339,16 +348,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
-                </div>
 
-                {/* Right: Mode & Send */}
-                <div className="flex items-center gap-2">
-
-                    {/* Mode Menu Trigger - Hidden when collapsed */}
-                    <div className={twMerge(
-                        "relative mode-menu-trigger transition-all duration-200 ease-out",
-                        isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'
-                    )}>
+                    {/* Tools/Settings Button: Square 1:1, h-6 w-6, Center content */}
+                    <div ref={modeTriggerRef} className="relative mode-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -357,56 +359,80 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl transition-all duration-150 border h-8",
-                                isModeMenuOpen
+                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
+                                isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
                             )}
+                            title="Session Settings"
                         >
-                            <Rocket size={14} className={selectedMode === 'START' ? 'text-indigo-400' : ''} />
-                            <ChevronUp size={12} className={`transition-transform duration-150 text-zinc-500 ${isModeMenuOpen ? 'rotate-180' : ''}`} />
+                            <Settings2 size={12} className={sessionTitle ? 'text-indigo-400' : ''} />
                         </motion.button>
 
                         <AnimatePresence>
                             {isModeMenuOpen && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: -8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -8 }}
+                                    ref={modeMenuRef}
+                                    initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[280px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80"
+                                    style={{
+                                        position: 'fixed',
+                                        top: modeMenuPos.top,
+                                        left: modeMenuPos.left,
+                                        transformOrigin: modeMenuPos.transformOrigin
+                                    }}
+                                    className="mode-menu-dropdown w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
-                                    <div className="p-1.5 space-y-0.5">
+                                    {/* Section 1: Title Input */}
+                                    <div className="p-3 border-b border-white/5">
+                                        <label className="text-[10px] uppercase font-bold text-zinc-500 mb-1.5 block tracking-wider">Session Title</label>
+                                        <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500/30 transition-colors">
+                                            <Type size={12} className="text-zinc-500" />
+                                            <input
+                                                type="text"
+                                                value={sessionTitle}
+                                                onChange={(e) => setSessionTitle(e.target.value)}
+                                                placeholder="Optional title..."
+                                                className="bg-transparent border-none outline-none text-xs text-white placeholder:text-zinc-600 w-full"
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Section 2: Mode Selection */}
+                                    <div className="p-1.5 space-y-0.5 max-h-[240px] overflow-y-auto">
+                                        <div className="px-2 py-1.5">
+                                            <label className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Session Mode</label>
+                                        </div>
                                         {['START', 'SCHEDULED', 'INTERACTIVE', 'REVIEW'].map((mode) => (
                                             <button
                                                 key={mode}
                                                 onClick={() => { setSelectedMode(mode as SessionMode); setIsModeMenuOpen(false); }}
-                                                className="w-full text-left p-2.5 rounded-lg hover:bg-white/5 group transition-colors flex items-start gap-3 min-h-[40px]"
+                                                className={twMerge(
+                                                    "w-full text-left p-2 rounded-lg group transition-colors flex items-start gap-3 min-h-[36px]",
+                                                    selectedMode === mode ? 'bg-indigo-500/10' : 'hover:bg-white/5'
+                                                )}
                                             >
-                                                <div className="mt-0.5 text-zinc-400 group-hover:text-white transition-colors">
-                                                    {mode === 'START' && <Rocket size={16} />}
-                                                    {mode === 'SCHEDULED' && <Clock size={16} />}
-                                                    {mode === 'INTERACTIVE' && <MessageSquare size={16} />}
-                                                    {mode === 'REVIEW' && <FileSearch size={16} />}
+                                                <div className={twMerge("mt-0.5 transition-colors", selectedMode === mode ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300')}>
+                                                    {mode === 'START' && <Rocket size={14} />}
+                                                    {mode === 'SCHEDULED' && <Clock size={14} />}
+                                                    {mode === 'INTERACTIVE' && <MessageSquare size={14} />}
+                                                    {mode === 'REVIEW' && <FileSearch size={14} />}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-[13px] font-medium text-white">
+                                                        <span className={twMerge("text-[12px] font-medium", selectedMode === mode ? 'text-indigo-200' : 'text-zinc-300')}>
                                                             {mode === 'START' ? 'Start immediately' :
                                                                 mode === 'SCHEDULED' ? 'Scheduled task' :
                                                                     mode === 'INTERACTIVE' ? 'Interactive plan' : 'Review plan'}
                                                         </span>
                                                         {mode === 'SCHEDULED' && <span className="text-[9px] font-bold bg-[#6366F1]/20 text-[#818CF8] px-1.5 py-0.5 rounded tracking-wide">NEW</span>}
                                                     </div>
-                                                    <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
-                                                        {mode === 'START' ? 'Begin execution without approval.' :
-                                                            mode === 'SCHEDULED' ? "Delegate work while you're away." :
-                                                                mode === 'INTERACTIVE' ? 'Discuss goals before executing.' :
-                                                                    'Generate plan and wait for approval.'}
-                                                    </p>
                                                 </div>
-                                                {selectedMode === mode && <Check size={14} className="text-indigo-400 mt-1" />}
+                                                {selectedMode === mode && <Check size={12} className="text-indigo-400 mt-1" />}
                                             </button>
                                         ))}
                                     </div>
@@ -415,28 +441,31 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         </AnimatePresence>
                     </div>
 
-                    {/* Send Button - Always visible */}
-                    <motion.button
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleSubmit();
-                        }}
-                        disabled={!input.trim() || isLoading}
-                        className={twMerge(
-                            "w-8 h-8 flex items-center justify-center rounded-full transition-all duration-150 flex-shrink-0",
-                            input.trim()
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
-                                : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
-                        )}
-                    >
-                        {isLoading ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <ArrowRight size={16} />
-                        )}
-                    </motion.button>
+                    {/* Right: Send Button - Square 1:1, w-6 h-6 */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <motion.button
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.92 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSubmit();
+                            }}
+                            disabled={!input.trim() || isLoading}
+                            aria-label="Send message"
+                            className={twMerge(
+                                "w-6 h-6 aspect-square flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                                input.trim()
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
+                                    : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
+                            )}
+                        >
+                            {isLoading ? (
+                                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <ArrowRight size={14} />
+                            )}
+                        </motion.button>
+                    </div>
                 </div>
             </div>
         </div>

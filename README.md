@@ -65,4 +65,12 @@ Contributions are welcome! Feel free to open an issue or submit a pull request.
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the [Apache License 2.0](LICENSE).
+
+## ⚖️ Legal Disclaimer
+
+This project is an independent open-source interface and is **not affiliated with, endorsed by, or maintained by Google**.
+
+- This software is a wrapper around Google-provided tools and APIs.
+- The use of Google APIs is governed by [Google’s Terms of Service](https://policies.google.com/terms) and [Google AI Generative Terms of Service](https://policies.google.com/terms/generative-ai).
+- No ownership is claimed over the underlying Google technologies.

@@ -57,6 +57,7 @@ export interface JulesSession {
     title?: string;
     prompt: string;
     state: SessionState;
+    priority?: number;
     createTime: string;
     updateTime?: string;
     // Additional API fields

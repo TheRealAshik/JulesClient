@@ -1,33 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock } from 'lucide-react';
+import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2 } from 'lucide-react';
 import { JulesSession, JulesSource, formatRelativeTime } from '../types';
-
-// Helper to get session status icon with appropriate styling
-const getSessionStatusIcon = (state?: JulesSession['state'], isActive?: boolean) => {
-    const baseClass = "flex-shrink-0 transition-colors";
-    const activeColor = "text-indigo-400";
-    const inactiveColor = "text-zinc-600 group-hover:text-zinc-500";
-
-    switch (state) {
-        case 'IN_PROGRESS':
-        case 'PLANNING':
-            return <Loader2 size={16} className={`${baseClass} text-blue-400 animate-spin`} />;
-        case 'QUEUED':
-            return <Clock size={16} className={`${baseClass} text-yellow-500`} />;
-        case 'AWAITING_PLAN_APPROVAL':
-        case 'AWAITING_USER_FEEDBACK':
-            return <MessageCircle size={16} className={`${baseClass} text-amber-400`} />;
-        case 'PAUSED':
-            return <Pause size={16} className={`${baseClass} text-zinc-400`} />;
-        case 'FAILED':
-            return <XCircle size={16} className={`${baseClass} text-red-500`} />;
-        case 'COMPLETED':
-            return <CheckCircle2 size={16} className={`${baseClass} text-green-500`} />;
-        default:
-            return <AlertCircle size={16} className={`${baseClass} ${isActive ? activeColor : inactiveColor}`} />;
-    }
-};
+import { sortSessions, getSessionDisplayInfo } from '../utils/session';
 
 interface DrawerProps {
     isOpen: boolean;
@@ -38,6 +13,10 @@ interface DrawerProps {
     currentSourceId?: string;
     onSelectSession: (session: JulesSession) => void;
     onSelectSource: (source: JulesSource) => void;
+    onDeleteSession?: (sessionName: string) => void;
+    onUpdateSession?: (sessionName: string, updates: Partial<JulesSession>, updateMask: string[]) => void;
+    sessionsUsed?: number;
+    dailyLimit?: number;
 }
 
 export const Drawer: React.FC<DrawerProps> = ({
@@ -48,18 +27,23 @@ export const Drawer: React.FC<DrawerProps> = ({
     currentSessionId,
     currentSourceId,
     onSelectSession,
-    onSelectSource
+    onSelectSource,
+    onDeleteSession,
+    onUpdateSession,
+    sessionsUsed = 0,
+    dailyLimit = 100
 }) => {
     const [isSessionsOpen, setIsSessionsOpen] = useState(true);
+    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
     const [isCodebasesOpen, setIsCodebasesOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter logic
-    const filteredSessions = sessions.filter(session => {
+    const filteredSessions = sortSessions(sessions.filter(session => {
         const query = searchQuery.toLowerCase();
         return (session.title?.toLowerCase().includes(query) ||
             session.prompt?.toLowerCase().includes(query));
-    });
+    }));
 
     const filteredSources = sources.filter(source => {
         const query = searchQuery.toLowerCase();
@@ -135,31 +119,117 @@ export const Drawer: React.FC<DrawerProps> = ({
                                         {searchQuery ? 'No matching sessions' : 'No recent sessions'}
                                     </div>
                                 )}
-                                {filteredSessions.map((session) => (
-                                    <NavLink
-                                        key={session.name}
-                                        to={`/session/${session.name.replace('sessions/', '')}`}
-                                        onClick={onClose}
-                                        className={({ isActive }) => `
-                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group 
-                                            ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
-                                        `}
-                                    >
-                                        {({ isActive }) => (
-                                            <>
-                                                {getSessionStatusIcon(session.state, isActive)}
-                                                <div className="flex flex-col min-w-0 flex-1">
-                                                    <span className={`text-sm truncate text-left font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
-                                                        {session.title || session.prompt}
-                                                    </span>
-                                                    <span className="text-[10px] text-zinc-600 font-mono">
-                                                        {formatRelativeTime(session.createTime)}
-                                                    </span>
+                                {filteredSessions.map((session) => {
+                                    const displayInfo = getSessionDisplayInfo(session.state);
+                                    return (
+                                        <NavLink
+                                            key={session.name}
+                                            to={`/session/${session.name.replace('sessions/', '')}`}
+                                            onClick={onClose}
+                                            className={({ isActive }) => `
+                                                w-full flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors group
+                                                ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
+                                            `}
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    <div className={`mt-0.5 text-base ${displayInfo.shimmer ? 'animate-pulse' : ''}`}>
+                                                        {displayInfo.emoji}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                                                        <span className={`text-sm truncate text-left font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                                                            {session.title || session.prompt}
+                                                        </span>
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-[10px] font-medium ${isActive ? 'text-indigo-300' : 'text-zinc-400'}`}>
+                                                                {displayInfo.label}
+                                                            </span>
+                                                            <span className="text-[10px] text-zinc-600 truncate">
+                                                                {displayInfo.helperText}
+                                                            </span>
+                                                            {displayInfo.cta !== 'none' && (
+                                                                <span className="text-[10px] text-indigo-400 font-bold mt-0.5 uppercase tracking-wide">
+                                                                    {displayInfo.cta} →
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Context Menu Button */}
+                                                    <div className="relative self-center">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setMenuOpenId(menuOpenId === session.name ? null : session.name);
+                                                        }}
+                                                        className={`p-1.5 rounded-md transition-all ${menuOpenId === session.name ? 'opacity-100 bg-white/10 text-white' : 'opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-white hover:bg-white/10'}`}
+                                                    >
+                                                        <MoreHorizontal size={16} />
+                                                    </button>
+
+                                                    {/* Dropdown Menu */}
+                                                    {menuOpenId === session.name && (
+                                                        <>
+                                                            <div
+                                                                className="fixed inset-0 z-40 bg-transparent"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setMenuOpenId(null);
+                                                                }}
+                                                            />
+                                                            <div className="absolute right-0 top-full mt-1 w-32 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                                                {(session.state === 'IN_PROGRESS' || session.state === 'PLANNING') && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            onUpdateSession?.(session.name, { state: 'PAUSED' }, ['state']);
+                                                                            setMenuOpenId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                                                                    >
+                                                                        <Pause size={12} /> Pause
+                                                                    </button>
+                                                                )}
+
+                                                                {session.state === 'PAUSED' && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            onUpdateSession?.(session.name, { state: 'IN_PROGRESS' }, ['state']);
+                                                                            setMenuOpenId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                                                                    >
+                                                                        <Loader2 size={12} /> Resume
+                                                                    </button>
+                                                                )}
+
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        if (window.confirm('Are you sure you want to delete this session?')) {
+                                                                            onDeleteSession?.(session.name);
+                                                                        }
+                                                                        setMenuOpenId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2"
+                                                                >
+                                                                    <Trash2 size={12} /> Delete
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </>
                                         )}
-                                    </NavLink>
-                                ))}
+                                        </NavLink>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -233,10 +303,13 @@ export const Drawer: React.FC<DrawerProps> = ({
                 <div className="p-4 border-t border-white/5 bg-[#0E0E11]">
                     <div className="mb-4">
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-xs text-zinc-500">Daily session limit (12/100)</span>
+                            <span className="text-xs text-zinc-500">Daily session limit ({sessionsUsed}/{dailyLimit})</span>
                         </div>
                         <div className="h-1 bg-zinc-800 rounded-full overflow-hidden w-full">
-                            <div className="h-full bg-[#3F3F46] w-[12%] rounded-full" />
+                            <div
+                                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, (sessionsUsed / dailyLimit) * 100)}%` }}
+                            />
                         </div>
                     </div>
 
