@@ -28,7 +28,8 @@ export default function App() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     // Polling ref
-    const pollInterval = useRef<number | null>(null);
+    const pollTimeout = useRef<number | null>(null);
+    const activePollingSession = useRef<string | null>(null);
     const activitiesRef = useRef<JulesActivity[]>([]);
 
     useEffect(() => {
@@ -114,48 +115,61 @@ export default function App() {
     };
 
     const startPolling = useCallback((sessionName: string) => {
-        if (pollInterval.current) clearInterval(pollInterval.current);
+        if (pollTimeout.current) clearTimeout(pollTimeout.current);
+        activePollingSession.current = sessionName;
 
-        // Immediate fetch
-        JulesApi.listActivities(sessionName).then(response => {
-            activitiesRef.current = response.activities;
-            setActivities(response.activities);
-        });
+        const poll = async () => {
+            if (activePollingSession.current !== sessionName) return;
 
-        // Poll every 2s
-        pollInterval.current = window.setInterval(async () => {
-            const response = await JulesApi.listActivities(sessionName);
+            try {
+                const response = await JulesApi.listActivities(sessionName);
+                if (activePollingSession.current !== sessionName) return;
 
-            // Only update activities if they've changed (compare by length and last item name)
-            const newActivities = response.activities;
-            const prevActivities = activitiesRef.current;
-            const hasChanged =
-                newActivities.length !== prevActivities.length ||
-                (newActivities.length > 0 && prevActivities.length > 0 &&
-                    newActivities[newActivities.length - 1]?.name !== prevActivities[prevActivities.length - 1]?.name);
+                // Only update activities if they've changed (compare by length and last item name)
+                const newActivities = response.activities;
+                const prevActivities = activitiesRef.current;
+                const hasChanged =
+                    newActivities.length !== prevActivities.length ||
+                    (newActivities.length > 0 && prevActivities.length > 0 &&
+                        newActivities[newActivities.length - 1]?.name !== prevActivities[prevActivities.length - 1]?.name);
 
-            if (hasChanged) {
-                activitiesRef.current = newActivities;
-                setActivities(newActivities);
-            }
-
-            // Also check session status for outputs and state
-            const sess = await JulesApi.getSession(sessionName);
-            setCurrentSession(prev => {
-                // Only update if state has changed to avoid unnecessary re-renders
-                if (!prev || prev.state !== sess.state || prev.outputs?.length !== sess.outputs?.length) {
-                    return sess;
+                if (hasChanged) {
+                    activitiesRef.current = newActivities;
+                    setActivities(newActivities);
                 }
-                return prev;
-            });
 
-            // Use API state to determine if processing
-            // Active states: QUEUED, PLANNING, IN_PROGRESS
-            // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
-            // Terminal states: COMPLETED, FAILED
-            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
-            setIsProcessing(isActive);
-        }, 2000);
+                // Also check session status for outputs and state
+                const sess = await JulesApi.getSession(sessionName);
+                if (activePollingSession.current !== sessionName) return;
+
+                setCurrentSession(prev => {
+                    // Only update if state has changed to avoid unnecessary re-renders
+                    if (!prev || prev.state !== sess.state || prev.outputs?.length !== sess.outputs?.length) {
+                        return sess;
+                    }
+                    return prev;
+                });
+
+                // Use API state to determine if processing
+                // Active states: QUEUED, PLANNING, IN_PROGRESS
+                // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
+                // Terminal states: COMPLETED, FAILED
+                const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+                setIsProcessing(isActive);
+
+                if (activePollingSession.current === sessionName) {
+                    pollTimeout.current = window.setTimeout(poll, 2000);
+                }
+            } catch (e) {
+                console.error("Polling error", e);
+                // Retry on error
+                if (activePollingSession.current === sessionName) {
+                    pollTimeout.current = window.setTimeout(poll, 2000);
+                }
+            }
+        };
+
+        poll();
     }, []);
 
     const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
@@ -248,7 +262,8 @@ export default function App() {
     // Cleanup polling on unmount or session switch
     useEffect(() => {
         return () => {
-            if (pollInterval.current) clearInterval(pollInterval.current);
+            activePollingSession.current = null;
+            if (pollTimeout.current) clearTimeout(pollTimeout.current);
         };
     }, []);
 
