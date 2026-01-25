@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import dev.therealashik.client.jules.model.JulesSession
+import dev.therealashik.client.jules.model.SessionState
 import dev.therealashik.client.jules.ui.JulesSurface
 
 @Composable
@@ -24,12 +25,10 @@ fun Drawer(
     sessions: List<JulesSession>,
     currentSessionId: String?,
     onSelectSession: (JulesSession) -> Unit,
-    onDeleteSession: (String) -> Unit
+    onDeleteSession: (String) -> Unit,
+    sessionsUsed: Int,
+    dailyLimit: Int
 ) {
-    // Determine screen width based on platform logic in the parent or use Box constraints
-    // For simplicity, we'll assume a fixed width overlay or standard ModalDrawerSheet behavior if using Material3 ModalNavigationDrawer
-    
-    // Simplistic Overlay implementation
     if (isOpen) {
         Box(
             modifier = Modifier
@@ -43,7 +42,7 @@ fun Drawer(
                     .fillMaxHeight()
                     .width(300.dp)
                     .background(JulesSurface)
-                    .clickable(enabled = false) {} // Prevent click through
+                    .clickable(enabled = false) {}
                     .padding(16.dp)
             ) {
                 Text(
@@ -53,6 +52,23 @@ fun Drawer(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
+                // Usage Progress
+                Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Daily Limit", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text("$sessionsUsed / $dailyLimit", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { sessionsUsed.toFloat() / dailyLimit.coerceAtLeast(1) },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (sessionsUsed >= dailyLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                }
+
                 LazyColumn(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -94,7 +110,7 @@ fun SessionItem(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = session.name.replace("sessions/", ""), // Simplified name display
+                text = session.title ?: session.name.replace("sessions/", ""),
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -102,7 +118,7 @@ fun SessionItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = session.state,
+                text = session.state.name,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )

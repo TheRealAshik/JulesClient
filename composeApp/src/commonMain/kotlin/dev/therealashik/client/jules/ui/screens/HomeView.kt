@@ -11,15 +11,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.therealashik.client.jules.model.AutomationMode
 import dev.therealashik.client.jules.model.JulesSource
-import dev.therealashik.client.jules.model.SessionConfig
+import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesSurface
 
 @Composable
 fun HomeView(
     currentSource: JulesSource?,
-    onSendMessage: (String, SessionConfig) -> Unit,
+    onSendMessage: (String, CreateSessionConfig) -> Unit,
     isProcessing: Boolean
 ) {
     var inputText by remember { mutableStateOf("") }
@@ -84,11 +85,11 @@ fun HomeView(
                         Button(
                             onClick = {
                                 if (inputText.isNotBlank() && currentSource != null) {
-                                    val config = SessionConfig(
+                                    val config = CreateSessionConfig(
                                         title = null,
                                         requirePlanApproval = false,
                                         startingBranch = "main",
-                                        automationMode = "AUTO_CREATE_PR"
+                                        automationMode = AutomationMode.AUTO_CREATE_PR
                                     )
                                     onSendMessage(inputText, config)
                                 }
