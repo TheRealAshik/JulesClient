@@ -2,32 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2 } from 'lucide-react';
 import { JulesSession, JulesSource, formatRelativeTime } from '../types';
-
-// Helper to get session status icon with appropriate styling
-const getSessionStatusIcon = (state?: JulesSession['state'], isActive?: boolean) => {
-    const baseClass = "flex-shrink-0 transition-colors";
-    const activeColor = "text-indigo-400";
-    const inactiveColor = "text-zinc-600 group-hover:text-zinc-500";
-
-    switch (state) {
-        case 'IN_PROGRESS':
-        case 'PLANNING':
-            return <Loader2 size={16} className={`${baseClass} text-blue-400 animate-spin`} />;
-        case 'QUEUED':
-            return <Clock size={16} className={`${baseClass} text-yellow-500`} />;
-        case 'AWAITING_PLAN_APPROVAL':
-        case 'AWAITING_USER_FEEDBACK':
-            return <MessageCircle size={16} className={`${baseClass} text-amber-400`} />;
-        case 'PAUSED':
-            return <Pause size={16} className={`${baseClass} text-zinc-400`} />;
-        case 'FAILED':
-            return <XCircle size={16} className={`${baseClass} text-red-500`} />;
-        case 'COMPLETED':
-            return <CheckCircle2 size={16} className={`${baseClass} text-green-500`} />;
-        default:
-            return <AlertCircle size={16} className={`${baseClass} ${isActive ? activeColor : inactiveColor}`} />;
-    }
-};
+import { sortSessions, getSessionDisplayInfo } from '../utils/session';
 
 interface DrawerProps {
     isOpen: boolean;
@@ -64,11 +39,11 @@ export const Drawer: React.FC<DrawerProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter logic
-    const filteredSessions = sessions.filter(session => {
+    const filteredSessions = sortSessions(sessions.filter(session => {
         const query = searchQuery.toLowerCase();
         return (session.title?.toLowerCase().includes(query) ||
             session.prompt?.toLowerCase().includes(query));
-    });
+    }));
 
     const filteredSources = sources.filter(source => {
         const query = searchQuery.toLowerCase();
@@ -144,33 +119,47 @@ export const Drawer: React.FC<DrawerProps> = ({
                                         {searchQuery ? 'No matching sessions' : 'No recent sessions'}
                                     </div>
                                 )}
-                                {filteredSessions.map((session) => (
-                                    <NavLink
-                                        key={session.name}
-                                        to={`/session/${session.name.replace('sessions/', '')}`}
-                                        onClick={onClose}
-                                        className={({ isActive }) => `
-                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group 
-                                            ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
-                                        `}
-                                    >
-                                        {({ isActive }) => (
-                                            <>
-                                                {getSessionStatusIcon(session.state, isActive)}
-                                                <div className="flex flex-col min-w-0 flex-1">
-                                                    <span className={`text-sm truncate text-left font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
-                                                        {session.title || session.prompt}
-                                                    </span>
-                                                    <span className="text-[10px] text-zinc-600 font-mono">
-                                                        {formatRelativeTime(session.createTime)}
-                                                    </span>
-                                                </div>
+                                {filteredSessions.map((session) => {
+                                    const displayInfo = getSessionDisplayInfo(session.state);
+                                    return (
+                                        <NavLink
+                                            key={session.name}
+                                            to={`/session/${session.name.replace('sessions/', '')}`}
+                                            onClick={onClose}
+                                            className={({ isActive }) => `
+                                                w-full flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors group
+                                                ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
+                                            `}
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    <div className={`mt-0.5 text-base ${displayInfo.shimmer ? 'animate-pulse' : ''}`}>
+                                                        {displayInfo.emoji}
+                                                    </div>
+                                                    <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                                                        <span className={`text-sm truncate text-left font-light ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                                                            {session.title || session.prompt}
+                                                        </span>
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-[10px] font-medium ${isActive ? 'text-indigo-300' : 'text-zinc-400'}`}>
+                                                                {displayInfo.label}
+                                                            </span>
+                                                            <span className="text-[10px] text-zinc-600 truncate">
+                                                                {displayInfo.helperText}
+                                                            </span>
+                                                            {displayInfo.cta !== 'none' && (
+                                                                <span className="text-[10px] text-indigo-400 font-bold mt-0.5 uppercase tracking-wide">
+                                                                    {displayInfo.cta} →
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
 
-                                                {/* Context Menu Button */}
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
+                                                    {/* Context Menu Button */}
+                                                    <div className="relative self-center">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
                                                             e.stopPropagation();
                                                             setMenuOpenId(menuOpenId === session.name ? null : session.name);
                                                         }}
@@ -238,8 +227,9 @@ export const Drawer: React.FC<DrawerProps> = ({
                                                 </div>
                                             </>
                                         )}
-                                    </NavLink>
-                                ))}
+                                        </NavLink>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
