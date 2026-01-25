@@ -227,7 +227,7 @@ class SharedViewModel : ViewModel() {
             return sessions.size
         }
         */
-        return sessions.size // Fallback to avoid compilation error with Clock.System
+        return sessions.size
     }
 
     private fun stopPolling() {

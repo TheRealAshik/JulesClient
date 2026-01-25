@@ -11,6 +11,7 @@ import dev.therealashik.client.jules.ui.LoginScreen
 import dev.therealashik.client.jules.ui.components.Drawer
 import dev.therealashik.client.jules.ui.components.Header
 import dev.therealashik.client.jules.ui.screens.HomeView
+import dev.therealashik.client.jules.ui.screens.RepositoryView
 import dev.therealashik.client.jules.ui.screens.SessionView
 import dev.therealashik.client.jules.viewmodel.Screen
 import dev.therealashik.client.jules.viewmodel.SharedViewModel
@@ -83,15 +84,19 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                         }
                     }
                     is Screen.Repository -> {
-                        // TODO: Implement RepositoryView
-                        // For now show Home or a Placeholder
-                        HomeView(
-                            currentSource = state.currentSource,
-                            onSendMessage = { text, config ->
-                                viewModel.createSession(text, config)
-                            },
-                            isProcessing = state.isProcessing
-                        )
+                        if (state.currentSource != null) {
+                            RepositoryView(
+                                source = state.currentSource!!,
+                                onStartNewSession = { viewModel.navigateBack() } // Going back to Home triggers new session flow UI
+                            )
+                        } else {
+                            // Should not happen, fallback to Home
+                            HomeView(
+                                currentSource = null,
+                                onSendMessage = { text, config -> viewModel.createSession(text, config) },
+                                isProcessing = state.isProcessing
+                            )
+                        }
                     }
                 }
             }
