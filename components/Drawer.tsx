@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2 } from 'lucide-react';
+import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock } from 'lucide-react';
 import { JulesSession, JulesSource, formatRelativeTime } from '../types';
 
 // Helper to get session status icon with appropriate styling
@@ -38,10 +38,6 @@ interface DrawerProps {
     currentSourceId?: string;
     onSelectSession: (session: JulesSession) => void;
     onSelectSource: (source: JulesSource) => void;
-    onDeleteSession?: (sessionName: string) => void;
-    onUpdateSession?: (sessionName: string, updates: Partial<JulesSession>, updateMask: string[]) => void;
-    sessionsUsed?: number;
-    dailyLimit?: number;
 }
 
 export const Drawer: React.FC<DrawerProps> = ({
@@ -52,14 +48,9 @@ export const Drawer: React.FC<DrawerProps> = ({
     currentSessionId,
     currentSourceId,
     onSelectSession,
-    onSelectSource,
-    onDeleteSession,
-    onUpdateSession,
-    sessionsUsed = 0,
-    dailyLimit = 100
+    onSelectSource
 }) => {
     const [isSessionsOpen, setIsSessionsOpen] = useState(true);
-    const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
     const [isCodebasesOpen, setIsCodebasesOpen] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -165,77 +156,6 @@ export const Drawer: React.FC<DrawerProps> = ({
                                                         {formatRelativeTime(session.createTime)}
                                                     </span>
                                                 </div>
-
-                                                {/* Context Menu Button */}
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            setMenuOpenId(menuOpenId === session.name ? null : session.name);
-                                                        }}
-                                                        className={`p-1.5 rounded-md transition-all ${menuOpenId === session.name ? 'opacity-100 bg-white/10 text-white' : 'opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-white hover:bg-white/10'}`}
-                                                    >
-                                                        <MoreHorizontal size={16} />
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    {menuOpenId === session.name && (
-                                                        <>
-                                                            <div
-                                                                className="fixed inset-0 z-40 bg-transparent"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    setMenuOpenId(null);
-                                                                }}
-                                                            />
-                                                            <div className="absolute right-0 top-full mt-1 w-32 bg-[#18181b] border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden py-1">
-                                                                {(session.state === 'IN_PROGRESS' || session.state === 'PLANNING') && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            onUpdateSession?.(session.name, { state: 'PAUSED' }, ['state']);
-                                                                            setMenuOpenId(null);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
-                                                                    >
-                                                                        <Pause size={12} /> Pause
-                                                                    </button>
-                                                                )}
-
-                                                                {session.state === 'PAUSED' && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            onUpdateSession?.(session.name, { state: 'IN_PROGRESS' }, ['state']);
-                                                                            setMenuOpenId(null);
-                                                                        }}
-                                                                        className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-2"
-                                                                    >
-                                                                        <Loader2 size={12} /> Resume
-                                                                    </button>
-                                                                )}
-
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        if (window.confirm('Are you sure you want to delete this session?')) {
-                                                                            onDeleteSession?.(session.name);
-                                                                        }
-                                                                        setMenuOpenId(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 flex items-center gap-2"
-                                                                >
-                                                                    <Trash2 size={12} /> Delete
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
                                             </>
                                         )}
                                     </NavLink>
@@ -313,13 +233,10 @@ export const Drawer: React.FC<DrawerProps> = ({
                 <div className="p-4 border-t border-white/5 bg-[#0E0E11]">
                     <div className="mb-4">
                         <div className="flex justify-between items-end mb-2">
-                            <span className="text-xs text-zinc-500">Daily session limit ({sessionsUsed}/{dailyLimit})</span>
+                            <span className="text-xs text-zinc-500">Daily session limit (12/100)</span>
                         </div>
                         <div className="h-1 bg-zinc-800 rounded-full overflow-hidden w-full">
-                            <div
-                                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                                style={{ width: `${Math.min(100, (sessionsUsed / dailyLimit) * 100)}%` }}
-                            />
+                            <div className="h-full bg-[#3F3F46] w-[12%] rounded-full" />
                         </div>
                     </div>
 
