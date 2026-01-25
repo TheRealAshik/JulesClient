@@ -547,6 +547,249 @@ PullRequestCard.displayName = 'PullRequestCard';
 
 
 
+const ActivityItem: React.FC<{
+    act: JulesActivity;
+    onApprovePlan: (activityId: string) => void;
+    isApproved: boolean;
+    isCurrentlyActive: boolean;
+}> = memo(({ act, onApprovePlan, isApproved, isCurrentlyActive }) => {
+    const timeString = formatTime(act.createTime);
+    const items: React.ReactNode[] = [];
+
+    // --- 0. System Messages ---
+    if (act.originator === 'system' && !act.planGenerated && !act.userMessaged && !act.agentMessaged && act.description) {
+        items.push(
+            <div
+                key="system"
+                className="flex justify-center my-6"
+            >
+                <span className="text-[11px] text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5 font-medium tracking-wide text-center">
+                    {act.description}
+                </span>
+            </div>
+        );
+    }
+
+    // --- 1. User Message ---
+    if (act.userMessaged || act.userMessage) {
+        const userText = getTextContent(act.userMessaged || act.userMessage);
+        if (userText) {
+            items.push(<UserMessageBubble key="user" text={userText} time={timeString} />);
+        }
+    }
+
+    // --- 2. Agent Message ---
+    if (act.agentMessaged || act.agentMessage) {
+        const agentText = getTextContent(act.agentMessaged || act.agentMessage) || "Thinking...";
+        items.push(
+            <div
+                key="agent"
+                className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
+            >
+                <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
+                    <Bot size={18} className="text-indigo-400" />
+                </div>
+                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
+                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={MarkdownComponents}
+                        >
+                            {agentText}
+                        </ReactMarkdown>
+                    </div>
+                    {timeString && (
+                        <div className="text-[10px] text-zinc-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+                            Jules • {timeString}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // --- 3. Plan Generated ---
+    if (act.planGenerated) {
+        items.push(
+            <div
+                key="plan"
+                className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+            >
+                <div className="w-8 h-8 flex-shrink-0" />
+                <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
+                    <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
+                        <span className="text-sm font-medium text-white flex items-center gap-2">
+                            <ListTodo size={16} className="text-indigo-400" />
+                            Execution Plan
+                        </span>
+                        <span className="text-xs text-zinc-500 font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                            {act.planGenerated.plan?.steps?.length || 0} steps
+                        </span>
+                    </div>
+                    <div className="p-2 space-y-1">
+                        {act.planGenerated.plan?.steps ? (
+                            act.planGenerated.plan.steps.map((step, i) => (
+                                <PlanStepItem key={i} step={step} index={i} />
+                            ))
+                        ) : (
+                            <div className="p-4 text-sm italic text-zinc-500">Generating plan details...</div>
+                        )}
+                    </div>
+                    <div className="p-4 bg-black/20 border-t border-white/5 flex justify-between items-center gap-4">
+                        <span className="text-xs text-zinc-500 hidden sm:block">Review the plan before continuing.</span>
+                        <div className="ml-auto w-full sm:w-auto">
+                            {isApproved ? (
+                                <div className="flex justify-center sm:justify-end">
+                                    <span className="flex items-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                                        <Check size={12} /> Plan approved
+                                    </span>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => onApprovePlan(act.name)}
+                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/25 active:scale-95"
+                                >
+                                    Start Coding <ChevronRight size={14} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- 4. Artifacts ---
+    if (act.artifacts && act.artifacts.length > 0) {
+        act.artifacts.forEach((artifact, i) => {
+            if (artifact.bashOutput) {
+                items.push(
+                    <div
+                        key={`art-${i}-bash`}
+                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+                    >
+                        <div className="w-8 h-8 flex-shrink-0" />
+                        <CommandArtifact
+                            command={artifact.bashOutput.command}
+                            output={artifact.bashOutput.output}
+                            exitCode={artifact.bashOutput.exitCode}
+                        />
+                    </div>
+                );
+            }
+
+            if (artifact.media) {
+                items.push(
+                    <div
+                        key={`art-${i}-media`}
+                        className="flex gap-3 sm:gap-5 justify-start"
+                    >
+                        <div className="w-8 h-8 flex-shrink-0" />
+                        <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
+                            <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
+                                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                                    <ImageIcon size={12} />
+                                    <span>Generated Artifact</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <a
+                                        href={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
+                                        download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
+                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
+                                        title="Download"
+                                    >
+                                        <Download size={14} />
+                                    </a>
+                                    <a
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const win = window.open();
+                                            win?.document.write(
+                                                `<iframe src="data:${artifact.media.mimeType};base64,${artifact.media.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+                                            );
+                                        }}
+                                        href="#"
+                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
+                                        title="Open in new window"
+                                    >
+                                        <ExternalLink size={14} />
+                                    </a>
+                                </div>
+                            </div>
+                            <div className="relative bg-[#18181b] flex justify-center p-2">
+                                <img
+                                    src={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
+                                    alt="Jules generated artifact"
+                                    className="w-full h-auto object-contain max-h-[400px]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (artifact.changeSet) {
+                items.push(
+                    <div
+                        key={`art-${i}-diff`}
+                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
+                    >
+                        <div className="w-8 h-8 flex-shrink-0" />
+                        <CodeChangeArtifact changeSet={artifact.changeSet} />
+                    </div>
+                );
+            }
+        });
+    }
+
+    // --- 5. Progress Updates ---
+    if (act.progressUpdated) {
+        const progress = act.progressUpdated;
+        const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || "Processing";
+        const description = progress.description || progress.progress_description || progress.text || progress.message;
+        const cleanTitle = title.trim().toLowerCase();
+        const cleanDesc = description ? description.trim().toLowerCase() : "";
+        const isRedundant = !description || cleanTitle === cleanDesc || cleanTitle.includes(cleanDesc);
+
+        items.push(
+            <div key="progress" className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
+                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
+                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
+                    <Loader2
+                        size={14}
+                        className={twMerge(
+                            "text-indigo-500 flex-shrink-0",
+                            isCurrentlyActive && "animate-spin"
+                        )}
+                    />
+                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
+                        <span className="font-medium text-zinc-300 transition-colors truncate">
+                            {title}
+                        </span>
+                        {!isRedundant && (
+                            <span className="text-zinc-500 font-sans truncate text-[10px] mt-0.5 opacity-80">{description}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- 6. Session Completed ---
+    if (act.sessionCompleted) {
+        items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
+    }
+
+    // --- 7. Session Failed ---
+    if (act.sessionFailed) {
+        items.push(<CompactSessionFailed key="failed" reason={act.sessionFailed.reason} />);
+    }
+
+    if (items.length === 0) return null;
+    return <React.Fragment>{items}</React.Fragment>;
+});
+ActivityItem.displayName = 'ActivityItem';
+
 export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStreaming, onApprovePlan, sessionOutputs, sessionPrompt, sessionCreateTime }) => {
     // Memoize the expensive initial prompt check
     const hasInitialPromptInActivities = useMemo(() => {
@@ -570,249 +813,23 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                     />
                 )}
 
-                {activities.map((act) => {
-                    const timeString = formatTime(act.createTime);
-                    const items: React.ReactNode[] = [];
+                {activities.map((act, index) => {
+                    const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
+                    const activitiesAfter = activities.slice(index + 1);
+                    const isCurrentlyActive = !activitiesAfter.some(a =>
+                        a.progressUpdated || a.agentMessage || a.agentMessaged ||
+                        a.planGenerated || a.sessionCompleted || a.sessionFailed
+                    );
 
-                    // --- 0. System Messages ---
-                    if (act.originator === 'system' && !act.planGenerated && !act.userMessaged && !act.agentMessaged && act.description) {
-                        items.push(
-                            <div
-                                key="system"
-                                className="flex justify-center my-6"
-                            >
-                                <span className="text-[11px] text-zinc-500 bg-white/5 px-3 py-1 rounded-full border border-white/5 font-medium tracking-wide text-center">
-                                    {act.description}
-                                </span>
-                            </div>
-                        );
-                    }
-
-                    // --- 1. User Message ---
-                    if (act.userMessaged || act.userMessage) {
-                        const userText = getTextContent(act.userMessaged || act.userMessage);
-                        if (userText) {
-                            items.push(<UserMessageBubble key="user" text={userText} time={timeString} />);
-                        }
-                    }
-
-                    // --- 2. Agent Message ---
-                    if (act.agentMessaged || act.agentMessage) {
-                        const agentText = getTextContent(act.agentMessaged || act.agentMessage) || "Thinking...";
-                        items.push(
-                            <div
-                                key="agent"
-                                className="flex gap-3 sm:gap-5 justify-start group w-full overflow-hidden"
-                            >
-                                <div className="w-8 h-8 rounded-full bg-[#18181B] flex-shrink-0 flex items-center justify-center border border-white/10 mt-1 shadow-sm">
-                                    <Bot size={18} className="text-indigo-400" />
-                                </div>
-                                <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
-                                    <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            components={MarkdownComponents}
-                                        >
-                                            {agentText}
-                                        </ReactMarkdown>
-                                    </div>
-                                    {timeString && (
-                                        <div className="text-[10px] text-zinc-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity">
-                                            Jules • {timeString}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    // --- 3. Plan Generated ---
-                    if (act.planGenerated) {
-                        const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
-                        items.push(
-                            <div
-                                key="plan"
-                                className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                            >
-                                <div className="w-8 h-8 flex-shrink-0" />
-                                <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl bg-[#121215] border border-white/10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/5">
-                                    <div className="bg-[#18181B] px-5 py-3 border-b border-white/5 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-white flex items-center gap-2">
-                                            <ListTodo size={16} className="text-indigo-400" />
-                                            Execution Plan
-                                        </span>
-                                        <span className="text-xs text-zinc-500 font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                                            {act.planGenerated.plan?.steps?.length || 0} steps
-                                        </span>
-                                    </div>
-                                    <div className="p-2 space-y-1">
-                                        {act.planGenerated.plan?.steps ? (
-                                            act.planGenerated.plan.steps.map((step, i) => (
-                                                <PlanStepItem key={i} step={step} index={i} />
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-sm italic text-zinc-500">Generating plan details...</div>
-                                        )}
-                                    </div>
-                                    <div className="p-4 bg-black/20 border-t border-white/5 flex justify-between items-center gap-4">
-                                        <span className="text-xs text-zinc-500 hidden sm:block">Review the plan before continuing.</span>
-                                        <div className="ml-auto w-full sm:w-auto">
-                                            {isApproved ? (
-                                                <div className="flex justify-center sm:justify-end">
-                                                    <span className="flex items-center gap-2 text-xs font-medium text-green-400 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
-                                                        <Check size={12} /> Plan approved
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => onApprovePlan(act.name)}
-                                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/25 active:scale-95"
-                                                >
-                                                    Start Coding <ChevronRight size={14} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    // --- 4. Artifacts ---
-                    if (act.artifacts && act.artifacts.length > 0) {
-                        act.artifacts.forEach((artifact, i) => {
-                            if (artifact.bashOutput) {
-                                items.push(
-                                    <div
-                                        key={`art-${i}-bash`}
-                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <CommandArtifact
-                                            command={artifact.bashOutput.command}
-                                            output={artifact.bashOutput.output}
-                                            exitCode={artifact.bashOutput.exitCode}
-                                        />
-                                    </div>
-                                );
-                            }
-
-                            if (artifact.media) {
-                                items.push(
-                                    <div
-                                        key={`art-${i}-media`}
-                                        className="flex gap-3 sm:gap-5 justify-start"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <div className="max-w-full sm:max-w-xl rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#0E0E11] group">
-                                            <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
-                                                <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                                    <ImageIcon size={12} />
-                                                    <span>Generated Artifact</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <a
-                                                        href={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
-                                                        download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
-                                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
-                                                        title="Download"
-                                                    >
-                                                        <Download size={14} />
-                                                    </a>
-                                                    <a
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            const win = window.open();
-                                                            win?.document.write(
-                                                                `<iframe src="data:${artifact.media.mimeType};base64,${artifact.media.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
-                                                            );
-                                                        }}
-                                                        href="#"
-                                                        className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
-                                                        title="Open in new window"
-                                                    >
-                                                        <ExternalLink size={14} />
-                                                    </a>
-                                                </div>
-                                            </div>
-                                            <div className="relative bg-[#18181b] flex justify-center p-2">
-                                                <img
-                                                    src={`data:${artifact.media.mimeType};base64,${artifact.media.data}`}
-                                                    alt="Jules generated artifact"
-                                                    className="w-full h-auto object-contain max-h-[400px]"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            if (artifact.changeSet) {
-                                items.push(
-                                    <div
-                                        key={`art-${i}-diff`}
-                                        className="flex gap-3 sm:gap-5 justify-start w-full min-w-0"
-                                    >
-                                        <div className="w-8 h-8 flex-shrink-0" />
-                                        <CodeChangeArtifact changeSet={artifact.changeSet} />
-                                    </div>
-                                );
-                            }
-                        });
-                    }
-
-                    // --- 5. Progress Updates ---
-                    if (act.progressUpdated) {
-                        const progress = act.progressUpdated;
-                        const title = progress.title || progress.progress_title || progress.status || progress.status_update || act.description || "Processing";
-                        const description = progress.description || progress.progress_description || progress.text || progress.message;
-                        const cleanTitle = title.trim().toLowerCase();
-                        const cleanDesc = description ? description.trim().toLowerCase() : "";
-                        const isRedundant = !description || cleanTitle === cleanDesc || cleanTitle.includes(cleanDesc);
-
-                        // Only spin if this is the most recent progress/agent action
-                        const activitiesAfter = activities.slice(activities.indexOf(act) + 1);
-                        const isCurrentlyActive = !activitiesAfter.some(a =>
-                            a.progressUpdated || a.agentMessage || a.agentMessaged ||
-                            a.planGenerated || a.sessionCompleted || a.sessionFailed
-                        );
-
-                        items.push(
-                            <div key="progress" className="flex gap-3 sm:gap-5 justify-start items-start w-full min-w-0 overflow-hidden">
-                                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center mt-0.5" />
-                                <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono bg-[#161619] px-3 py-2 rounded-xl border border-white/5 shadow-sm min-w-0 flex-1 max-w-[calc(100vw-4rem)] sm:max-w-xl hover:border-white/10 transition-colors overflow-hidden">
-                                    <Loader2
-                                        size={14}
-                                        className={twMerge(
-                                            "text-indigo-500 flex-shrink-0",
-                                            isCurrentlyActive && "animate-spin"
-                                        )}
-                                    />
-                                    <div className="flex flex-col min-w-0 overflow-hidden flex-1">
-                                        <span className="font-medium text-zinc-300 transition-colors truncate">
-                                            {title}
-                                        </span>
-                                        {!isRedundant && (
-                                            <span className="text-zinc-500 font-sans truncate text-[10px] mt-0.5 opacity-80">{description}</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    // --- 6. Session Completed ---
-                    if (act.sessionCompleted) {
-                        items.push(<CompactSessionCompleted key="completed" timestamp={act.createTime} />);
-                    }
-
-                    // --- 7. Session Failed ---
-                    if (act.sessionFailed) {
-                        items.push(<CompactSessionFailed key="failed" reason={act.sessionFailed.reason} />);
-                    }
-
-                    if (items.length === 0) return null;
-                    return <React.Fragment key={act.name}>{items}</React.Fragment>;
+                    return (
+                        <ActivityItem
+                            key={act.name}
+                            act={act}
+                            onApprovePlan={onApprovePlan}
+                            isApproved={isApproved}
+                            isCurrentlyActive={isCurrentlyActive}
+                        />
+                    );
                 })}
 
                 {/* Session Outputs */}
