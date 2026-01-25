@@ -361,7 +361,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
+                                    className="mode-menu-dropdown absolute top-full mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
                                     {/* Section 1: Title Input */}
                                     <div className="p-3 border-b border-white/5">
@@ -468,49 +468,29 @@ function useViewportAwarePosition(
         const viewportWidth = window.innerWidth;
         const margin = 10;
 
-        let newStyle: React.CSSProperties = {};
-
+        // Calculate the ideal absolute left position based on alignment
+        let idealLeft: number;
         if (align === 'right') {
-            // Default: right aligned to trigger (right: 0)
-            // Screen Right of dropdown = triggerRect.right
-            // Screen Left of dropdown = triggerRect.right - dropdownRect.width
-
-            // Check LEFT overflow
-            const currentLeft = triggerRect.right - dropdownRect.width;
-            if (currentLeft < margin) {
-                // Overflows left, needs to shift right
-                // Shift amount = margin - currentLeft
-                // Decrease 'right' value by shift (making it negative)
-                const shift = margin - currentLeft;
-                newStyle = { right: -shift };
-            } else {
-                newStyle = { right: 0 };
-            }
+            // Align right edge of dropdown with right edge of trigger
+            idealLeft = triggerRect.right - dropdownRect.width;
         } else {
-            // Default: left aligned to trigger (left: 0)
-            // Screen Left = triggerRect.left
-            // Screen Right = triggerRect.left + dropdownRect.width
-
-            // Check RIGHT overflow
-            const currentRight = triggerRect.left + dropdownRect.width;
-            if (currentRight > viewportWidth - margin) {
-                // Overflows right, needs to shift left
-                // Shift amount = currentRight - (viewportWidth - margin)
-                const shift = currentRight - (viewportWidth - margin);
-                // Decrease 'left' value
-                let newLeft = -shift;
-
-                // Double check left overflow (if shifted too far)
-                if (triggerRect.left + newLeft < margin) {
-                    newLeft = margin - triggerRect.left;
-                }
-                newStyle = { left: newLeft };
-            } else {
-                newStyle = { left: 0 };
-            }
+            // Align left edge of dropdown with left edge of trigger
+            idealLeft = triggerRect.left;
         }
 
-        setStyle(newStyle);
+        // Constraints
+        const minLeft = margin;
+        const maxLeft = viewportWidth - dropdownRect.width - margin;
+
+        // Clamp
+        const clampedLeft = Math.max(minLeft, Math.min(idealLeft, maxLeft));
+
+        // Convert back to relative 'left' for the style prop
+        // The dropdown is absolute positioned relative to the trigger container
+        // So: relativeLeft = clampedLeft - triggerRect.left
+        const relativeLeft = clampedLeft - triggerRect.left;
+
+        setStyle({ left: relativeLeft });
 
     }, [isOpen, align]);
 
