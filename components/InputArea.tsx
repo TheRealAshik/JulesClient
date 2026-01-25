@@ -77,8 +77,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
     const modeDropdownRef = useRef<HTMLDivElement>(null);
 
     // Viewport aware positioning hooks
-    const branchMenuStyles = useViewportAwarePosition(isBranchMenuOpen, branchTriggerRef, branchDropdownRef);
-    const modeMenuStyles = useViewportAwarePosition(isModeMenuOpen, modeTriggerRef, modeDropdownRef);
+    const branchMenuStyles = useViewportAwarePosition(isBranchMenuOpen, branchTriggerRef, branchDropdownRef, 'left');
+    const modeMenuStyles = useViewportAwarePosition(isModeMenuOpen, modeTriggerRef, modeDropdownRef, 'right');
 
     // Initialize selected branch
     useEffect(() => {
@@ -361,7 +361,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
+                                    className="mode-menu-dropdown absolute top-full right-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
                                     {/* Section 1: Title Input */}
                                     <div className="p-3 border-b border-white/5">
@@ -453,9 +453,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
 function useViewportAwarePosition(
     isOpen: boolean,
     triggerRef: React.RefObject<HTMLElement>,
-    dropdownRef: React.RefObject<HTMLElement>
+    dropdownRef: React.RefObject<HTMLElement>,
+    align: 'left' | 'right' = 'left'
 ): React.CSSProperties {
-    const [style, setStyle] = useState<React.CSSProperties>({ left: 0 });
+    const [style, setStyle] = useState<React.CSSProperties>({});
 
     useLayoutEffect(() => {
         if (!isOpen || !triggerRef.current || !dropdownRef.current) {
@@ -467,29 +468,51 @@ function useViewportAwarePosition(
         const viewportWidth = window.innerWidth;
         const margin = 10;
 
-        // Default position is aligned to left edge of trigger (relative to trigger)
-        // Which means absolute left: 0.
-        // Screen X of dropdown left edge = triggerRect.left.
-        // Screen X of dropdown right edge = triggerRect.left + dropdownRect.width.
+        let newStyle: React.CSSProperties = {};
 
-        let leftAdjustment = 0;
+        if (align === 'right') {
+            // Default: right aligned to trigger (right: 0)
+            // Screen Right of dropdown = triggerRect.right
+            // Screen Left of dropdown = triggerRect.right - dropdownRect.width
 
-        // Check right overflow
-        if (triggerRect.left + dropdownRect.width > viewportWidth - margin) {
-            // Amount of overflow
-            // We want (triggerRect.left + leftAdjustment + dropdownRect.width) <= viewportWidth - margin
-            leftAdjustment = (viewportWidth - margin) - (triggerRect.left + dropdownRect.width);
+            // Check LEFT overflow
+            const currentLeft = triggerRect.right - dropdownRect.width;
+            if (currentLeft < margin) {
+                // Overflows left, needs to shift right
+                // Shift amount = margin - currentLeft
+                // Decrease 'right' value by shift (making it negative)
+                const shift = margin - currentLeft;
+                newStyle = { right: -shift };
+            } else {
+                newStyle = { right: 0 };
+            }
+        } else {
+            // Default: left aligned to trigger (left: 0)
+            // Screen Left = triggerRect.left
+            // Screen Right = triggerRect.left + dropdownRect.width
+
+            // Check RIGHT overflow
+            const currentRight = triggerRect.left + dropdownRect.width;
+            if (currentRight > viewportWidth - margin) {
+                // Overflows right, needs to shift left
+                // Shift amount = currentRight - (viewportWidth - margin)
+                const shift = currentRight - (viewportWidth - margin);
+                // Decrease 'left' value
+                let newLeft = -shift;
+
+                // Double check left overflow (if shifted too far)
+                if (triggerRect.left + newLeft < margin) {
+                    newLeft = margin - triggerRect.left;
+                }
+                newStyle = { left: newLeft };
+            } else {
+                newStyle = { left: 0 };
+            }
         }
 
-        // Check left overflow (if adjusted too far left)
-        if (triggerRect.left + leftAdjustment < margin) {
-            // We want (triggerRect.left + leftAdjustment) >= margin
-            leftAdjustment = margin - triggerRect.left;
-        }
+        setStyle(newStyle);
 
-        setStyle({ left: leftAdjustment });
-
-    }, [isOpen]);
+    }, [isOpen, align]);
 
     return style;
 }
