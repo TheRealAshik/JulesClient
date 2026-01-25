@@ -1,14 +1,26 @@
-# General
+*.iml
+.kotlin
+.gradle
+**/build/
+xcuserdata
+!src/**/build/
+local.properties
+.idea
 .DS_Store
-.idea/
+captures
+.externalNativeBuild
+.cxx
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+node_modules/
+
+# Generic Archives & Logs
+*.zip
+*.tar.gz
 *.log
 *.pyc
 __pycache__/
-
-# Dependencies (if installed at root by mistake)
-node_modules/
-.pnpm-store/
-
-# Archives
-*.zip
-*.tar.gz
