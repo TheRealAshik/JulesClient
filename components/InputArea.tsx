@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, ChevronUp, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Zap, GitPullRequest, Settings2 } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Settings2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JulesSource, AutomationMode } from '../types';
-import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useViewportAwarePosition } from '../hooks/useViewportAwarePosition';
+import { useDynamicPlaceholder } from '../hooks/useDynamicPlaceholder';
 
 export type SessionMode = 'SCHEDULED' | 'INTERACTIVE' | 'REVIEW' | 'START';
 
@@ -21,6 +22,18 @@ interface InputAreaProps {
     placeholder?: string;
     currentSource?: JulesSource | null;
 }
+
+const DEFAULT_PLACEHOLDERS = [
+    "Refactor this function...",
+    "Fix CSS alignment issues...",
+    "Add a new API endpoint...",
+    "Optimize performance...",
+    "Write unit tests...",
+    "Explain this code..."
+];
+
+const PLACEHOLDER_CYCLE_INTERVAL = 3500;
+const BRANCH_BUTTON_MAX_WIDTH = '120px'; // For styles
 
 export const InputArea: React.FC<InputAreaProps> = ({
     onSendMessage,
@@ -43,14 +56,32 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
     // Session title (optional)
     const [sessionTitle, setSessionTitle] = useState('');
-    const [showTitleInput, setShowTitleInput] = useState(false);
 
     // Automation mode
     const [automationMode, setAutomationMode] = useState<AutomationMode>('AUTO_CREATE_PR');
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const titleInputRef = useRef<HTMLInputElement>(null);
+
+    // Positioning Refs
+    const branchTriggerRef = useRef<HTMLDivElement>(null);
+    const branchMenuRef = useRef<HTMLDivElement>(null);
+    const modeTriggerRef = useRef<HTMLDivElement>(null);
+    const modeMenuRef = useRef<HTMLDivElement>(null);
+
+    // Dynamic Placeholder
+    const dynamicPlaceholder = useDynamicPlaceholder(
+        DEFAULT_PLACEHOLDERS,
+        PLACEHOLDER_CYCLE_INTERVAL,
+        isFocused || input.length > 0
+    );
+
+    // Use dynamic placeholder if no static one provided
+    const effectivePlaceholder = placeholder || dynamicPlaceholder;
+
+    // Viewport Aware Positioning
+    const branchMenuPos = useViewportAwarePosition(branchTriggerRef, branchMenuRef, isBranchMenuOpen);
+    const modeMenuPos = useViewportAwarePosition(modeTriggerRef, modeMenuRef, isModeMenuOpen);
 
     // Initialize selected branch
     useEffect(() => {
@@ -71,7 +102,6 @@ export const InputArea: React.FC<InputAreaProps> = ({
         });
         setInput('');
         setSessionTitle('');
-        setShowTitleInput(false);
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
             if (variant === 'default') {
@@ -108,24 +138,33 @@ export const InputArea: React.FC<InputAreaProps> = ({
     // Click outside handlers
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
+            // Check if clicking outside container to close focus
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 if (!input.trim()) {
                     setIsFocused(false);
                 }
-                const target = event.target as Element;
-                if (!target.closest('.branch-menu-trigger') && !target.closest('.branch-menu-dropdown')) {
-                    setIsBranchMenuOpen(false);
-                }
             }
 
+            // Close menus if clicking outside
             const target = event.target as Element;
-            if (!target.closest('.mode-menu-trigger') && !target.closest('.mode-menu-dropdown')) {
+
+            // Branch Menu
+            if (isBranchMenuOpen &&
+                branchTriggerRef.current && !branchTriggerRef.current.contains(target as Node) &&
+                branchMenuRef.current && !branchMenuRef.current.contains(target as Node)) {
+                setIsBranchMenuOpen(false);
+            }
+
+            // Mode Menu
+            if (isModeMenuOpen &&
+                modeTriggerRef.current && !modeTriggerRef.current.contains(target as Node) &&
+                modeMenuRef.current && !modeMenuRef.current.contains(target as Node)) {
                 setIsModeMenuOpen(false);
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [input]);
+    }, [input, isBranchMenuOpen, isModeMenuOpen]);
 
     const branches = currentSource?.githubRepo?.branches || [];
     const filteredBranches = branches.filter(b =>
@@ -156,7 +195,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         onKeyDown={handleKeyDown}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
-                        placeholder={placeholder || "Reply to Jules..."}
+                        placeholder={effectivePlaceholder}
                         className="flex-1 bg-transparent border-none outline-none text-textMain placeholder:text-zinc-500 resize-none py-2 max-h-[200px] text-base leading-relaxed min-w-0 font-normal"
                         rows={1}
                     />
@@ -179,14 +218,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
         );
     }
 
-    // --- DEFAULT VARIANT (Hero Card - Expandable with Linear Animation) ---
+    // --- DEFAULT VARIANT (Hero Card) ---
     return (
         <div
             ref={containerRef}
             className={twMerge(
                 "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out",
                 isExpanded
-                    ? 'rounded-xl min-h-[160px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
+                    ? 'rounded-xl min-h-[140px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
                     : 'rounded-xl min-h-[60px] border-white/10 shadow-sm hover:border-white/20 hover:bg-[#18181b]'
             )}
             onClick={() => {
@@ -198,7 +237,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
         >
             <div className={twMerge(
                 "w-full transition-all duration-200 ease-out",
-                isExpanded ? 'p-5 pb-2' : 'p-3 px-4'
+                isExpanded ? 'p-3 pb-2' : 'p-3 px-4'
             )}>
                 <textarea
                     ref={textareaRef}
@@ -207,7 +246,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
-                    placeholder={placeholder}
+                    placeholder={effectivePlaceholder}
                     className="w-full bg-transparent border-none outline-none text-[#E4E4E7] placeholder:text-zinc-600 resize-none font-normal leading-relaxed transition-all duration-200 selection:bg-indigo-500/30 text-[15px]"
                     rows={1}
                     style={{
@@ -219,28 +258,29 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
             {isExpanded && <div className="flex-1" />}
 
-            {/* Footer Controls - Animated appearance */}
+            {/* Footer Controls */}
             <div className={twMerge(
                 "flex items-center justify-between pointer-events-auto transition-all duration-200 ease-out bg-[#141417]/50 rounded-b-xl",
-                isExpanded ? 'px-4 pb-4 pt-2 opacity-100 border-t border-white/5' : 'px-3 pb-3 opacity-100'
+                isExpanded ? 'px-3 pb-3 pt-2 opacity-100 border-t border-white/5' : 'px-3 pb-3 opacity-100'
             )}>
 
-                {/* Left: Attach, Branch, Settings - Hidden when collapsed */}
+                {/* Left: Attach, Branch, Settings */}
                 <div className={twMerge(
                     "flex items-center gap-2 transition-all duration-200 ease-out",
                     isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2 pointer-events-none'
                 )}>
+                    {/* Plus Button: Square 1:1, h-6 w-6 */}
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-6 h-6 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-6 h-6 aspect-square flex-shrink-0 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
                         <Plus size={14} />
                     </motion.button>
 
                     {/* Branch Selector Pill */}
-                    <div className="relative branch-menu-trigger">
+                    <div ref={branchTriggerRef} className="relative branch-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -248,7 +288,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6 max-w-[120px]"
+                            style={{ maxWidth: BRANCH_BUTTON_MAX_WIDTH }}
+                            className="flex items-center gap-1.5 px-2 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6"
                         >
                             <GitBranch size={11} className="text-indigo-400 flex-shrink-0" />
                             <span className="truncate">{selectedBranch}</span>
@@ -258,12 +299,19 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         <AnimatePresence>
                             {isBranchMenuOpen && (
                                 <motion.div
+                                    ref={branchMenuRef}
                                     initial={{ opacity: 0, y: -8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="branch-menu-dropdown absolute top-full left-0 mt-2 w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
+                                    style={{
+                                        position: 'fixed',
+                                        top: branchMenuPos.top,
+                                        left: branchMenuPos.left,
+                                        transformOrigin: branchMenuPos.transformOrigin
+                                    }}
+                                    className="branch-menu-dropdown w-[260px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col ring-1 ring-black/50"
                                 >
                                     <div className="p-2 border-b border-white/5 bg-[#0e0e11]">
                                         <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-lg px-2.5 py-1.5">
@@ -301,8 +349,8 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         </AnimatePresence>
                     </div>
 
-                    {/* Compact Settings Trigger (Mode & Title) */}
-                    <div className="relative mode-menu-trigger">
+                    {/* Tools/Settings Button: Square 1:1, h-6 w-6, Center content */}
+                    <div ref={modeTriggerRef} className="relative mode-menu-trigger flex-shrink-0">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -311,7 +359,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-2 rounded-lg transition-all duration-150 border h-6",
+                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
@@ -324,12 +372,19 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         <AnimatePresence>
                             {isModeMenuOpen && (
                                 <motion.div
+                                    ref={modeMenuRef}
                                     initial={{ opacity: 0, scale: 0.95, y: -8 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: -8 }}
                                     transition={{ duration: 0.15, ease: 'easeOut' }}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="mode-menu-dropdown absolute top-full left-0 mt-2 w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
+                                    style={{
+                                        position: 'fixed',
+                                        top: modeMenuPos.top,
+                                        left: modeMenuPos.left,
+                                        transformOrigin: modeMenuPos.transformOrigin
+                                    }}
+                                    className="mode-menu-dropdown w-[280px] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/80 flex flex-col"
                                 >
                                     {/* Section 1: Title Input */}
                                     <div className="p-3 border-b border-white/5">
@@ -385,32 +440,32 @@ export const InputArea: React.FC<InputAreaProps> = ({
                             )}
                         </AnimatePresence>
                     </div>
-                </div>
 
-                {/* Right: Send Button */}
-                <div className="flex items-center gap-2">
-                    <motion.button
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleSubmit();
-                        }}
-                        disabled={!input.trim() || isLoading}
-                        aria-label="Send message"
-                        className={twMerge(
-                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
-                            input.trim()
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
-                                : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
-                        )}
-                    >
-                        {isLoading ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <ArrowRight size={14} />
-                        )}
-                    </motion.button>
+                    {/* Right: Send Button - Square 1:1, w-6 h-6 */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <motion.button
+                            whileHover={{ scale: 1.08 }}
+                            whileTap={{ scale: 0.92 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSubmit();
+                            }}
+                            disabled={!input.trim() || isLoading}
+                            aria-label="Send message"
+                            className={twMerge(
+                                "w-6 h-6 aspect-square flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                                input.trim()
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
+                                    : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
+                            )}
+                        >
+                            {isLoading ? (
+                                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <ArrowRight size={14} />
+                            )}
+                        </motion.button>
+                    </div>
                 </div>
             </div>
         </div>
