@@ -12,9 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.therealashik.client.jules.model.JulesActivity
-import dev.therealashik.client.jules.model.JulesSession
+import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesSurface
 
@@ -23,7 +23,8 @@ fun SessionView(
     session: JulesSession,
     activities: List<JulesActivity>,
     isProcessing: Boolean,
-    onSendMessage: (String) -> Unit
+    onSendMessage: (String) -> Unit,
+    onApprovePlan: (String?) -> Unit
 ) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -49,7 +50,7 @@ fun SessionView(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             items(activities) { activity ->
-                ActivityItem(activity)
+                ActivityItem(activity, onApprovePlan, session.state == SessionState.AWAITING_PLAN_APPROVAL)
             }
         }
 
@@ -57,7 +58,7 @@ fun SessionView(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(JulesSurface) // Visual separator
+                .background(JulesSurface)
                 .padding(16.dp)
         ) {
              Row(
@@ -97,10 +98,26 @@ fun SessionView(
 }
 
 @Composable
-fun ActivityItem(activity: JulesActivity) {
-    val isUser = activity.type == "user_message" // Assuming "user_message" or similar based on real API
-    // Need to verify actual activity types. For now, basic rendering.
+fun ActivityItem(
+    activity: JulesActivity,
+    onApprovePlan: (String?) -> Unit,
+    isAwaitingApproval: Boolean
+) {
+    // Determine content type
+    val isUser = activity.userMessaged != null || activity.userMessage != null
+    val isAgent = activity.agentMessaged != null || activity.agentMessage != null
+    val isPlan = activity.planGenerated != null
+
+    val text = when {
+        isUser -> activity.userMessaged?.text ?: activity.userMessage?.text
+        isAgent -> activity.agentMessaged?.text ?: activity.agentMessage?.text
+        // If isPlan is true, activity.planGenerated is not null
+        isPlan -> "Plan Generated: ${activity.planGenerated?.plan?.steps?.size ?: 0} steps"
+        else -> activity.description ?: activity.originator ?: "Unknown"
+    }
     
+    val displayText = text ?: "..."
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -125,7 +142,7 @@ fun ActivityItem(activity: JulesActivity) {
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = activity.type.uppercase(),
+                text = activity.originator?.uppercase() ?: "SYSTEM",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Gray
             )
@@ -140,12 +157,36 @@ fun ActivityItem(activity: JulesActivity) {
                 .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                 .padding(12.dp)
         ) {
-            Text(
-                text = activity.text ?: activity.toolCall ?: "...",
-                color = Color.White.copy(alpha = 0.9f),
-                fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Column {
+                Text(
+                    text = displayText,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // Show Plan Steps
+                if (isPlan && activity.planGenerated != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    activity.planGenerated.plan.steps.forEach { step ->
+                        Text(
+                            text = "${step.index}. ${step.title}",
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    if (isAwaitingApproval) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { onApprovePlan(activity.planGenerated.plan.id) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Approve Plan")
+                        }
+                    }
+                }
+            }
         }
     }
 }
