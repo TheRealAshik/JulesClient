@@ -8,6 +8,7 @@
 - **Buttons**: Icon-only buttons must have `aria-label`. Minimum visual height `h-8`.
 - **Inputs**: Avoid conditional font sizes to prevent layout shifts.
 - **Lists/Tabs**: Use `gap` and `overflow-auto` instead of negative margin hacks.
+- **Indicators**: Use a shimmer animation (`animate-pulse`) for active work states (e.g., IN_PROGRESS, PLANNING) in lists to indicate background activity.
 
 ## Colors
 - **Background**: `#0c0c0c`
