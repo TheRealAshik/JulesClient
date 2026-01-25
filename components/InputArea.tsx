@@ -341,7 +341,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-1.5 py-1 rounded-lg transition-all duration-150 border h-6",
+                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
@@ -431,7 +431,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         disabled={!input.trim() || isLoading}
                         aria-label="Send message"
                         className={twMerge(
-                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                            "w-6 h-6 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
