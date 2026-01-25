@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 kotlin {
@@ -32,6 +33,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation("io.ktor:ktor-client-okhttp:3.0.3")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -42,6 +44,14 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            
+            implementation("io.ktor:ktor-client-core:3.0.3")
+            implementation("io.ktor:ktor-client-content-negotiation:3.0.3")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.0.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+            
+            // Icons
+            implementation(compose.material)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -49,6 +59,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation("io.ktor:ktor-client-cio:3.0.3")
         }
     }
 }
