@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.therealashik.client.jules.api.GeminiService
 import dev.therealashik.client.jules.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -63,11 +66,15 @@ class SharedViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val sourcesResp = api.listSources()
+                // Execute network calls on IO dispatcher
+                val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
+                    val src = api.listSources()
+                    val sess = api.listAllSessions()
+                    src to sess
+                }
+
                 // Auto-select first source if none selected
                 val firstSource = sourcesResp.sources.firstOrNull()
-
-                val allSessions = api.listAllSessions()
 
                 _uiState.update {
                     it.copy(
@@ -126,14 +133,16 @@ class SharedViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isProcessing = true, error = null) }
             try {
-                val session = api.createSession(
-                    prompt = prompt,
-                    sourceName = source.name,
-                    title = config.title,
-                    requirePlanApproval = config.requirePlanApproval,
-                    automationMode = config.automationMode,
-                    startingBranch = config.startingBranch
-                )
+                val session = withContext(Dispatchers.IO) {
+                    api.createSession(
+                        prompt = prompt,
+                        sourceName = source.name,
+                        title = config.title,
+                        requirePlanApproval = config.requirePlanApproval,
+                        automationMode = config.automationMode,
+                        startingBranch = config.startingBranch
+                    )
+                }
 
                 // Prepend new session
                 val updatedSessions = listOf(session) + _uiState.value.sessions
@@ -159,7 +168,9 @@ class SharedViewModel : ViewModel() {
         viewModelScope.launch {
              _uiState.update { it.copy(isProcessing = true, error = null) }
              try {
-                 api.sendMessage(session.name, text)
+                 withContext(Dispatchers.IO) {
+                     api.sendMessage(session.name, text)
+                 }
                  // Force immediate refresh
                  refreshSession(session.name)
              } catch (e: Exception) {
@@ -172,7 +183,9 @@ class SharedViewModel : ViewModel() {
          viewModelScope.launch {
              _uiState.update { it.copy(isProcessing = true) }
              try {
-                 api.approvePlan(sessionId, planId)
+                 withContext(Dispatchers.IO) {
+                     api.approvePlan(sessionId, planId)
+                 }
                  refreshSession(sessionId)
              } catch (e: Exception) {
                   _uiState.update { it.copy(error = "Failed to approve: ${e.message}", isProcessing = false) }
@@ -183,7 +196,9 @@ class SharedViewModel : ViewModel() {
     fun deleteSession(sessionId: String) {
         viewModelScope.launch {
             try {
-                api.deleteSession(sessionId)
+                withContext(Dispatchers.IO) {
+                    api.deleteSession(sessionId)
+                }
                 val updatedSessions = _uiState.value.sessions.filter { it.name != sessionId }
 
                 _uiState.update {
@@ -211,6 +226,7 @@ class SharedViewModel : ViewModel() {
     // --- Internals ---
 
     private fun calculateSessionsUsed(sessions: List<JulesSession>): Int {
+        // Temporarily simplified to avoid Clock issues if any, but re-enabling safe try-catch
         /*
         try {
             val now = Clock.System.now()
@@ -247,12 +263,15 @@ class SharedViewModel : ViewModel() {
 
     private suspend fun refreshSession(sessionName: String) {
         try {
-            // Parallel fetch could be better but sequential is safer for now
-            val activitiesResp = api.listActivities(sessionName)
-            val session = api.getSession(sessionName)
-
             // Check if we are still looking at this session
             if (_uiState.value.currentSession?.name != sessionName) return
+
+            // Parallel fetch could be better but sequential is safer for now
+            val (activitiesResp, session) = withContext(Dispatchers.IO) {
+                val act = api.listActivities(sessionName)
+                val sess = api.getSession(sessionName)
+                act to sess
+            }
 
             val isProcessing = session.state == SessionState.QUEUED ||
                                session.state == SessionState.PLANNING ||
