@@ -234,9 +234,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-7 h-7 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="w-6 h-6 flex items-center justify-center rounded-md bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
-                        <Plus size={15} />
+                        <Plus size={14} />
                     </motion.button>
 
                     {/* Branch Selector Pill */}
@@ -248,9 +248,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[11px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-7 max-w-[120px]"
+                            className="flex items-center gap-1.5 px-2 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6 max-w-[120px]"
                         >
-                            <GitBranch size={12} className="text-indigo-400 flex-shrink-0" />
+                            <GitBranch size={11} className="text-indigo-400 flex-shrink-0" />
                             <span className="truncate">{selectedBranch}</span>
                             <ChevronDown size={10} className="text-zinc-500 flex-shrink-0" />
                         </motion.button>
@@ -311,14 +311,14 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
                             className={twMerge(
-                                "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-150 border h-7",
+                                "flex items-center gap-1.5 px-2 rounded-lg transition-all duration-150 border h-6",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-[#2a2a2f] text-white border-white/15'
                                     : 'bg-[#1f1f23] hover:bg-[#2a2a2f] text-zinc-400 hover:text-white border-white/10'
                             )}
                             title="Session Settings"
                         >
-                            <Settings2 size={13} className={sessionTitle ? 'text-indigo-400' : ''} />
+                            <Settings2 size={12} className={sessionTitle ? 'text-indigo-400' : ''} />
                         </motion.button>
 
                         <AnimatePresence>
@@ -399,16 +399,16 @@ export const InputArea: React.FC<InputAreaProps> = ({
                         disabled={!input.trim() || isLoading}
                         aria-label="Send message"
                         className={twMerge(
-                            "w-8 h-8 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                            "w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                             input.trim()
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                 : 'bg-[#252529] text-zinc-500 cursor-not-allowed border border-white/5'
                         )}
                     >
                         {isLoading ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                            <ArrowRight size={16} />
+                            <ArrowRight size={14} />
                         )}
                     </motion.button>
                 </div>
