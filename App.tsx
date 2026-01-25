@@ -18,8 +18,6 @@ export default function App() {
     const [currentSession, setCurrentSession] = useState<JulesSession | null>(null);
     const [sessions, setSessions] = useState<JulesSession[]>([]);
     const [activities, setActivities] = useState<JulesActivity[]>([]);
-    const [sessionsUsed, setSessionsUsed] = useState(0);
-    const [dailyLimit] = useState(100); // Default to Pro plan
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -28,8 +26,7 @@ export default function App() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     // Polling ref
-    const pollTimeout = useRef<number | null>(null);
-    const activePollingSession = useRef<string | null>(null);
+    const pollInterval = useRef<number | null>(null);
     const activitiesRef = useRef<JulesActivity[]>([]);
 
     useEffect(() => {
@@ -101,75 +98,36 @@ export default function App() {
     };
 
     const fetchSessions = async () => {
-        const allSessions = await JulesApi.listAllSessions();
-        setSessions(allSessions);
-
-        // Calculate sessions in last 24 hours
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const usedCount = allSessions.filter(s => {
-            const createDate = new Date(s.createTime);
-            return createDate > twentyFourHoursAgo;
-        }).length;
-
-        setSessionsUsed(usedCount);
+        const response = await JulesApi.listSessions();
+        setSessions(response.sessions);
     };
 
     const startPolling = useCallback((sessionName: string) => {
-        if (pollTimeout.current) clearTimeout(pollTimeout.current);
-        activePollingSession.current = sessionName;
+        if (pollInterval.current) clearInterval(pollInterval.current);
 
-        const poll = async () => {
-            if (activePollingSession.current !== sessionName) return;
+        // Immediate fetch
+        JulesApi.listActivities(sessionName).then(response => {
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
+        });
 
-            try {
-                const response = await JulesApi.listActivities(sessionName);
-                if (activePollingSession.current !== sessionName) return;
+        // Poll every 2s
+        pollInterval.current = window.setInterval(async () => {
+            const response = await JulesApi.listActivities(sessionName);
+            activitiesRef.current = response.activities;
+            setActivities(response.activities);
 
-                // Only update activities if they've changed (compare by length and last item name)
-                const newActivities = response.activities;
-                const prevActivities = activitiesRef.current;
-                const hasChanged =
-                    newActivities.length !== prevActivities.length ||
-                    (newActivities.length > 0 && prevActivities.length > 0 &&
-                        newActivities[newActivities.length - 1]?.name !== prevActivities[prevActivities.length - 1]?.name);
+            // Also check session status for outputs and state
+            const sess = await JulesApi.getSession(sessionName);
+            setCurrentSession(sess);
 
-                if (hasChanged) {
-                    activitiesRef.current = newActivities;
-                    setActivities(newActivities);
-                }
-
-                // Also check session status for outputs and state
-                const sess = await JulesApi.getSession(sessionName);
-                if (activePollingSession.current !== sessionName) return;
-
-                setCurrentSession(prev => {
-                    // Only update if state has changed to avoid unnecessary re-renders
-                    if (!prev || prev.state !== sess.state || prev.outputs?.length !== sess.outputs?.length) {
-                        return sess;
-                    }
-                    return prev;
-                });
-
-                // Use API state to determine if processing
-                // Active states: QUEUED, PLANNING, IN_PROGRESS
-                // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
-                // Terminal states: COMPLETED, FAILED
-                const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
-                setIsProcessing(isActive);
-
-                if (activePollingSession.current === sessionName) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
-                }
-            } catch (e) {
-                console.error("Polling error", e);
-                // Retry on error
-                if (activePollingSession.current === sessionName) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
-                }
-            }
-        };
-
-        poll();
+            // Use API state to determine if processing
+            // Active states: QUEUED, PLANNING, IN_PROGRESS
+            // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
+            // Terminal states: COMPLETED, FAILED
+            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+            setIsProcessing(isActive);
+        }, 2000);
     }, []);
 
     const handleSendMessage = async (text: string, options: SessionCreateOptions) => {
@@ -195,7 +153,6 @@ export default function App() {
 
                 setCurrentSession(session);
                 setSessions(prev => [session, ...prev]);
-                setSessionsUsed(prev => prev + 1);
                 navigate(`/session/${session.name.replace('sessions/', '')}`);
                 startPolling(session.name);
             } else {
@@ -231,39 +188,10 @@ export default function App() {
         startPolling(session.name);
     };
 
-    const handleDeleteSession = async (sessionName: string) => {
-        try {
-            await JulesApi.deleteSession(sessionName);
-            setSessions(prev => prev.filter(s => s.name !== sessionName));
-
-            // If the deleted session is the current one, redirect to home
-            if (currentSession?.name === sessionName) {
-                setCurrentSession(null);
-                setActivities([]);
-                navigate('/');
-            }
-        } catch (e: any) {
-            setError(e.message || "Failed to delete session");
-        }
-    };
-
-    const handleUpdateSession = async (sessionName: string, updates: Partial<JulesSession>, updateMask: string[]) => {
-        try {
-            const updated = await JulesApi.updateSession(sessionName, updates, updateMask);
-            setSessions(prev => prev.map(s => s.name === sessionName ? updated : s));
-            if (currentSession?.name === sessionName) {
-                setCurrentSession(updated);
-            }
-        } catch (e: any) {
-            setError(e.message || "Failed to update session");
-        }
-    };
-
     // Cleanup polling on unmount or session switch
     useEffect(() => {
         return () => {
-            activePollingSession.current = null;
-            if (pollTimeout.current) clearTimeout(pollTimeout.current);
+            if (pollInterval.current) clearInterval(pollInterval.current);
         };
     }, []);
 
@@ -323,15 +251,11 @@ export default function App() {
                 currentSessionId={currentSession?.name}
                 currentSourceId={currentSource?.name}
                 onSelectSession={handleSelectSession}
-                onDeleteSession={handleDeleteSession}
-                onUpdateSession={handleUpdateSession}
                 onSelectSource={(source) => {
                     setCurrentSource(source);
                     navigate(`/repository/${source.name.replace('sources/', '')}`);
                     setIsDrawerOpen(false);
                 }}
-                sessionsUsed={sessionsUsed}
-                dailyLimit={dailyLimit}
             />
 
             <Routes>

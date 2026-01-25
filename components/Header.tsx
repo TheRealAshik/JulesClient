@@ -51,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="relative min-w-0" ref={repoRef}>
           <button
             onClick={() => setIsRepoOpen(!isRepoOpen)}
-            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 bg-[#1a1a1d] hover:bg-[#232326] border border-white/8 rounded-xl transition-all duration-200 group min-h-[36px] sm:min-h-[32px] max-w-[200px] sm:max-w-[400px]"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 bg-[#1a1a1d] hover:bg-[#232326] border border-white/8 rounded-xl transition-all duration-200 group min-h-[36px] sm:min-h-[32px] max-w-[160px] sm:max-w-[240px]"
           >
             <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#4f46e5] flex items-center justify-center text-white flex-shrink-0 shadow-sm">
               <Command size={11} />
