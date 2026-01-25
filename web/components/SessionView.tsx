@@ -12,6 +12,7 @@ interface SessionViewProps {
     error: string | null;
     onSendMessage: (text: string) => void;
     onApprovePlan: (id: string) => void;
+    defaultCardCollapsed: boolean;
 }
 
 export const SessionView: React.FC<SessionViewProps> = ({
@@ -20,7 +21,8 @@ export const SessionView: React.FC<SessionViewProps> = ({
     isProcessing,
     error,
     onSendMessage,
-    onApprovePlan
+    onApprovePlan,
+    defaultCardCollapsed
 }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,6 +65,7 @@ export const SessionView: React.FC<SessionViewProps> = ({
                         sessionOutputs={session.outputs}
                         sessionPrompt={session.prompt}
                         sessionCreateTime={session.createTime}
+                        defaultCardCollapsed={defaultCardCollapsed}
                     />
 
                     {error && (

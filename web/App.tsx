@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { HomeView } from './components/HomeView';
 import { SessionView } from './components/SessionView';
 import { RepositoryView } from './components/RepositoryView';
+import { SettingsView } from './components/SettingsView';
 import { Drawer } from './components/Drawer';
 import * as JulesApi from './services/geminiService';
 import { JulesActivity, JulesSource, JulesSession, AutomationMode } from './types';
@@ -20,6 +21,12 @@ export default function App() {
     const [activities, setActivities] = useState<JulesActivity[]>([]);
     const [sessionsUsed, setSessionsUsed] = useState(0);
     const [dailyLimit] = useState(100); // Default to Pro plan
+
+    // Settings State
+    const [defaultCardCollapsed, setDefaultCardCollapsed] = useState(() => {
+        const saved = localStorage.getItem('jules_default_card_collapsed');
+        return saved === 'true';
+    });
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -89,6 +96,8 @@ export default function App() {
             const response = await JulesApi.listSources();
             setSources(response.sources);
             if (response.sources.length > 0 && !currentSource) {
+                // If we are on settings page, don't force select source yet, wait for nav
+                // But generally we want a source.
                 setCurrentSource(response.sources[0]);
             }
         } catch (e) {
@@ -98,6 +107,11 @@ export default function App() {
                 setError("Invalid API Key. Please reset.");
             }
         }
+    };
+
+    const handleToggleDefaultCardCollapsed = (collapsed: boolean) => {
+        setDefaultCardCollapsed(collapsed);
+        localStorage.setItem('jules_default_card_collapsed', String(collapsed));
     };
 
     const fetchSessions = async () => {
@@ -350,6 +364,13 @@ export default function App() {
                     />
                 } />
 
+                <Route path="/settings" element={
+                    <SettingsView
+                        defaultCardCollapsed={defaultCardCollapsed}
+                        onToggleDefaultCardCollapsed={handleToggleDefaultCardCollapsed}
+                    />
+                } />
+
                 <Route path="/session/:sessionId" element={
                     currentSession ? (
                         <SessionView
@@ -359,6 +380,7 @@ export default function App() {
                             error={error}
                             onSendMessage={(text) => handleSendMessage(text, { mode: 'START' })}
                             onApprovePlan={handleApprovePlan}
+                            defaultCardCollapsed={defaultCardCollapsed}
                         />
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-zinc-500">
