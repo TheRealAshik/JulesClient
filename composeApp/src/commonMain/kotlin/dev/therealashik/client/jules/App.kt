@@ -13,6 +13,7 @@ import dev.therealashik.client.jules.ui.components.Header
 import dev.therealashik.client.jules.ui.screens.HomeView
 import dev.therealashik.client.jules.ui.screens.RepositoryView
 import dev.therealashik.client.jules.ui.screens.SessionView
+import dev.therealashik.client.jules.ui.screens.SettingsView
 import dev.therealashik.client.jules.viewmodel.Screen
 import dev.therealashik.client.jules.viewmodel.SharedViewModel
 
@@ -60,7 +61,10 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             onSendMessage = { text, config ->
                                 viewModel.createSession(text, config)
                             },
-                            isProcessing = state.isProcessing
+                            isProcessing = state.isProcessing,
+                            sessions = state.sessions,
+                            onSelectSession = { viewModel.selectSession(it) },
+                            onResetKey = { viewModel.setApiKey("") } // Assuming setApiKey empty resets it or we need a proper reset
                         )
                     }
                     is Screen.Session -> {
@@ -71,6 +75,7 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 session = session,
                                 activities = state.activities,
                                 isProcessing = state.isProcessing,
+                                defaultCardState = state.defaultCardState,
                                 onSendMessage = { text ->
                                     viewModel.sendMessage(text)
                                 },
@@ -87,16 +92,27 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                         if (state.currentSource != null) {
                             RepositoryView(
                                 source = state.currentSource!!,
-                                onStartNewSession = { viewModel.navigateBack() } // Going back to Home triggers new session flow UI
+                                sessions = state.sessions,
+                                onStartNewSession = { viewModel.navigateBack() }, // Going back to Home triggers new session flow UI
+                                onSelectSession = { viewModel.selectSession(it) }
                             )
                         } else {
                             // Should not happen, fallback to Home
                             HomeView(
                                 currentSource = null,
                                 onSendMessage = { text, config -> viewModel.createSession(text, config) },
-                                isProcessing = state.isProcessing
+                                isProcessing = state.isProcessing,
+                                sessions = state.sessions,
+                                onSelectSession = { viewModel.selectSession(it) }
                             )
                         }
+                    }
+                    is Screen.Settings -> {
+                        SettingsView(
+                            defaultCardState = state.defaultCardState,
+                            onUpdateCardState = { viewModel.updateDefaultCardState(it) },
+                            onBack = { viewModel.navigateBack() }
+                        )
                     }
                 }
             }
@@ -113,7 +129,17 @@ fun JulesAppContent(viewModel: SharedViewModel) {
             },
             onDeleteSession = { viewModel.deleteSession(it) },
             sessionsUsed = state.sessionsUsed,
-            dailyLimit = state.dailyLimit
+            dailyLimit = state.dailyLimit,
+            sources = state.sources,
+            currentSource = state.currentSource,
+            onSelectSource = {
+                viewModel.selectSource(it)
+                isDrawerOpen = false
+            },
+            onNavigateToSettings = {
+                viewModel.navigateToSettings()
+                isDrawerOpen = false
+            }
         )
     }
 }
