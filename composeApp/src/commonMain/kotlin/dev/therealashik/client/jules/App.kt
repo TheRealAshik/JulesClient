@@ -50,7 +50,8 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                 currentSource = state.currentSource,
                 sources = state.sources,
                 onSourceChange = { viewModel.selectSource(it) },
-                isLoading = state.isProcessing || state.isLoading
+                isLoading = state.isProcessing || state.isLoading,
+                onOpenSettings = { viewModel.navigateToSettings() }
             )
 
             Box(modifier = Modifier.weight(1f)) {

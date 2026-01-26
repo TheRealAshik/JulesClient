@@ -1,16 +1,32 @@
 package dev.therealashik.client.jules.ui.components
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -18,8 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
-import dev.therealashik.client.jules.model.SessionState
-import dev.therealashik.client.jules.ui.JulesSurface
+import dev.therealashik.client.jules.utils.getSessionDisplayInfo
 
 @Composable
 fun Drawer(
@@ -36,62 +51,128 @@ fun Drawer(
     onSelectSource: (JulesSource) -> Unit,
     onNavigateToSettings: (() -> Unit)? = null
 ) {
-    if (isOpen) {
+    AnimatedVisibility(
+        visible = isOpen,
+        enter = slideInHorizontally(
+            initialOffsetX = { -it },
+            animationSpec = tween(300, easing = FastOutSlowInEasing)
+        ) + fadeIn(tween(300)),
+        exit = slideOutHorizontally(
+            targetOffsetX = { -it },
+            animationSpec = tween(300)
+        ) + fadeOut(tween(300))
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .zIndex(100f)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable { onClose() }
         ) {
+            // Backdrop
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clickable { onClose() }
+            )
+
+            // Drawer Content
             Column(
                 modifier = Modifier
+                    .width(320.dp)
                     .fillMaxHeight()
-                    .width(300.dp)
-                    .background(Color(0xFF121212))
+                    .background(Color(0xFF0E0E11))
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.05f),
+                        shape = RectangleShape
+                    )
                     .clickable(enabled = false) {}
-                    .padding(16.dp)
             ) {
                 // Header
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🐙", style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.width(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Logo replacement since image is missing
+                        Icon(
+                            Icons.Default.SmartToy,
+                            contentDescription = "Jules",
+                            tint = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(24.dp)
+                        )
                         Text(
                             "jules",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            letterSpacing = (-0.5).sp
                         )
                     }
-                    IconButton(onClick = onClose) {
-                        Text("✕", color = Color.White, style = MaterialTheme.typography.titleMedium)
+
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(Icons.Default.Close, null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(20.dp))
                     }
                 }
+                Divider(color = Color.White.copy(alpha = 0.05f))
 
-                // Search
+                // Search Input
                 var searchQuery by remember { mutableStateOf("") }
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                    placeholder = { Text("Search...", style = MaterialTheme.typography.bodyMedium, color = Color.Gray) },
-                    leadingIcon = { Text("🔍", color = Color.Gray) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.DarkGray,
-                        unfocusedBorderColor = Color.DarkGray.copy(alpha = 0.5f),
-                        cursorColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    shape = MaterialTheme.shapes.medium,
-                    singleLine = true
-                )
+                var isFocused by remember { mutableStateOf(false) }
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .background(
+                            if (isFocused) Color(0xFF1E1E22) else Color(0xFF161619),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .border(
+                            1.dp,
+                            if (isFocused) Color(0xFF6366F1).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.1f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        tint = if (isFocused) Color(0xFF6366F1) else Color(0xFF71717A),
+                        modifier = Modifier.size(16.dp)
+                    )
+
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 12.dp)
+                            .onFocusChanged { isFocused = it.isFocused },
+                        textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            if (searchQuery.isEmpty()) {
+                                Text("Search repositories & sessions...", color = Color(0xFF52525B), fontSize = 14.sp)
+                            }
+                            innerTextField()
+                        }
+                    )
+                }
+
+                // Filtering logic
                 var isSessionsExpanded by remember { mutableStateOf(true) }
                 var isCodebasesExpanded by remember { mutableStateOf(true) }
 
@@ -99,7 +180,7 @@ fun Drawer(
                     if (searchQuery.isBlank()) sessions
                     else sessions.filter {
                         (it.title ?: "").contains(searchQuery, ignoreCase = true) ||
-                                it.name.contains(searchQuery, ignoreCase = true)
+                                it.prompt.contains(searchQuery, ignoreCase = true)
                     }
                 }
 
@@ -111,24 +192,22 @@ fun Drawer(
                     }
                 }
 
-                LazyColumn(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Recent Sessions Section
+                LazyColumn(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
+                    // Recent Sessions
                     item {
-                        DrawerSectionHeader(
+                         DrawerSectionHeader(
                             title = "Recent sessions",
+                            count = if (searchQuery.isNotEmpty()) filteredSessions.size else null,
                             isExpanded = isSessionsExpanded,
                             onToggle = { isSessionsExpanded = !isSessionsExpanded }
                         )
                     }
                     if (isSessionsExpanded) {
                         items(filteredSessions) { session ->
-                            val isSelected = session.name == currentSessionId
                             SessionItem(
                                 session = session,
-                                isSelected = isSelected,
-                                onSelect = { onSelectSession(session) },
+                                isSelected = session.name == currentSessionId,
+                                onSelect = { onSelectSession(session); onClose() }, // Close drawer on selection
                                 onDelete = { onDeleteSession(session.name) }
                             )
                         }
@@ -136,87 +215,108 @@ fun Drawer(
 
                     item { Spacer(modifier = Modifier.height(16.dp)) }
 
-                    // Codebases Section
+                    // Codebases
                     item {
                         DrawerSectionHeader(
                             title = "Codebases",
+                            count = if (searchQuery.isNotEmpty()) filteredSources.size else null,
                             isExpanded = isCodebasesExpanded,
                             onToggle = { isCodebasesExpanded = !isCodebasesExpanded }
                         )
                     }
                     if (isCodebasesExpanded) {
                         items(filteredSources) { source ->
-                            val isSelected = source.name == currentSource?.name
                             SourceItem(
                                 source = source,
-                                isSelected = isSelected,
-                                onSelect = { onSelectSource(source) }
+                                isSelected = currentSource?.name == source.name,
+                                onSelect = { onSelectSource(source); onClose() }
                             )
                         }
                     }
                 }
 
                 // Footer
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .background(Color(0xFF0E0E11))
+                        .border(1.dp, Color.White.copy(alpha = 0.05f)) // Top border effectively
+                        .padding(16.dp)
+                ) {
                     // Progress
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        Text("Daily session limit", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                        Text("($sessionsUsed/$dailyLimit)", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text(
+                            "Daily session limit ($sessionsUsed/$dailyLimit)",
+                            fontSize = 12.sp,
+                            color = Color(0xFF71717A)
+                        )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(
-                        progress = { sessionsUsed.toFloat() / dailyLimit.coerceAtLeast(1) },
-                        modifier = Modifier.fillMaxWidth().height(4.dp),
-                        color = Color(0xFF4F46E5), // Indigo-600
-                        trackColor = Color.DarkGray
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Links
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .background(Color(0xFF27272A), RoundedCornerShape(2.dp))
                     ) {
-                        OutlinedButton(
-                            onClick = { /* Open Docs */ },
-                            modifier = Modifier.weight(1f),
-                            shape = MaterialTheme.shapes.small,
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                            border = BorderStroke(1.dp, Color.DarkGray)
-                        ) {
-                            Text("📄 Docs")
-                        }
-
-                        IconButton(
-                            onClick = { /* Open Discord */ },
-                            modifier = Modifier.background(Color.DarkGray.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
-                        ) {
-                            Text("💬") // Discord
-                        }
-
-                        IconButton(
-                            onClick = { /* Open X */ },
-                            modifier = Modifier.background(Color.DarkGray.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
-                        ) {
-                            Text("🐦") // X
-                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(sessionsUsed.toFloat() / dailyLimit.coerceAtLeast(1))
+                                .height(4.dp)
+                                .background(Color(0xFF6366F1), RoundedCornerShape(2.dp))
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Settings Button
-                    OutlinedButton(
-                        onClick = { onNavigateToSettings?.invoke() },
+                    // Buttons
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                        border = BorderStroke(1.dp, Color.DarkGray)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("⚙️ Settings")
+                        // Settings Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF161619))
+                                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                .clickable { onNavigateToSettings?.invoke() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Default.Settings, null, tint = Color(0xFFD4D4D8), modifier = Modifier.size(14.dp))
+                                Text("Settings", fontSize = 14.sp, color = Color(0xFFD4D4D8))
+                            }
+                        }
+
+                        // Docs
+                        IconButton(
+                            onClick = { /* TODO */ },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF161619))
+                                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                        ) {
+                            // Using generic icon for Docs
+                            Icon(Icons.Default.Search, null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(18.dp))
+                        }
+
+                         // Discord
+                        IconButton(
+                            onClick = { /* TODO */ },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFF161619))
+                                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                        ) {
+                             // Using generic icon for Discord
+                            Icon(Icons.Default.SmartToy, null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
@@ -227,6 +327,7 @@ fun Drawer(
 @Composable
 fun DrawerSectionHeader(
     title: String,
+    count: Int?,
     isExpanded: Boolean,
     onToggle: () -> Unit
 ) {
@@ -234,16 +335,131 @@ fun DrawerSectionHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggle() }
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, color = Color.Gray)
-        Text(
-            text = if (isExpanded) "▲" else "▼",
-            color = Color.Gray,
-            fontSize = 12.sp
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFFA1A1AA))
+            if (count != null && count > 0) {
+                 Text(
+                    count.toString(),
+                    fontSize = 10.sp,
+                    color = Color(0xFFD4D4D8),
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                 )
+            }
+        }
+
+        Icon(
+            if (isExpanded) Icons.Default.ExpandMore else Icons.Default.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color(0xFF71717A),
+            modifier = Modifier.size(16.dp)
         )
+    }
+}
+
+@Composable
+fun SessionItem(
+    session: JulesSession,
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val displayInfo = remember(session.state) { getSessionDisplayInfo(session.state) }
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) Color.White.copy(alpha = 0.05f) else Color.Transparent)
+            .clickable { onSelect() }
+            .padding(12.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Emoji
+        Text(
+            text = displayInfo.emoji,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            // Title
+            Text(
+                text = session.title ?: session.prompt,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                color = if (isSelected) Color.White else Color(0xFFD4D4D8),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Status and Helper
+            Column {
+                Text(
+                    text = displayInfo.label,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isSelected) Color(0xFFA5B4FC) else Color(0xFFA1A1AA), // Indigo-300 or Zinc-400
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Text(
+                    text = displayInfo.helperText,
+                    fontSize = 10.sp,
+                    color = Color(0xFF52525B), // Zinc-600
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                if (displayInfo.cta != "none") {
+                    Text(
+                        text = "${displayInfo.cta} →",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF818CF8), // Indigo-400
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
+        }
+
+        // Context Menu
+        Box {
+             IconButton(
+                onClick = { menuExpanded = true },
+                modifier = Modifier.size(20.dp)
+            ) {
+                Icon(
+                    Icons.Default.MoreHoriz,
+                    contentDescription = "Options",
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                modifier = Modifier.background(Color(0xFF18181B))
+            ) {
+                // We can add Pause/Resume here if we had callbacks, for now just Delete as per previous implementation
+                DropdownMenuItem(
+                    text = { Text("Delete", fontSize = 12.sp, color = Color(0xFFF87171)) },
+                    onClick = {
+                        onDelete()
+                        menuExpanded = false
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -256,78 +472,30 @@ fun SourceItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                else Color.Transparent,
-                shape = MaterialTheme.shapes.small
-            )
+            .padding(vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) Color.White.copy(alpha = 0.05f) else Color.Transparent)
             .clickable { onSelect() }
-            .padding(8.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("📦", fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(8.dp))
+        // Icon (Github or box)
+        Box(
+            modifier = Modifier.size(16.dp).background(Color(0xFF27272A), RoundedCornerShape(4.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            // Placeholder for Github icon
+             Text("G", fontSize = 10.sp, color = Color.Gray)
+        }
+        Spacer(modifier = Modifier.width(12.dp))
         Column {
             Text(
-                text = source.displayName ?: source.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                text = source.displayName ?: source.name.split("/").takeLast(2).joinToString("/"),
+                fontSize = 14.sp,
+                color = if (isSelected) Color.White else Color(0xFFA1A1AA),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = "1 session",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-        }
-    }
-}
-
-@Composable
-fun SessionItem(
-    session: JulesSession,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .background(
-                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) 
-                else Color.Transparent, 
-                shape = MaterialTheme.shapes.small
-            )
-            .clickable { onSelect() }
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = session.title ?: session.name.replace("sessions/", ""),
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = session.state.name,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-        }
-        
-        IconButton(
-            onClick = onDelete,
-            modifier = Modifier.size(24.dp)
-        ) {
-            Text("x", color = Color.Gray)
         }
     }
 }

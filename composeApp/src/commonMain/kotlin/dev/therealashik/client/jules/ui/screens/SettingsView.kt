@@ -1,12 +1,17 @@
 package dev.therealashik.client.jules.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Monitor
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,8 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import dev.therealashik.client.jules.ui.JulesBackground
-import dev.therealashik.client.jules.ui.JulesSurface
 
 @Composable
 fun SettingsView(
@@ -29,128 +34,198 @@ fun SettingsView(
         modifier = Modifier
             .fillMaxSize()
             .background(JulesBackground)
-            .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 600.dp).align(Alignment.TopCenter)
+        // Sticky Header
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .zIndex(10f),
+            color = Color(0xFF0E0E11).copy(alpha = 0.8f),
+            tonalElevation = 2.dp
         ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 24.dp)
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Transparent)
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF9CA3AF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Text(
+                        "Settings",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                 }
+                Divider(color = Color.White.copy(alpha = 0.05f))
+            }
+        }
+
+        // Scrollable Content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 80.dp) // Offset for header + status bar approx
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+        ) {
+
+            // Appearance Section
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Monitor,
+                    contentDescription = null,
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier.size(14.dp)
+                )
                 Text(
-                    "Settings",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    "APPEARANCE",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF71717A),
+                    letterSpacing = 1.5.sp
                 )
             }
 
-            // Appearance Section
-            Text(
-                "APPEARANCE",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
-            )
-
             Card(
-                colors = CardDefaults.cardColors(containerColor = JulesSurface),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
                 shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "Default Card State",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Choose how chat artifacts appear by default.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                        Text(
+                            "Default Card State",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Choose whether large items (commands, code changes) appear expanded or collapsed by default.",
+                            fontSize = 14.sp,
+                            color = Color(0xFF9CA3AF), // Zinc-400
+                            lineHeight = 20.sp
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Toggle Button Group
+                    Row(
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        // Expanded Button (defaultCardState == true means Expanded)
 
-                    // Option A: Expanded
-                    SettingsOption(
-                        title = "Expanded",
-                        description = "See all details by default.",
-                        isSelected = defaultCardState,
-                        onClick = { onUpdateCardState(true) }
-                    )
+                        val isExpanded = defaultCardState
+                        val isCollapsed = !defaultCardState
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        // Expanded Option
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isExpanded) Color(0xFF4F46E5) else Color.Transparent
+                                )
+                                .clickable { onUpdateCardState(true) } // Set Expanded
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Expanded",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (isExpanded) Color.White else Color(0xFF71717A)
+                            )
+                        }
 
-                    // Option B: Collapsed
-                    SettingsOption(
-                        title = "Collapsed",
-                        description = "Keep the chat tidy by default.",
-                        isSelected = !defaultCardState,
-                        onClick = { onUpdateCardState(false) }
-                    )
+                        // Collapsed Option
+                         Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (isCollapsed) Color(0xFF4F46E5) else Color.Transparent
+                                )
+                                .clickable { onUpdateCardState(false) } // Set Collapsed
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Collapsed",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (isCollapsed) Color.White else Color(0xFF71717A)
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // About Section
-            Text(
-                "ABOUT",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.Gray,
-                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp)
-            )
+             Row(
+                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Tune, // Using Tune as Sliders
+                    contentDescription = null,
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    "ABOUT",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF71717A),
+                    letterSpacing = 1.5.sp
+                )
+            }
 
             Card(
-                colors = CardDefaults.cardColors(containerColor = JulesSurface),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
                 shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
                     SettingsRow("Client Version", "v0.1.0-alpha")
-                    Divider(color = Color.White.copy(alpha = 0.1f))
-                    SettingsRow("Theme", "Jules Dark")
+                    Divider(color = Color.White.copy(alpha = 0.05f))
+                    SettingsRow("Theme", "Dark (System)")
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun SettingsOption(
-    title: String,
-    description: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = isSelected,
-            onClick = onClick,
-            colors = RadioButtonDefaults.colors(
-                selectedColor = MaterialTheme.colorScheme.primary,
-                unselectedColor = Color.Gray
-            )
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = Color.White)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
     }
 }
@@ -164,7 +239,7 @@ fun SettingsRow(label: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = Color.White)
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(label, fontSize = 14.sp, color = Color(0xFFD4D4D8)) // Zinc-300
+        Text(value, fontSize = 14.sp, color = Color(0xFF71717A)) // Zinc-500
     }
 }
