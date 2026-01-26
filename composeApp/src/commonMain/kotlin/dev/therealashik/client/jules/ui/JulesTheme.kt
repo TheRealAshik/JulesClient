@@ -17,6 +17,12 @@ val JulesPrimary = Color(0xFF4F46E5)
 val JulesOnBackground = Color.White
 val JulesOnSurface = Color.White
 
+// Additional Palette
+val JulesGreen = Color(0xFF34D399) // Emerald-400
+val JulesRed = Color(0xFFF87171)   // Red-400
+val JulesZinc = Color(0xFF71717A)  // Zinc-500
+val JulesIndigo = Color(0xFF818CF8) // Indigo-400
+
 private val DarkColorScheme = darkColorScheme(
     primary = JulesPrimary,
     background = JulesBackground,

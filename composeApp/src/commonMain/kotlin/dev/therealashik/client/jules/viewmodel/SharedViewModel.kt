@@ -2,6 +2,7 @@ package dev.therealashik.client.jules.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.therealashik.client.jules.Settings
 import dev.therealashik.client.jules.api.GeminiService
 import dev.therealashik.client.jules.model.*
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ sealed class Screen {
     data object Home : Screen()
     data class Session(val sessionId: String) : Screen()
     data class Repository(val sourceId: String) : Screen()
+    data object Settings : Screen()
 }
 
 data class JulesUiState(
@@ -39,7 +41,8 @@ data class JulesUiState(
     val isProcessing: Boolean = false,
     val currentScreen: Screen = Screen.Home,
     val error: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val defaultCardState: Boolean = false // false = Collapsed, true = Expanded
 )
 
 // ==================== VIEW MODEL ====================
@@ -63,8 +66,11 @@ class SharedViewModel : ViewModel() {
     }
 
     private fun loadInitialData() {
+        // Load settings
+        val savedCardState = Settings.getBoolean("default_card_state", false)
+
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, defaultCardState = savedCardState) }
             try {
                 // Execute network calls on IO dispatcher
                 val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
@@ -93,6 +99,15 @@ class SharedViewModel : ViewModel() {
 
     // --- Navigation & Selection ---
 
+    fun navigateToSettings() {
+        _uiState.update { it.copy(currentScreen = Screen.Settings) }
+    }
+
+    fun updateDefaultCardState(expanded: Boolean) {
+        Settings.saveBoolean("default_card_state", expanded)
+        _uiState.update { it.copy(defaultCardState = expanded) }
+    }
+
     fun selectSource(source: JulesSource) {
         _uiState.update {
             it.copy(
@@ -116,7 +131,7 @@ class SharedViewModel : ViewModel() {
     fun navigateBack() {
         _uiState.update { state ->
             when (state.currentScreen) {
-                is Screen.Session, is Screen.Repository -> {
+                is Screen.Session, is Screen.Repository, is Screen.Settings -> {
                     // Stop polling when leaving session
                     stopPolling()
                     state.copy(currentScreen = Screen.Home, currentSession = null)

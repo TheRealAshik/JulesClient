@@ -42,6 +42,7 @@ fun SessionView(
     session: JulesSession,
     activities: List<JulesActivity>,
     isProcessing: Boolean,
+    defaultCardState: Boolean,
     onSendMessage: (String) -> Unit,
     onApprovePlan: (String?) -> Unit
 ) {
@@ -75,7 +76,7 @@ fun SessionView(
             contentPadding = PaddingValues(bottom = 16.dp, top = 16.dp)
         ) {
             items(activities) { activity ->
-                ActivityItem(activity, onApprovePlan)
+                ActivityItem(activity, defaultCardState, onApprovePlan)
             }
 
             // Session Outputs (PR Cards)
@@ -170,7 +171,7 @@ private fun getTextContent(content: MessageContent?): String? {
 }
 
 @Composable
-fun ActivityItem(activity: JulesActivity, onApprovePlan: (String?) -> Unit) {
+fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePlan: (String?) -> Unit) {
     val isUser = activity.userMessaged != null || activity.userMessage != null
     val isPlan = activity.planGenerated != null
     val isProgress = activity.progressUpdated != null
@@ -301,13 +302,13 @@ fun ActivityItem(activity: JulesActivity, onApprovePlan: (String?) -> Unit) {
             if (isPlan && activity.planGenerated != null) {
                 val plan = activity.planGenerated.plan
                 // val isApproved = activity.planApproved != null // Simplification
-                PlanCard(plan, onApprove = { onApprovePlan(activity.name) })
+                PlanCard(plan, defaultCardState, onApprove = { onApprovePlan(activity.name) })
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
             // Artifacts
             activity.artifacts.forEach { artifact ->
-                ArtifactView(artifact)
+                ArtifactView(artifact, defaultCardState)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -357,44 +358,57 @@ fun StatusBanner(success: Boolean, message: String) {
 }
 
 @Composable
-fun PlanCard(plan: Plan, onApprove: () -> Unit) {
+fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
+    var isExpanded by remember { mutableStateOf(defaultExpanded) }
+
     Card(
         modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF121215))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("ℹ", color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Execution Plan", style = MaterialTheme.typography.titleMedium, color = Color.White)
                 Spacer(modifier = Modifier.weight(1f))
                 Text("${plan.steps.size} steps", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            plan.steps.forEach { step ->
-                Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                    Box(
-                        modifier = Modifier.size(20.dp).background(Color(0xFF18181B), CircleShape).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("${(step.index ?: 0) + 1}", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = Color.Gray)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(step.title, style = MaterialTheme.typography.bodyMedium, color = Color.LightGray)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onApprove,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Start Coding")
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("▶", fontSize = 12.sp)
+                Text(if (isExpanded) "▲" else "▼", color = Color.Gray, fontSize = 12.sp)
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                    plan.steps.forEach { step ->
+                        Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                            Box(
+                                modifier = Modifier.size(20.dp).background(Color(0xFF18181B), CircleShape).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("${(step.index ?: 0) + 1}", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = Color.Gray)
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(step.title, style = MaterialTheme.typography.bodyMedium, color = Color.LightGray)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onApprove,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Start Coding")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("▶", fontSize = 12.sp)
+                    }
+                }
             }
         }
     }
@@ -439,19 +453,21 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
 
 @OptIn(ExperimentalEncodingApi::class)
 @Composable
-fun ArtifactView(artifact: ActivityArtifact) {
+fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
     if (artifact.bashOutput != null) {
         CodeBlock(
             title = "Bash Output (Exit: ${artifact.bashOutput.exitCode})",
             content = artifact.bashOutput.output,
             language = "bash",
-            isError = artifact.bashOutput.exitCode != 0
+            isError = artifact.bashOutput.exitCode != 0,
+            defaultExpanded = defaultExpanded
         )
     } else if (artifact.changeSet != null) {
         CodeBlock(
             title = artifact.changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
             content = artifact.changeSet.gitPatch?.unidiffPatch ?: "No diff content",
-            language = "diff"
+            language = "diff",
+            defaultExpanded = defaultExpanded
         )
     } else if (artifact.media != null) {
         val base64Data = artifact.media.data
@@ -478,8 +494,8 @@ fun ArtifactView(artifact: ActivityArtifact) {
 }
 
 @Composable
-fun CodeBlock(title: String, content: String, language: String, isError: Boolean = false) {
-    var isExpanded by remember { mutableStateOf(false) }
+fun CodeBlock(title: String, content: String, language: String, isError: Boolean = false, defaultExpanded: Boolean = false) {
+    var isExpanded by remember { mutableStateOf(defaultExpanded) }
     val borderColor = if (isError) Color.Red.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
     val headerBg = if (isError) Color.Red.copy(alpha = 0.1f) else Color(0xFF1E1E1E)
 

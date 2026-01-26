@@ -15,6 +15,10 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
 import dev.therealashik.client.jules.ui.JulesBackground
+import dev.therealashik.client.jules.ui.JulesPrimary
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.ProactiveSection
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
@@ -79,8 +84,48 @@ fun HomeView(
                 onSendMessage = onSendMessage,
                 isLoading = isProcessing,
                 currentSource = currentSource,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = 24.dp)
             )
+
+            // Find Issues Toggle
+            var findIssuesEnabled by remember { mutableStateOf(false) }
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+                    .clickable { findIssuesEnabled = !findIssuesEnabled },
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Automatically find issues",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.White
+                        )
+                        Text(
+                            "Jules will proactively scan your codebase for bugs.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    Switch(
+                        checked = findIssuesEnabled,
+                        onCheckedChange = { findIssuesEnabled = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = JulesPrimary,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = Color.DarkGray
+                        )
+                    )
+                }
+            }
 
             // Proactive Section
             ProactiveSection(
