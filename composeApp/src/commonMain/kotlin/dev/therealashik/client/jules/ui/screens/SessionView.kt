@@ -1,9 +1,11 @@
 package dev.therealashik.client.jules.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,18 +16,42 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -42,6 +68,7 @@ fun SessionView(
     session: JulesSession,
     activities: List<JulesActivity>,
     isProcessing: Boolean,
+    error: String? = null,
     defaultCardState: Boolean,
     onSendMessage: (String) -> Unit,
     onApprovePlan: (String?) -> Unit
@@ -50,111 +77,233 @@ fun SessionView(
     val listState = rememberLazyListState()
 
     // Auto-scroll to bottom
-    LaunchedEffect(activities.size, session.outputs.size) {
-        if (activities.isNotEmpty() || session.outputs.isNotEmpty()) {
+    LaunchedEffect(activities.size, session.outputs.size, error) {
+        if (activities.isNotEmpty() || session.outputs.isNotEmpty() || error != null) {
             // Wait a frame for layout
             kotlinx.coroutines.delay(100)
             val count = activities.size + session.outputs.filter { it.pullRequest != null }.size
-            if (count > 0) {
+            if (count > 0 || error != null) {
                  listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
             }
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(JulesBackground)
     ) {
-        // Chat History
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = 16.dp, top = 16.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            items(activities) { activity ->
-                ActivityItem(activity, defaultCardState, onApprovePlan)
+            // Header
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF0E0E11).copy(alpha = 0.8f),
+                tonalElevation = 2.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Chat",
+                        color = Color(0xFF71717A),
+                        fontSize = 14.sp,
+                        modifier = Modifier.clickable { /* Navigate home */ }
+                    )
+                    Text(" / ", color = Color(0xFF3F3F46), fontSize = 14.sp)
+                    Text(
+                        session.title ?: session.name.removePrefix("sessions/"),
+                        color = Color(0xFFD4D4D8),
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
+            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
 
-            // Session Outputs (PR Cards)
-            session.outputs.forEach { output ->
-                if (output.pullRequest != null) {
+            // Chat History
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(bottom = 160.dp, top = 16.dp)
+            ) {
+                items(activities) { activity ->
+                    ActivityItem(activity, defaultCardState, onApprovePlan)
+                }
+
+                // Session Outputs (PR Cards)
+                session.outputs.forEach { output ->
+                    if (output.pullRequest != null) {
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            PullRequestCard(output.pullRequest)
+                        }
+                    }
+                }
+
+                // Plan Approval Card (Pinned to bottom of list if waiting)
+                if (session.state == SessionState.AWAITING_PLAN_APPROVAL) {
                     item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        PullRequestCard(output.pullRequest)
+                        PlanApprovalCard(onApprove = { onApprovePlan(null) })
+                    }
+                }
+
+                // Completion / Failure Status (if no specific activity rendered it)
+                if (session.state == SessionState.COMPLETED) {
+                     item {
+                         Spacer(modifier = Modifier.height(24.dp))
+                         StatusBanner(true, "Session Completed Successfully")
+                     }
+                } else if (session.state == SessionState.FAILED) {
+                     item {
+                         Spacer(modifier = Modifier.height(24.dp))
+                         StatusBanner(false, "Session Failed")
+                     }
+                }
+
+                // Error Display
+                if (!error.isNullOrBlank()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                                .background(Color(0xFFEF4444).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                                .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Filled.Warning, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                            Text(error, color = Color(0xFFEF4444), fontSize = 14.sp)
+                        }
                     }
                 }
             }
-
-            // Plan Approval Card (Pinned to bottom of list if waiting)
-            if (session.state == SessionState.AWAITING_PLAN_APPROVAL) {
-                item {
-                    PlanApprovalCard(onApprove = { onApprovePlan(null) })
-                }
-            }
-
-            // Completion / Failure Status (if no specific activity rendered it)
-            if (session.state == SessionState.COMPLETED) {
-                 item {
-                     Spacer(modifier = Modifier.height(24.dp))
-                     StatusBanner(true, "Session Completed Successfully")
-                 }
-            } else if (session.state == SessionState.FAILED) {
-                 item {
-                     Spacer(modifier = Modifier.height(24.dp))
-                     StatusBanner(false, "Session Failed")
-                 }
-            }
         }
 
-        // Input Area (Fixed at bottom)
+        // Input Area (Floating & Gradient)
         Box(
             modifier = Modifier
+                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(JulesSurface)
-                .padding(16.dp)
         ) {
-             Row(
-                modifier = Modifier.fillMaxWidth(),
+            // Gradient Overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color(0xFF0C0C0C).copy(alpha = 0.8f),
+                                Color(0xFF0C0C0C)
+                            )
+                        )
+                    )
+            )
+
+            // Input Pill
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp)
+                    .background(
+                        Color(0xFF1C1C1F).copy(alpha = 0.95f),
+                        RoundedCornerShape(26.dp)
+                    )
+                    .border(
+                        1.dp,
+                        Color.White.copy(alpha = 0.1f),
+                        RoundedCornerShape(26.dp)
+                    )
+                    .padding(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Plus Button
+                IconButton(
+                    onClick = { /* TODO: Attachments */ },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color(0xFFA1A1AA) // Zinc-400
+                    )
+                }
+
                 TextField(
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Type a message...") },
+                    placeholder = { Text("Type a message...", color = Color(0xFF71717A)) },
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Black.copy(alpha = 0.3f),
-                        unfocusedContainerColor = Color.Black.copy(alpha = 0.3f),
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.White,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     ),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = false,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (inputText.isNotBlank() && !isProcessing) {
+                                onSendMessage(inputText)
+                                inputText = ""
+                            }
+                        }
+                    ),
                     maxLines = 4
                 )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Button(
+
+                // Send Button
+                val isEnabled = inputText.isNotBlank() && !isProcessing
+                IconButton(
                     onClick = {
-                        if (inputText.isNotBlank()) {
+                        if (isEnabled) {
                             onSendMessage(inputText)
                             inputText = ""
                         }
                     },
-                    enabled = inputText.isNotBlank() && !isProcessing,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
+                    enabled = isEnabled || isProcessing,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isEnabled) MaterialTheme.colorScheme.primary else Color(0xFF27272A)
+                        )
                 ) {
-                    Text("➤", fontSize = 16.sp)
+                    if (isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.ArrowForward,
+                            contentDescription = "Send",
+                            tint = if (isEnabled) Color.White else Color(0xFF71717A),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
@@ -196,17 +345,23 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp) // Reduced vertical padding
     ) {
         // System Message
         if (activity.originator == "system" && !isPlan && !isProgress && !isCompleted && !isFailed) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
                  Text(
                     text = text ?: "System Event",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
+                    color = Color(0xFF71717A), // Zinc-500
                     modifier = Modifier
                         .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = 0.05f), CircleShape)
                         .padding(horizontal = 12.dp, vertical = 4.dp)
                 )
             }
@@ -215,72 +370,167 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
 
         // User/Agent Message Header & Bubble
         if (text != null) {
+            var isTimestampVisible by remember { mutableStateOf(false) }
+
             Row(
                 verticalAlignment = Alignment.Top,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isUser) { isTimestampVisible = !isTimestampVisible },
                 horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
             ) {
                 if (!isUser) {
                      Box(
                         modifier = Modifier
                             .size(32.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                            .background(Color(0xFF18181B), CircleShape)
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("J", color = Color.White, fontWeight = FontWeight.Bold)
+                        Icon(
+                            Icons.Default.SmartToy,
+                            contentDescription = "Jules",
+                            tint = Color(0xFF818CF8), // Indigo-400
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
                 }
 
-                Column(modifier = Modifier.weight(1f, fill = false).widthIn(max = 600.dp)) {
+                val bubbleShape = RoundedCornerShape(20.dp)
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .fillMaxWidth(if (isUser) 0.85f else 1f)
+                ) {
                     // Bubble
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(
-                                topStart = 16.dp,
-                                topEnd = 16.dp,
-                                bottomStart = if (isUser) 16.dp else 4.dp,
-                                bottomEnd = if (isUser) 4.dp else 16.dp
-                            ))
+                            .clip(bubbleShape)
                             .background(if (isUser) Color(0xFF27272A) else Color.Transparent)
                             .border(
                                 width = if (isUser) 1.dp else 0.dp,
-                                color = if (isUser) Color.White.copy(alpha = 0.1f) else Color.Transparent,
-                                shape = RoundedCornerShape(16.dp)
+                                color = if (isUser) Color.White.copy(alpha = 0.05f) else Color.Transparent,
+                                shape = bubbleShape
                             )
-                            .padding(if (isUser) 12.dp else 0.dp)
+                            .padding(if (isUser) 16.dp else 0.dp) // Increased padding
+                            .animateContentSize()
                     ) {
-                        SelectionContainer {
-                            Markdown(
-                                content = text,
-                                colors = DefaultMarkdownColors(
-                                     text = Color.White.copy(alpha = 0.9f),
-                                     codeText = Color(0xFFCE9178),
-                                     codeBackground = Color(0xFF1E1E1E),
-                                     inlineCodeText = Color(0xFFCE9178),
-                                     inlineCodeBackground = Color(0xFF1E1E1E),
-                                     dividerColor = Color.Gray,
-                                     linkText = Color(0xFF818CF8) // Indigo-400
-                                ),
-                                typography = DefaultMarkdownTypography(
-                                     h1 = MaterialTheme.typography.headlineLarge,
-                                     h2 = MaterialTheme.typography.headlineMedium,
-                                     h3 = MaterialTheme.typography.headlineSmall,
-                                     h4 = MaterialTheme.typography.titleLarge,
-                                     h5 = MaterialTheme.typography.titleMedium,
-                                     h6 = MaterialTheme.typography.titleSmall,
-                                     text = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
-                                     code = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-                                     inlineCode = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-                                     quote = MaterialTheme.typography.bodyMedium,
-                                     paragraph = MaterialTheme.typography.bodyMedium,
-                                     ordered = MaterialTheme.typography.bodyMedium,
-                                     bullet = MaterialTheme.typography.bodyMedium,
-                                     list = MaterialTheme.typography.bodyMedium,
-                                     link = MaterialTheme.typography.bodyMedium
+                        // Expansion Logic for User Messages
+                        if (isUser) {
+                            val isLong = text.length > 500 || text.count { it == '\n' } > 8
+                            var isExpanded by remember { mutableStateOf(false) }
+
+                            Column {
+                                Box(
+                                    modifier = Modifier.heightIn(max = if (isLong && !isExpanded) 200.dp else 5000.dp)
+                                ) {
+                                    SelectionContainer {
+                                        Markdown(
+                                            content = text,
+                                            colors = DefaultMarkdownColors(
+                                                 text = Color.White.copy(alpha = 0.9f),
+                                                 codeText = Color(0xFFCE9178),
+                                                 codeBackground = Color(0xFF1E1E1E),
+                                                 inlineCodeText = Color(0xFFCE9178),
+                                                 inlineCodeBackground = Color(0xFF1E1E1E),
+                                                 dividerColor = Color.Gray,
+                                                 linkText = Color(0xFF818CF8)
+                                            ),
+                                            typography = DefaultMarkdownTypography(
+                                                 h1 = MaterialTheme.typography.headlineLarge,
+                                                 h2 = MaterialTheme.typography.headlineMedium,
+                                                 h3 = MaterialTheme.typography.headlineSmall,
+                                                 h4 = MaterialTheme.typography.titleLarge,
+                                                 h5 = MaterialTheme.typography.titleMedium,
+                                                 h6 = MaterialTheme.typography.titleSmall,
+                                                 text = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp),
+                                                 code = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                                                 inlineCode = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                                                 quote = MaterialTheme.typography.bodyMedium,
+                                                 paragraph = MaterialTheme.typography.bodyMedium,
+                                                 ordered = MaterialTheme.typography.bodyMedium,
+                                                 bullet = MaterialTheme.typography.bodyMedium,
+                                                 list = MaterialTheme.typography.bodyMedium,
+                                                 link = MaterialTheme.typography.bodyMedium
+                                            )
+                                        )
+                                    }
+
+                                    // Gradient Overlay
+                                    if (isLong && !isExpanded) {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .fillMaxWidth()
+                                                .height(48.dp)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        listOf(Color.Transparent, Color(0xFF27272A))
+                                                    )
+                                                )
+                                        )
+                                    }
+                                }
+
+                                if (isLong) {
+                                    TextButton(
+                                        onClick = { isExpanded = !isExpanded },
+                                        modifier = Modifier.align(Alignment.CenterHorizontally).height(32.dp),
+                                        contentPadding = PaddingValues(4.dp)
+                                    ) {
+                                        Text(
+                                            if (isExpanded) "Show less" else "Show more",
+                                            fontSize = 12.sp,
+                                            color = Color(0xFFA1A1AA)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(
+                                            if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            null,
+                                            tint = Color(0xFFA1A1AA),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            // Agent Message (Standard Render)
+                            SelectionContainer {
+                                Markdown(
+                                    content = text,
+                                    colors = DefaultMarkdownColors(
+                                         text = Color(0xFFE4E4E7), // Zinc-200
+                                         codeText = Color(0xFFCE9178),
+                                         codeBackground = Color(0xFF1E1E1E),
+                                         inlineCodeText = Color(0xFFCE9178),
+                                         inlineCodeBackground = Color(0xFF1E1E1E),
+                                         dividerColor = Color.Gray,
+                                         linkText = Color(0xFF818CF8)
+                                    ),
+                                    typography = DefaultMarkdownTypography(
+                                         text = MaterialTheme.typography.bodyMedium.copy(
+                                             lineHeight = 24.sp,
+                                             fontWeight = FontWeight.Light
+                                         ),
+                                         code = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                                         inlineCode = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+                                    )
                                 )
-                            )
+                            }
                         }
+                    }
+
+                    // Timestamp (Agent only)
+                    AnimatedVisibility(visible = isTimestampVisible && !isUser) {
+                        Text(
+                            "Jules • ${activity.createTime.take(16).replace("T", " ")}", // Simple formatting
+                            fontSize = 10.sp,
+                            color = Color(0xFF52525B),
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                 }
             }
@@ -328,13 +578,31 @@ fun ProgressItem(progress: ProgressUpdate) {
     val title = progress.title ?: progress.status ?: "Processing"
     val description = progress.description
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("↻", color = Color.Gray, fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(8.dp))
+    val icon = when {
+        title.contains("read", true) || title.contains("analyz", true) -> Icons.Default.Description
+        title.contains("run", true) || title.contains("exec", true) -> Icons.Default.Code
+        else -> Icons.Default.CheckCircle
+    }
+
+    Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 4.dp)) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(Color(0xFF18181B), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.SmartToy, null, tint = Color(0xFF818CF8).copy(0.7f), modifier = Modifier.size(18.dp))
+        }
+        Spacer(modifier = Modifier.width(16.dp))
         Column {
-            Text(title, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(title, color = Color(0xFFE4E4E7), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
             if (!description.isNullOrBlank() && description != title) {
-                Text(description, style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                Text(description, color = Color(0xFFA1A1AA), fontSize = 13.sp, lineHeight = 18.sp, modifier = Modifier.padding(start = 22.dp))
             }
         }
     }
@@ -371,45 +639,97 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { isExpanded = !isExpanded }
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("ℹ", color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
+                Icon(Icons.Default.List, null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Execution Plan", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                Text("Execution Plan", style = MaterialTheme.typography.titleMedium, fontSize = 14.sp, color = Color.White)
+
                 Spacer(modifier = Modifier.weight(1f))
-                Text("${plan.steps.size} steps", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(if (isExpanded) "▲" else "▼", color = Color.Gray, fontSize = 12.sp)
+
+                Text(
+                    "${plan.steps.size} steps",
+                    fontSize = 12.sp,
+                    color = Color(0xFF71717A),
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier
+                        .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                )
             }
 
             AnimatedVisibility(visible = isExpanded) {
-                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                    plan.steps.forEach { step ->
-                        Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                            Box(
-                                modifier = Modifier.size(20.dp).background(Color(0xFF18181B), CircleShape).border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("${(step.index ?: 0) + 1}", style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = Color.Gray)
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(step.title, style = MaterialTheme.typography.bodyMedium, color = Color.LightGray)
+                Column {
+                    Column(Modifier.padding(8.dp)) {
+                        plan.steps.forEachIndexed { index, step ->
+                            PlanStepItem(step, index)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = onApprove,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    // Footer
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(0.2f))
+                            .padding(16.dp)
                     ) {
-                        Text("Start Coding")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("▶", fontSize = 12.sp)
+                        Button(
+                            onClick = onApprove,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                        ) {
+                            Text("Start Coding")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(14.dp))
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PlanStepItem(step: Step, index: Int) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { isExpanded = !isExpanded }
+            .padding(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(Color(0xFF18181B), CircleShape)
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("${index + 1}", fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = Color(0xFF71717A))
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(step.title, modifier = Modifier.weight(1f), fontSize = 14.sp, color = Color(0xFFE4E4E7), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(
+                Icons.Default.ExpandMore,
+                null,
+                modifier = Modifier.size(14.dp).rotate(if (isExpanded) 180f else 0f),
+                tint = Color(0xFF71717A)
+            )
+        }
+
+        AnimatedVisibility(visible = isExpanded) {
+            Text(
+                step.description ?: "",
+                modifier = Modifier.padding(start = 36.dp, top = 8.dp),
+                fontSize = 14.sp,
+                color = Color(0xFF9CA3AF),
+                lineHeight = 20.sp
+            )
         }
     }
 }
@@ -456,16 +776,26 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
 fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
     if (artifact.bashOutput != null) {
         CodeBlock(
-            title = "Bash Output (Exit: ${artifact.bashOutput.exitCode})",
+            title = artifact.bashOutput.command,
             content = artifact.bashOutput.output,
             language = "bash",
-            isError = artifact.bashOutput.exitCode != 0,
+            exitCode = artifact.bashOutput.exitCode,
             defaultExpanded = defaultExpanded
         )
     } else if (artifact.changeSet != null) {
+        val patch = artifact.changeSet.gitPatch?.unidiffPatch ?: ""
+
+        // Extract filename
+        val match = Regex("^\\+\\+\\+\\s+(?:b/)?(.+)$", RegexOption.MULTILINE).find(patch)
+        val fileName = match?.groupValues?.get(1)?.trim()?.let { fullPath ->
+           val parts = fullPath.split('/')
+           if (parts.size > 2) ".../${parts.takeLast(2).joinToString("/")}" else fullPath
+        }
+
         CodeBlock(
             title = artifact.changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
-            content = artifact.changeSet.gitPatch?.unidiffPatch ?: "No diff content",
+            subtitle = fileName,
+            content = patch,
             language = "diff",
             defaultExpanded = defaultExpanded
         )
@@ -494,15 +824,16 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
 }
 
 @Composable
-fun CodeBlock(title: String, content: String, language: String, isError: Boolean = false, defaultExpanded: Boolean = false) {
+fun CodeBlock(title: String, subtitle: String? = null, content: String, language: String, exitCode: Int? = null, defaultExpanded: Boolean = false) {
     var isExpanded by remember { mutableStateOf(defaultExpanded) }
-    val borderColor = if (isError) Color.Red.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
-    val headerBg = if (isError) Color.Red.copy(alpha = 0.1f) else Color(0xFF1E1E1E)
+    val isError = exitCode != null && exitCode != 0
+    val borderColor = if (isError) Color(0xFFEF4444).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
+    val headerBg = if (isError) Color(0xFFEF4444).copy(alpha = 0.05f) else Color.White.copy(alpha = 0.02f)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF09090B)),
-        shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.fillMaxWidth().border(1.dp, borderColor, RoundedCornerShape(8.dp))
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth().border(1.dp, borderColor, RoundedCornerShape(12.dp))
     ) {
         Column {
             // Header
@@ -511,16 +842,59 @@ fun CodeBlock(title: String, content: String, language: String, isError: Boolean
                     .fillMaxWidth()
                     .background(headerBg)
                     .clickable { isExpanded = !isExpanded }
-                    .padding(8.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (language == "bash") ">_" else "±", color = if(isError) Color.Red else Color.Gray, fontFamily = FontFamily.Monospace)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(title, color = if(isError) Color.Red else Color.Gray, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Icon(
+                        if (isError) Icons.Default.Warning else Icons.Default.Code,
+                        null,
+                        tint = if (isError) Color(0xFFF87171) else Color(0xFF71717A),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                         Text(
+                             title,
+                             color = if (isError) Color(0xFFF87171) else Color(0xFFD4D4D8),
+                             style = MaterialTheme.typography.bodyMedium,
+                             fontFamily = FontFamily.Monospace,
+                             maxLines = 1,
+                             overflow = TextOverflow.Ellipsis
+                         )
+                         if (subtitle != null) {
+                             Text(
+                                 subtitle,
+                                 color = Color(0xFF71717A),
+                                 fontSize = 10.sp,
+                                 fontFamily = FontFamily.Monospace
+                             )
+                         }
+                    }
                 }
-                Text(if (isExpanded) "▲" else "▼", color = Color.Gray, fontSize = 10.sp)
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (exitCode != null && isError) {
+                        Text(
+                            "Failed",
+                            color = Color(0xFFF87171),
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .background(Color(0xFFEF4444).copy(0.1f), RoundedCornerShape(4.dp))
+                                .border(1.dp, Color(0xFFEF4444).copy(0.2f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+
+                    Icon(
+                        if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        null,
+                        tint = Color(0xFF71717A),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
 
             // Content
@@ -529,15 +903,52 @@ fun CodeBlock(title: String, content: String, language: String, isError: Boolean
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Box(modifier = Modifier.padding(0.dp).fillMaxWidth().background(Color.Black.copy(alpha = 0.3f))) {
-                    SelectionContainer {
-                        Text(
-                            text = content,
-                            color = if(isError) Color(0xFFFCA5A5) else Color(0xFFD4D4D4),
-                            fontFamily = FontFamily.Monospace,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (isError) Color(0xFFEF4444).copy(0.02f) else Color.Black.copy(0.2f))
+                        .border(
+                             width = 1.dp,
+                             color = if (isError) Color(0xFFEF4444).copy(0.1f) else Color.White.copy(0.05f)
                         )
+                ) {
+                    if (language == "diff") {
+                        Column {
+                            content.split('\n').forEach { line ->
+                                val (textColor, bgColor) = when {
+                                    line.startsWith('+') && !line.startsWith("+++") ->
+                                        Color(0xFF4ADE80) to Color(0xFF22C55E).copy(alpha = 0.05f)
+                                    line.startsWith('-') && !line.startsWith("---") ->
+                                        Color(0xFFF87171) to Color(0xFFEF4444).copy(alpha = 0.05f)
+                                    line.startsWith("@@") ->
+                                        Color(0xFF818CF8) to Color.Transparent
+                                    else ->
+                                        Color(0xFFA1A1AA) to Color.Transparent
+                                }
+
+                                Text(
+                                    line,
+                                    color = textColor,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(bgColor)
+                                        .padding(horizontal = 12.dp, vertical = 2.dp),
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    } else {
+                        SelectionContainer {
+                            Text(
+                                text = content,
+                                color = if (isError) Color(0xFFFCA5A5) else Color(0xFFA1A1AA),
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -548,6 +959,19 @@ fun CodeBlock(title: String, content: String, language: String, isError: Boolean
 @Composable
 fun PullRequestCard(pr: PullRequestOutput) {
     val uriHandler = LocalUriHandler.current
+    val clipboardManager = LocalClipboardManager.current
+
+    // Pulse Animation
+    val infiniteTransition = rememberInfiniteTransition()
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -561,31 +985,84 @@ fun PullRequestCard(pr: PullRequestOutput) {
         ) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.background(Color(0xFF064E3B), RoundedCornerShape(4.dp)).padding(4.dp)) {
-                        Text("PR", color = Color(0xFF34D399), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Box(modifier = Modifier.background(Color(0xFF064E3B).copy(alpha=0.2f), RoundedCornerShape(6.dp)).padding(6.dp)) {
+                         // Fallback icon for GitPullRequest since standard Icons might not have it
+                         Icon(Icons.Default.Check, null, tint = Color(0xFF4ADE80), modifier = Modifier.size(14.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text("Pull Request Ready", style = MaterialTheme.typography.labelSmall, color = Color.LightGray)
-                        Text("Click to review", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Pull Request Ready", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE4E4E7))
+                        Text("Click to review", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = Color(0xFF71717A))
+                    }
+
+                    // Pulse Dot
+                    Box(modifier = Modifier.size(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .scale(scale)
+                                .background(Color(0xFF22C55E).copy(alpha = 0.5f), CircleShape)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFF22C55E), CircleShape)
+                        )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(pr.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                Text(pr.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = { uriHandler.openUri(pr.url) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Text("View PR")
+                Text(pr.title, style = MaterialTheme.typography.titleMedium, fontSize = 16.sp, color = Color.White)
+                if (pr.description.isNotEmpty()) {
+                    Text(
+                        pr.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFA1A1AA),
+                        maxLines = 2,
+                        modifier = Modifier.padding(top = 4.dp),
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                Text(pr.url, style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = Color.DarkGray, modifier = Modifier.padding(top=8.dp))
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Button(
+                        onClick = { uriHandler.openUri(pr.url) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.OpenInNew, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("View PR")
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = { clipboardManager.setText(AnnotatedString(pr.url)) },
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL", tint = Color(0xFFA1A1AA))
+                    }
+                }
+
+                Text(
+                    pr.url,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontSize = 10.sp,
+                    color = Color(0xFF52525B),
+                    modifier = Modifier.padding(top=12.dp).fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
