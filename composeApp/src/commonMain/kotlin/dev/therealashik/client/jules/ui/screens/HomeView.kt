@@ -1,5 +1,8 @@
 package dev.therealashik.client.jules.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +46,8 @@ fun HomeView(
     isProcessing: Boolean,
     sessions: List<JulesSession> = emptyList(),
     onSelectSession: ((JulesSession) -> Unit)? = null,
-    onResetKey: (() -> Unit)? = null
+    onResetKey: (() -> Unit)? = null,
+    error: String? = null
 ) {
     Box(
         modifier = Modifier
@@ -52,95 +56,80 @@ fun HomeView(
             .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.TopCenter
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 800.dp)
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn(animationSpec = tween(500)),
+            modifier = Modifier.fillMaxSize()
         ) {
-            
-            if (currentSource == null) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 800.dp)
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                if (currentSource == null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
+                            .background(Color(0xFFF59E0B).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Text(
+                            "No repositories found. Ensure the Jules App is installed on your GitHub.",
+                            color = Color(0xFFF59E0B),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                // Input Area
+                InputArea(
+                    onSendMessage = onSendMessage,
+                    isLoading = isProcessing,
+                    currentSource = currentSource,
+                    modifier = Modifier.padding(bottom = 32.dp)
+                )
+
+                if (error != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 24.dp)
+                            .background(Color(0xFFEF4444).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                        Text(
+                            error,
+                            color = Color(0xFFEF4444),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                // Proactive Section
+                ProactiveSection(
+                    sessions = sessions,
+                    onSelectSession = onSelectSession
+                )
+
+                // Footer
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp)
-                        .background(Color(0xFFF59E0B).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                        .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(top = 32.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                    Text(
-                        "No repositories found. Ensure the Jules App is installed on your GitHub.",
-                        color = Color(0xFFF59E0B),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            // Input Area
-            InputArea(
-                onSendMessage = onSendMessage,
-                isLoading = isProcessing,
-                currentSource = currentSource,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            // Find Issues Toggle
-            var findIssuesEnabled by remember { mutableStateOf(false) }
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp)
-                    .clickable { findIssuesEnabled = !findIssuesEnabled },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Automatically find issues",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = Color.White
-                        )
-                        Text(
-                            "Jules will proactively scan your codebase for bugs.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                    }
-                    Switch(
-                        checked = findIssuesEnabled,
-                        onCheckedChange = { findIssuesEnabled = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = JulesPrimary,
-                            uncheckedThumbColor = Color.Gray,
-                            uncheckedTrackColor = Color.DarkGray
-                        )
-                    )
-                }
-            }
-
-            // Proactive Section
-            ProactiveSection(
-                sessions = sessions,
-                onSelectSession = onSelectSession
-            )
-
-            // Footer
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 48.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ActionButton(Icons.Default.ViewInAr, "Render")
                     ActionButton(Icons.Default.Terminal, "CLI")

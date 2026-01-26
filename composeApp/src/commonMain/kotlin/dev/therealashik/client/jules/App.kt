@@ -64,7 +64,8 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             isProcessing = state.isProcessing,
                             sessions = state.sessions,
                             onSelectSession = { viewModel.selectSession(it) },
-                            onResetKey = { viewModel.setApiKey("") } // Assuming setApiKey empty resets it or we need a proper reset
+                            onResetKey = { viewModel.setApiKey("") }, // Assuming setApiKey empty resets it or we need a proper reset
+                            error = state.error
                         )
                     }
                     is Screen.Session -> {
@@ -103,7 +104,8 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 onSendMessage = { text, config -> viewModel.createSession(text, config) },
                                 isProcessing = state.isProcessing,
                                 sessions = state.sessions,
-                                onSelectSession = { viewModel.selectSession(it) }
+                                onSelectSession = { viewModel.selectSession(it) },
+                                error = state.error
                             )
                         }
                     }

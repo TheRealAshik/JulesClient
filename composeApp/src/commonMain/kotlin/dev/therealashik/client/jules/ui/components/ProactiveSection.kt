@@ -1,5 +1,6 @@
 package dev.therealashik.client.jules.ui.components
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -105,6 +107,16 @@ fun ProactiveSection(
 
         // Active Session
         if (runningSession != null) {
+            val infiniteTransition = rememberInfiniteTransition()
+            val pulseAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000),
+                    repeatMode = RepeatMode.Reverse
+                )
+            )
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.List, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
@@ -133,7 +145,7 @@ fun ProactiveSection(
                                         .border(1.dp, Color(0xFF6366F1).copy(alpha = 0.2f), RoundedCornerShape(8.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.Send, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
                                 }
                                 Text(
                                     runningSession.title ?: "Untitled Session",
@@ -144,13 +156,17 @@ fun ProactiveSection(
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
-                            Icon(Icons.Default.MoreVert, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
                         }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Box(modifier = Modifier.size(8.dp).background(Color(0xFF818CF8), CircleShape))
+                            Box(modifier = Modifier
+                                .size(8.dp)
+                                .alpha(pulseAlpha)
+                                .background(Color(0xFF818CF8), CircleShape)
+                            )
                             Text(
                                 getSessionStatusText(runningSession.state),
                                 color = Color.Gray,
