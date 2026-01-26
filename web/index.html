@@ -6,7 +6,7 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover" />
   <title>Jules Client</title>
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#2e2e36">
   <link rel="icon" href="/pwa-192x192.png">
   <link rel="apple-touch-icon" href="/pwa-192x192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,12 +14,22 @@
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --color-background: #2e2e36;
+      --color-surface: #3b3b44;
+      --color-surface-highlight: #464652;
+      --color-border: #6b7280;
+      --color-primary: #A855F7;
+      --color-text-main: #F3F4F6;
+      --color-text-muted: #9CA3AF;
+    }
+
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #0c0c0c;
-      background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #0c0c0c 40%);
+      background-color: var(--color-background);
+      background-image: radial-gradient(circle at 50% 0%, var(--color-surface) 0%, var(--color-background) 40%);
       background-attachment: fixed;
-      color: white;
+      color: var(--color-text-main);
       /* Improve text rendering on mobile */
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -155,13 +165,13 @@
       theme: {
         extend: {
           colors: {
-            background: '#050505',
-            surface: '#121215', // Main card bg
-            surfaceHighlight: '#18181b', // Slightly lighter surface
-            border: '#3f3f46',
+            background: '#2e2e36',
+            surface: '#3b3b44', // Main card bg
+            surfaceHighlight: '#464652', // Slightly lighter surface
+            border: '#6b7280',
             primary: '#A855F7', // Purple
-            textMain: '#E4E4E7',
-            textMuted: '#A1A1AA',
+            textMain: '#F3F4F6',
+            textMuted: '#9CA3AF',
           },
           typography: {
             DEFAULT: {

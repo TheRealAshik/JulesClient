@@ -10,6 +10,7 @@ import * as JulesApi from './services/geminiService';
 import { JulesActivity, JulesSource, JulesSession, AutomationMode } from './types';
 import { AlertCircle, Key, ChevronRight } from 'lucide-react';
 import { SessionMode, SessionCreateOptions } from './components/InputArea';
+import { useTheme } from './contexts/ThemeContext';
 
 export default function App() {
     const [apiKey, setApiKey] = useState<string>('');
@@ -22,11 +23,8 @@ export default function App() {
     const [sessionsUsed, setSessionsUsed] = useState(0);
     const [dailyLimit] = useState(100); // Default to Pro plan
 
-    // Settings State
-    const [defaultCardCollapsed, setDefaultCardCollapsed] = useState(() => {
-        const saved = localStorage.getItem('jules_default_card_collapsed');
-        return saved === 'true';
-    });
+    // Get settings from theme context
+    const { defaultCardCollapsed } = useTheme();
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -109,10 +107,7 @@ export default function App() {
         }
     };
 
-    const handleToggleDefaultCardCollapsed = (collapsed: boolean) => {
-        setDefaultCardCollapsed(collapsed);
-        localStorage.setItem('jules_default_card_collapsed', String(collapsed));
-    };
+
 
     const fetchSessions = async () => {
         const allSessions = await JulesApi.listAllSessions();
@@ -365,10 +360,7 @@ export default function App() {
                 } />
 
                 <Route path="/settings" element={
-                    <SettingsView
-                        defaultCardCollapsed={defaultCardCollapsed}
-                        onToggleDefaultCardCollapsed={handleToggleDefaultCardCollapsed}
-                    />
+                    <SettingsView />
                 } />
 
                 <Route path="/session/:sessionId" element={
