@@ -14,15 +14,16 @@ import dev.therealashik.client.jules.ui.screens.HomeView
 import dev.therealashik.client.jules.ui.screens.RepositoryView
 import dev.therealashik.client.jules.ui.screens.SessionView
 import dev.therealashik.client.jules.ui.screens.SettingsView
+import androidx.compose.material3.MaterialTheme
 import dev.therealashik.client.jules.viewmodel.Screen
 import dev.therealashik.client.jules.viewmodel.SharedViewModel
 
 @Composable
 fun App() {
-    JulesTheme {
-        val viewModel = viewModel { SharedViewModel() }
-        val state by viewModel.uiState.collectAsState()
+    val viewModel = viewModel { SharedViewModel() }
+    val state by viewModel.uiState.collectAsState()
 
+    JulesTheme(preset = state.currentTheme) {
         // Handle Back Navigation
         BackHandler(enabled = state.currentScreen !is Screen.Home) {
             viewModel.navigateBack()
@@ -43,7 +44,7 @@ fun JulesAppContent(viewModel: SharedViewModel) {
     val state by viewModel.uiState.collectAsState()
     var isDrawerOpen by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().background(JulesBackground)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Header(
                 onOpenDrawer = { isDrawerOpen = true },
@@ -84,6 +85,9 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 },
                                 onApprovePlan = { planId ->
                                     viewModel.approvePlan(session.name, planId)
+                                },
+                                onNavigateHome = {
+                                    viewModel.navigateBack()
                                 }
                             )
                         } else {
@@ -114,7 +118,9 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                     is Screen.Settings -> {
                         SettingsView(
                             defaultCardState = state.defaultCardState,
+                            currentTheme = state.currentTheme,
                             onUpdateCardState = { viewModel.updateDefaultCardState(it) },
+                            onThemeChange = { viewModel.setTheme(it) },
                             onBack = { viewModel.navigateBack() }
                         )
                     }

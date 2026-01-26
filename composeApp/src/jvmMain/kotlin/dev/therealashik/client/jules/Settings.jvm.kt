@@ -1,21 +1,12 @@
 package dev.therealashik.client.jules
 
-import android.content.Context
-import android.content.SharedPreferences
-
-object AndroidContext {
-    lateinit var context: Context
-}
+import java.util.prefs.Preferences
 
 actual object Settings {
-    private const val PREF_NAME = "jules_preferences"
-
-    private val prefs: SharedPreferences by lazy {
-        AndroidContext.context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-    }
+    private val prefs = Preferences.userNodeForPackage(Settings::class.java)
 
     actual fun saveBoolean(key: String, value: Boolean) {
-        prefs.edit().putBoolean(key, value).apply()
+        prefs.putBoolean(key, value)
     }
 
     actual fun getBoolean(key: String, default: Boolean): Boolean {
@@ -23,15 +14,15 @@ actual object Settings {
     }
 
     actual fun saveString(key: String, value: String) {
-        prefs.edit().putString(key, value).apply()
+        prefs.put(key, value)
     }
 
     actual fun getString(key: String, default: String): String {
-        return prefs.getString(key, default) ?: default
+        return prefs.get(key, default)
     }
 
     actual fun saveInt(key: String, value: Int) {
-        prefs.edit().putInt(key, value).apply()
+        prefs.putInt(key, value)
     }
 
     actual fun getInt(key: String, default: Int): Int {

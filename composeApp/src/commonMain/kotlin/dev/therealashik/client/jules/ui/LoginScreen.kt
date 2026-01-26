@@ -25,13 +25,13 @@ fun LoginScreen(onApiKeyEntered: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JulesBackground),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .width(400.dp)
-                .background(JulesSurface, shape = RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp))
                 .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -84,7 +84,7 @@ fun LoginScreen(onApiKeyEntered: (String) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = JulesPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Enter App", fontWeight = FontWeight.Medium)

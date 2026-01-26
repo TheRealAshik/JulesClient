@@ -52,7 +52,7 @@ fun HomeView(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JulesBackground)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.TopCenter
     ) {

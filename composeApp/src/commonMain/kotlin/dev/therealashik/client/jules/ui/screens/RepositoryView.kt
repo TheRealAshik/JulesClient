@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontFamily
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
 import dev.therealashik.client.jules.model.SessionState
@@ -48,36 +50,68 @@ fun RepositoryView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(JulesBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = source.displayName ?: source.name,
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface, // Use surface instead of hardcoded
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+                Text(
+                    text = source.displayName ?: source.name.substringAfterLast("/"),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = source.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
 
-            // Tabs
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = Color.Transparent,
-                contentColor = JulesPrimary,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = JulesPrimary
-                    )
-                }
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title, color = if (selectedTab == index) Color.White else Color.Gray) }
-                    )
+                // Tabs
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    contentColor = JulesPrimary,
+                    divider = {},
+                    indicator = { tabPositions ->
+                        Box(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[selectedTab])
+                                .height(3.dp)
+                                .padding(horizontal = 16.dp)
+                                .background(JulesPrimary, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { 
+                                Text(
+                                    title, 
+                                    color = if (selectedTab == index) Color.White else Color.Gray,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 14.sp
+                                ) 
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -105,7 +139,7 @@ fun OverviewTab(
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
-    val filters = listOf("All", "Active", "Completed", "Failed")
+    val filters = listOf("All", "Active", "Completed", "Failed", "Scheduled", "Archived")
 
     val filteredSessions = remember(sessions, searchQuery, selectedFilter) {
         sessions.filter { session ->
@@ -116,6 +150,8 @@ fun OverviewTab(
                 "Active" -> session.state != SessionState.COMPLETED && session.state != SessionState.FAILED
                 "Completed" -> session.state == SessionState.COMPLETED
                 "Failed" -> session.state == SessionState.FAILED
+                "Scheduled" -> session.state == SessionState.QUEUED
+                "Archived" -> false // Placeholder for archived logic
                 else -> true
             }
             matchesSearch && matchesFilter
@@ -221,22 +257,40 @@ fun MyFilterChip(
 @Composable
 fun StatsCard(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = JulesSurface),
-        shape = RoundedCornerShape(12.dp)
+        modifier = modifier.height(100.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF18181B)),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                count.toString(),
-                style = MaterialTheme.typography.headlineMedium,
-                color = color,
-                fontWeight = FontWeight.Bold
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Subtle accent
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(color)
+                    .align(Alignment.CenterStart)
             )
+            
+            Column(
+                modifier = Modifier
+                    .padding(start = 20.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    label.uppercase(), 
+                    style = MaterialTheme.typography.labelSmall, 
+                    color = Color.Gray,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    count.toString(),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
         }
     }
 }

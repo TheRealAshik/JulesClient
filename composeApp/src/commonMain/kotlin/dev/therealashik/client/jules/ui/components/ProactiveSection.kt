@@ -64,7 +64,7 @@ fun ProactiveSection(
         // Auto Find Issues Toggle Card
         Card(
             shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
         ) {
             Row(
@@ -125,7 +125,7 @@ fun ProactiveSection(
 
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
@@ -221,7 +221,7 @@ fun CategoryPill(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF161619))
+            .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {

@@ -61,6 +61,8 @@ import com.mikepenz.markdown.model.DefaultMarkdownTypography
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesSurface
+import dev.therealashik.client.jules.ui.components.InputArea
+import dev.therealashik.client.jules.ui.components.InputAreaVariant
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
@@ -71,7 +73,8 @@ fun SessionView(
     error: String? = null,
     defaultCardState: Boolean,
     onSendMessage: (String) -> Unit,
-    onApprovePlan: (String?) -> Unit
+    onApprovePlan: (String?) -> Unit,
+    onNavigateHome: () -> Unit
 ) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -91,7 +94,7 @@ fun SessionView(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JulesBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -112,7 +115,7 @@ fun SessionView(
                         "Chat",
                         color = Color(0xFF71717A),
                         fontSize = 14.sp,
-                        modifier = Modifier.clickable { /* Navigate home */ }
+                        modifier = Modifier.clickable { onNavigateHome() }
                     )
                     Text(" / ", color = Color(0xFF3F3F46), fontSize = 14.sp)
                     Text(
@@ -215,97 +218,18 @@ fun SessionView(
             )
 
             // Input Pill
-            Row(
+            InputArea(
+                variant = InputAreaVariant.CHAT,
+                onSendMessage = { text, _ -> onSendMessage(text) },
+                onSendMessageMinimal = onSendMessage,
+                isLoading = isProcessing,
+                currentSource = null,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 16.dp)
-                    .background(
-                        Color(0xFF1C1C1F).copy(alpha = 0.95f),
-                        RoundedCornerShape(26.dp)
-                    )
-                    .border(
-                        1.dp,
-                        Color.White.copy(alpha = 0.1f),
-                        RoundedCornerShape(26.dp)
-                    )
-                    .padding(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Plus Button
-                IconButton(
-                    onClick = { /* TODO: Attachments */ },
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = Color(0xFFA1A1AA) // Zinc-400
-                    )
-                }
-
-                TextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("Type a message...", color = Color(0xFF71717A)) },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(
-                        onSend = {
-                            if (inputText.isNotBlank() && !isProcessing) {
-                                onSendMessage(inputText)
-                                inputText = ""
-                            }
-                        }
-                    ),
-                    maxLines = 4
-                )
-
-                // Send Button
-                val isEnabled = inputText.isNotBlank() && !isProcessing
-                IconButton(
-                    onClick = {
-                        if (isEnabled) {
-                            onSendMessage(inputText)
-                            inputText = ""
-                        }
-                    },
-                    enabled = isEnabled || isProcessing,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isEnabled) MaterialTheme.colorScheme.primary else Color(0xFF27272A)
-                        )
-                ) {
-                    if (isProcessing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = Color.White
-                        )
-                    } else {
-                        Icon(
-                            Icons.Filled.ArrowForward,
-                            contentDescription = "Send",
-                            tint = if (isEnabled) Color.White else Color(0xFF71717A),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-            }
+            )
         }
     }
 }

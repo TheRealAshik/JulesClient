@@ -22,18 +22,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import dev.therealashik.client.jules.ui.JulesBackground
+import dev.therealashik.client.jules.ui.* // Import all UI constants
+import androidx.compose.material.icons.filled.Storage
+import dev.therealashik.client.jules.ui.ThemePreset
+import dev.therealashik.client.jules.ui.getThemeConfig
+import androidx.compose.material3.ColorScheme
 
 @Composable
 fun SettingsView(
     defaultCardState: Boolean,
+    currentTheme: ThemePreset,
     onUpdateCardState: (Boolean) -> Unit,
+    onThemeChange: (ThemePreset) -> Unit,
     onBack: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(JulesBackground)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Sticky Header
         Surface(
@@ -74,7 +80,7 @@ fun SettingsView(
                         color = Color.White
                     )
                 }
-                Divider(color = Color.White.copy(alpha = 0.05f))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
             }
         }
 
@@ -114,16 +120,62 @@ fun SettingsView(
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+
+                    // Theme Selection
+                    Column(
+                         modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
                         Text(
-                            "Default Card State",
+                            "Theme",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            ThemePreset.values().forEach { preset ->
+                                val config = getThemeConfig(preset)
+                                val isSelected = currentTheme == preset
+                                
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(config.background)
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp, 
+                                            color = if (isSelected) config.primary else Color.White.copy(alpha = 0.2f), 
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        .clickable { onThemeChange(preset) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .background(config.primary, RoundedCornerShape(8.dp))
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f)) // Separator
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+                            Text(
+                                "Default Card State",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
@@ -226,7 +278,62 @@ fun SettingsView(
                     SettingsRow("Theme", "Dark (System)")
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Data Section
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Storage, // Need to make sure Storage is available or use generic
+                    contentDescription = null,
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    "DATA & STORAGE",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF71717A),
+                    letterSpacing = 1.5.sp
+                )
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    SettingsActionRow("Export Settings", "Copy to Clipboard", onClick = {})
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                    SettingsActionRow("Clear All Data", "Reset App", isDestructive = true, onClick = {})
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun SettingsActionRow(label: String, actionLabel: String, isDestructive: Boolean = false, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, fontSize = 14.sp, color = Color(0xFFD4D4D8))
+        Text(
+            actionLabel, 
+            fontSize = 14.sp, 
+            color = if (isDestructive) Color(0xFFEF4444) else JulesPrimary,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

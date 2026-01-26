@@ -80,7 +80,7 @@ fun Drawer(
                 modifier = Modifier
                     .width(320.dp)
                     .fillMaxHeight()
-                    .background(Color(0xFF0E0E11))
+                    .background(MaterialTheme.colorScheme.surface)
                     .border(
                         width = 1.dp,
                         color = Color.White.copy(alpha = 0.05f),
@@ -238,7 +238,7 @@ fun Drawer(
                 // Footer
                 Column(
                     modifier = Modifier
-                        .background(Color(0xFF0E0E11))
+                        .background(MaterialTheme.colorScheme.surface)
                         .border(1.dp, Color.White.copy(alpha = 0.05f)) // Top border effectively
                         .padding(16.dp)
                 ) {
@@ -281,7 +281,7 @@ fun Drawer(
                                 .weight(1f)
                                 .height(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF161619))
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                                 .clickable { onNavigateToSettings?.invoke() },
                             contentAlignment = Alignment.Center
@@ -298,7 +298,7 @@ fun Drawer(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF161619))
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                         ) {
                             // Using generic icon for Docs
@@ -311,7 +311,7 @@ fun Drawer(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF161619))
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                         ) {
                              // Using generic icon for Discord

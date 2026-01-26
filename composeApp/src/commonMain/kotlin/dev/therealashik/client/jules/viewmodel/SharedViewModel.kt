@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dev.therealashik.client.jules.Settings
 import dev.therealashik.client.jules.api.GeminiService
 import dev.therealashik.client.jules.model.*
+import dev.therealashik.client.jules.ui.ThemePreset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
@@ -42,7 +43,8 @@ data class JulesUiState(
     val currentScreen: Screen = Screen.Home,
     val error: String? = null,
     val isLoading: Boolean = false,
-    val defaultCardState: Boolean = false // false = Collapsed, true = Expanded
+    val defaultCardState: Boolean = false, // false = Collapsed, true = Expanded
+    val currentTheme: ThemePreset = ThemePreset.MIDNIGHT
 )
 
 // ==================== VIEW MODEL ====================
@@ -68,9 +70,15 @@ class SharedViewModel : ViewModel() {
     private fun loadInitialData() {
         // Load settings
         val savedCardState = Settings.getBoolean("default_card_state", false)
+        val savedThemeStr = Settings.getString("theme", ThemePreset.MIDNIGHT.name)
+        val savedTheme = try {
+            ThemePreset.valueOf(savedThemeStr)
+        } catch (e: Exception) {
+            ThemePreset.MIDNIGHT
+        }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, defaultCardState = savedCardState) }
+            _uiState.update { it.copy(isLoading = true, defaultCardState = savedCardState, currentTheme = savedTheme) }
             try {
                 // Execute network calls on IO dispatcher
                 val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
@@ -106,6 +114,11 @@ class SharedViewModel : ViewModel() {
     fun updateDefaultCardState(expanded: Boolean) {
         Settings.saveBoolean("default_card_state", expanded)
         _uiState.update { it.copy(defaultCardState = expanded) }
+    }
+
+    fun setTheme(theme: ThemePreset) {
+        Settings.saveString("theme", theme.name)
+        _uiState.update { it.copy(currentTheme = theme) }
     }
 
     fun selectSource(source: JulesSource) {
