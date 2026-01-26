@@ -29,13 +29,7 @@ fun App() {
             viewModel.navigateBack()
         }
 
-        if (state.apiKey == null) {
-            LoginScreen(onApiKeyEntered = { key ->
-                viewModel.setApiKey(key)
-            })
-        } else {
-            JulesAppContent(viewModel)
-        }
+        JulesAppContent(viewModel)
     }
 }
 
@@ -119,8 +113,10 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                         SettingsView(
                             defaultCardState = state.defaultCardState,
                             currentTheme = state.currentTheme,
+                            currentApiKey = state.apiKey ?: "",
                             onUpdateCardState = { viewModel.updateDefaultCardState(it) },
                             onThemeChange = { viewModel.setTheme(it) },
+                            onApiKeyChange = { viewModel.setApiKey(it) },
                             onBack = { viewModel.navigateBack() }
                         )
                     }

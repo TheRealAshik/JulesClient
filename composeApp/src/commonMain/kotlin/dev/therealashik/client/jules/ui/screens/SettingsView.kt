@@ -27,13 +27,21 @@ import androidx.compose.material.icons.filled.Storage
 import dev.therealashik.client.jules.ui.ThemePreset
 import dev.therealashik.client.jules.ui.getThemeConfig
 import androidx.compose.material3.ColorScheme
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.runtime.*
 
 @Composable
 fun SettingsView(
     defaultCardState: Boolean,
     currentTheme: ThemePreset,
+    currentApiKey: String,
     onUpdateCardState: (Boolean) -> Unit,
     onThemeChange: (ThemePreset) -> Unit,
+    onApiKeyChange: (String) -> Unit,
     onBack: () -> Unit
 ) {
     Box(
@@ -92,6 +100,85 @@ fun SettingsView(
                 .padding(top = 80.dp) // Offset for header + status bar approx
                 .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
+
+
+            // Account Section
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp, start = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                 Icon(
+                    Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    "ACCOUNT",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF71717A),
+                    letterSpacing = 1.5.sp
+                )
+            }
+
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF161619)),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "API Key",
+                        fontSize = 14.sp,
+                        color = Color(0xFFD4D4D8),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    var apiKey by remember { mutableStateOf(currentApiKey) }
+                    
+                    // Update local state if prop changes
+                    LaunchedEffect(currentApiKey) {
+                        apiKey = currentApiKey
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                    ) {
+                        BasicTextField(
+                            value = apiKey,
+                            onValueChange = { 
+                                apiKey = it 
+                                onApiKeyChange(it) 
+                            },
+                            visualTransformation = PasswordVisualTransformation(),
+                            textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
+                            cursorBrush = SolidColor(Color.White),
+                            modifier = Modifier.fillMaxWidth(),
+                            decorationBox = { innerTextField ->
+                                if (apiKey.isEmpty()) {
+                                    Text("sk-...", color = Color.Gray, fontSize = 14.sp)
+                                }
+                                innerTextField()
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Your key is stored locally on this device.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF71717A)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Appearance Section
             Row(

@@ -61,10 +61,14 @@ class SharedViewModel : ViewModel() {
     // --- Initialization ---
 
     fun setApiKey(key: String) {
-        if (key.isBlank()) return
+        // Allow setting empty key to "logout" or reset, but always save it
         api.setApiKey(key)
+        Settings.saveString("api_key", key)
         _uiState.update { it.copy(apiKey = key) }
-        loadInitialData()
+        
+        if (key.isNotBlank()) {
+            loadInitialData()
+        }
     }
 
     private fun loadInitialData() {
@@ -76,10 +80,23 @@ class SharedViewModel : ViewModel() {
         } catch (e: Exception) {
             ThemePreset.MIDNIGHT
         }
+        
+        // Load API Key
+        val savedKey = Settings.getString("api_key", "")
+        if (savedKey.isNotBlank()) {
+             api.setApiKey(savedKey)
+             _uiState.update { it.copy(apiKey = savedKey) }
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, defaultCardState = savedCardState, currentTheme = savedTheme) }
             try {
+                // If no key, don't try to fetch data yet
+                if (api.getApiKey().isBlank()) {
+                     _uiState.update { it.copy(isLoading = false) }
+                     return@launch
+                }
+
                 // Execute network calls on IO dispatcher
                 val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
                     val src = api.listSources()

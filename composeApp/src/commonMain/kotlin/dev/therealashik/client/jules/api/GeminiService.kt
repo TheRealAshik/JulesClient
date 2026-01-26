@@ -18,6 +18,10 @@ object GeminiService {
         apiKey = key
     }
 
+    fun getApiKey(): String {
+        return apiKey ?: ""
+    }
+
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {

@@ -324,9 +324,10 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                 val bubbleShape = RoundedCornerShape(20.dp)
 
                 Column(
+                    horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
                     modifier = Modifier
                         .weight(1f, fill = false)
-                        .fillMaxWidth(if (isUser) 0.85f else 1f)
+                        .then(if (isUser) Modifier.fillMaxWidth(0.85f) else Modifier)
                 ) {
                     // Bubble
                     Box(
