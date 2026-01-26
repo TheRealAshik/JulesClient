@@ -33,7 +33,8 @@ fun Drawer(
     dailyLimit: Int,
     sources: List<JulesSource>,
     currentSource: JulesSource?,
-    onSelectSource: (JulesSource) -> Unit
+    onSelectSource: (JulesSource) -> Unit,
+    onNavigateToSettings: (() -> Unit)? = null
 ) {
     if (isOpen) {
         Box(
@@ -203,6 +204,19 @@ fun Drawer(
                         ) {
                             Text("🐦") // X
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Settings Button
+                    OutlinedButton(
+                        onClick = { onNavigateToSettings?.invoke() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                        border = BorderStroke(1.dp, Color.DarkGray)
+                    ) {
+                        Text("⚙️ Settings")
                     }
                 }
             }
