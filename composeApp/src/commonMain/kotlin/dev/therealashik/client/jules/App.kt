@@ -76,6 +76,7 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 session = session,
                                 activities = state.activities,
                                 isProcessing = state.isProcessing,
+                                error = state.error,
                                 defaultCardState = state.defaultCardState,
                                 onSendMessage = { text ->
                                     viewModel.sendMessage(text)
