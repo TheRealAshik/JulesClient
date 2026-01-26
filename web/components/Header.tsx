@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, PanelLeft, ChevronDown, Check, Search, Command } from 'lucide-react';
+import { Settings, PanelLeft, ChevronDown, Check, Search, Command, Gift } from 'lucide-react';
 import { JulesSource } from '../types';
 
 interface HeaderProps {
@@ -106,7 +106,22 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right Section: Configure */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Model Toggle (Mock) */}
+        <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[#27272a] hover:bg-[#3f3f46] border border-white/10 rounded-lg text-xs font-medium text-zinc-200 transition-colors">
+          <span className="text-indigo-400">Gemini 3</span>
+          <ChevronDown size={12} className="text-zinc-500" />
+        </button>
+
+        {/* Gift Icon */}
+        <button
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
+          aria-label="Offers"
+        >
+          <Gift size={18} />
+        </button>
+
+        {/* Settings */}
         <button
           className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
           aria-label="Configure"

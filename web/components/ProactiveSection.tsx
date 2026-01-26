@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lightbulb, Clock, Zap, Palette, ShieldCheck, ListTodo, Rocket, MoreHorizontal, Circle } from 'lucide-react';
+import { Lightbulb, Clock, Zap, Palette, ShieldCheck, ListTodo, Rocket, MoreHorizontal, Circle, Settings, Info, CheckCircle2, Target } from 'lucide-react';
 import { JulesSession } from '../types';
 
 interface ProactiveSectionProps {
@@ -12,22 +12,21 @@ const getSessionStatusText = (state: JulesSession['state']): string => {
     switch (state) {
         case 'QUEUED': return 'Queued';
         case 'PLANNING': return 'Planning...';
-        case 'AWAITING_PLAN_APPROVAL': return 'Awaiting Approval';
-        case 'AWAITING_USER_FEEDBACK': return 'Needs Feedback';
-        case 'IN_PROGRESS': return 'In Progress...';
+        case 'AWAITING_PLAN_APPROVAL': return 'Jules is waiting for you to review...';
+        case 'AWAITING_USER_FEEDBACK': return 'Jules needs your feedback...';
+        case 'IN_PROGRESS': return 'Working on task...';
         case 'PAUSED': return 'Paused';
         case 'COMPLETED': return 'Completed';
         case 'FAILED': return 'Failed';
-        default: return 'Unknown';
+        default: return 'Unknown status';
     }
 };
 
 export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [], onSelectSession }) => {
-    const [isEnabled, setIsEnabled] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
-    // Find the latest running/active session (not completed or failed)
-    const runningSession = sessions.find(s =>
+    // Filter active sessions
+    const activeSessions = sessions.filter(s =>
         ['QUEUED', 'PLANNING', 'AWAITING_PLAN_APPROVAL', 'AWAITING_USER_FEEDBACK', 'IN_PROGRESS', 'PAUSED'].includes(s.state)
     );
 
@@ -41,87 +40,95 @@ export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [
                 <TabButton label="Scheduled" isActive={activeTab === 'scheduled'} onClick={() => setActiveTab('scheduled')} />
             </div>
 
-            {/* Auto Find Issues Toggle Card - Improved Hierarchy */}
-            <div className="bg-[#161619] rounded-xl p-4 border border-white/5 flex flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-full bg-[#1e1e22] border border-white/5 flex items-center justify-center text-indigo-400 flex-shrink-0">
-                        <Lightbulb size={20} />
+            {/* Top Suggestions Card (Replacing Auto Find) */}
+            <div className="bg-[#161619] rounded-xl p-5 border border-white/5 relative overflow-hidden group">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-3">
+                        <Lightbulb className="text-zinc-100 mt-1" size={18} />
+                        <h3 className="text-[15px] font-medium text-zinc-200 max-w-[240px] leading-snug">
+                            Top suggestions to continuously improve your codebase
+                        </h3>
                     </div>
-                    <div className="flex flex-col">
-                        <div className="text-[15px] font-medium text-zinc-100 leading-snug">
-                            Automatically find issues
-                        </div>
-                        <div className="text-xs text-zinc-500">
-                            Scan codebase for bugs & improvements
-                        </div>
-                    </div>
+                    <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                        <span className="hidden sm:inline">Configure suggestions</span>
+                        <Settings size={14} />
+                    </button>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-zinc-600 hidden sm:block">0/5</span>
-                    <div
-                        onClick={() => setIsEnabled(!isEnabled)}
-                        className={`
-                            w-[44px] h-[24px] rounded-full relative transition-colors duration-300 ease-in-out cursor-pointer flex-shrink-0
-                            ${isEnabled ? 'bg-indigo-600' : 'bg-zinc-700'}
-                        `}
-                        role="switch"
-                        aria-checked={isEnabled}
-                    >
-                        <span
-                            className={`
-                                absolute top-[2px] left-[2px] bg-white w-[20px] h-[20px] rounded-full shadow-sm transform transition-transform duration-300
-                                ${isEnabled ? 'translate-x-[20px]' : 'translate-x-0'}
-                            `}
-                        />
-                    </div>
+                {/* Content (Empty State) */}
+                <div className="flex items-center gap-3 py-1 text-zinc-400">
+                    <Info size={16} className="text-zinc-500" />
+                    <span className="text-[13px]">No proactive suggestions found at this time.</span>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-4 pt-1">
+                    <button className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors font-medium">View more</button>
                 </div>
             </div>
 
-            {/* Active Sessions Section - Only show if there are running sessions */}
-            {runningSession && (
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                        <ListTodo size={16} className="text-zinc-500" />
-                        <h2 className="text-sm font-medium text-textMuted">Active Session</h2>
-                    </div>
-
-                    {/* Active Session Card */}
-                    <div
-                        onClick={() => onSelectSession?.(runningSession)}
-                        className="bg-[#161619] rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all cursor-pointer group shadow-sm"
-                    >
-                        <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className={`p-1.5 rounded-lg border flex-shrink-0 ${runningSession.state === 'IN_PROGRESS' || runningSession.state === 'PLANNING'
-                                    ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
-                                    : runningSession.state === 'AWAITING_PLAN_APPROVAL' || runningSession.state === 'AWAITING_USER_FEEDBACK'
-                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                        : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
-                                    }`}>
-                                    <Rocket size={16} />
-                                </div>
-                                <span className="text-sm font-medium text-zinc-200 truncate">{runningSession.title || 'Untitled Session'}</span>
-                            </div>
-                            <button className="text-zinc-500 hover:text-white transition-colors flex-shrink-0">
-                                <MoreHorizontal size={16} />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-4 pl-1">
-                            <div className="flex items-center gap-2 text-xs text-zinc-400">
-                                <Circle size={8} className={`${runningSession.state === 'IN_PROGRESS' || runningSession.state === 'PLANNING'
-                                    ? 'fill-indigo-400 text-indigo-400 animate-pulse'
-                                    : runningSession.state === 'AWAITING_PLAN_APPROVAL' || runningSession.state === 'AWAITING_USER_FEEDBACK'
-                                        ? 'fill-amber-400 text-amber-400'
-                                        : 'fill-zinc-500 text-zinc-500'
-                                    }`} />
-                                <span className="font-medium">{getSessionStatusText(runningSession.state)}</span>
-                            </div>
-                        </div>
-                    </div>
+            {/* Sessions List Section */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                    <ListTodo size={18} className="text-zinc-100" />
+                    <h2 className="text-[15px] font-medium text-white">Sessions</h2>
                 </div>
-            )}
+
+                {activeSessions.length > 0 ? (
+                    <div className="space-y-3">
+                        {activeSessions.slice(0, 3).map(session => (
+                            <div
+                                key={session.name}
+                                onClick={() => onSelectSession?.(session)}
+                                className="bg-[#161619] rounded-xl p-4 border border-white/5 hover:border-white/10 transition-all cursor-pointer group shadow-sm"
+                            >
+                                <div className="flex flex-col gap-2">
+                                    {/* Title Row */}
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                                            <Target size={10} className="text-red-400" />
+                                        </div>
+                                        <span className="text-[15px] font-bold text-zinc-200 truncate uppercase tracking-wide">
+                                            {session.title || 'UNTITLED SESSION'}
+                                        </span>
+                                    </div>
+
+                                    {/* Status Row */}
+                                    <div className="flex items-center justify-between pl-6 mt-1">
+                                        <div className="flex items-center gap-2 text-zinc-400">
+                                            <CheckCircle2 size={14} className="text-indigo-400" />
+                                            <span className="text-[13px] leading-snug text-zinc-400">
+                                                {getSessionStatusText(session.state)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {(session.state === 'AWAITING_PLAN_APPROVAL' || session.state === 'AWAITING_USER_FEEDBACK') && (
+                                                <button className="px-3 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 rounded-lg text-xs font-medium transition-colors">
+                                                    Review
+                                                </button>
+                                            )}
+                                            <button className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
+                                                <MoreHorizontal size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer Link */}
+                                    <div className="pl-6 mt-2">
+                                        <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">View more</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-zinc-500 text-sm px-1 py-4 text-center border border-dashed border-white/5 rounded-xl">
+                        No active sessions
+                    </div>
+                )}
+            </div>
 
             {/* Schedule Section */}
             <div className="space-y-3">

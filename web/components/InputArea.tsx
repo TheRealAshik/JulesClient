@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Rocket, ArrowRight, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Settings2 } from 'lucide-react';
+import { Plus, Rocket, ArrowRight, Check, Clock, MessageSquare, FileSearch, Search, GitBranch, ChevronDown, Type, Settings2, Droplet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { JulesSource, AutomationMode } from '../types';
 import { twMerge } from 'tailwind-merge';
@@ -77,7 +77,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
     );
 
     // Use dynamic placeholder if no static one provided
-    const effectivePlaceholder = placeholder || dynamicPlaceholder;
+    const effectivePlaceholder = (isFocused || input.length > 0) ? '' : (placeholder || dynamicPlaceholder);
 
     // Viewport Aware Positioning
     const branchMenuPos = useViewportAwarePosition(branchTriggerRef, branchMenuRef, isBranchMenuOpen);
@@ -223,10 +223,10 @@ export const InputArea: React.FC<InputAreaProps> = ({
         <div
             ref={containerRef}
             className={twMerge(
-                "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out",
+                "relative w-full bg-[#141417] border flex flex-col cursor-text transition-all duration-200 ease-out group",
                 isExpanded
-                    ? 'rounded-xl min-h-[140px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
-                    : 'rounded-xl min-h-[60px] border-white/10 shadow-sm hover:border-white/20 hover:bg-[#18181b]'
+                    ? 'rounded-[20px] min-h-[160px] border-indigo-500/40 shadow-[0_4px_30px_-4px_rgba(99,102,241,0.15)] ring-1 ring-indigo-500/20'
+                    : 'rounded-[26px] min-h-[52px] border-white/10 shadow-sm hover:border-white/20 hover:bg-[#18181b]'
             )}
             onClick={() => {
                 if (!isFocused) {
@@ -236,9 +236,28 @@ export const InputArea: React.FC<InputAreaProps> = ({
             }}
         >
             <div className={twMerge(
-                "w-full transition-all duration-200 ease-out",
-                isExpanded ? 'p-3 pb-2' : 'p-3 px-4'
+                "w-full transition-all duration-200 ease-out relative z-10",
+                isExpanded ? 'p-4' : 'p-3 px-4'
             )}>
+                {/* Custom Placeholder / Branding when expanded and empty */}
+                <AnimatePresence>
+                    {isExpanded && !input && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute top-4 left-4 pointer-events-none select-none"
+                        >
+                            <div className="flex flex-col gap-3">
+                                <span className="text-zinc-500 text-[15px]">Ask Jules to work on a session</span>
+                                <div className="text-indigo-500">
+                                    <Droplet size={24} fill="currentColor" className="opacity-80" />
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <textarea
                     ref={textareaRef}
                     aria-label="Message input"
