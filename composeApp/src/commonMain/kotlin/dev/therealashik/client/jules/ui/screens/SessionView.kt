@@ -510,12 +510,24 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                                          linkText = Color(0xFF818CF8)
                                     ),
                                     typography = DefaultMarkdownTypography(
+                                         h1 = MaterialTheme.typography.headlineLarge,
+                                         h2 = MaterialTheme.typography.headlineMedium,
+                                         h3 = MaterialTheme.typography.headlineSmall,
+                                         h4 = MaterialTheme.typography.titleLarge,
+                                         h5 = MaterialTheme.typography.titleMedium,
+                                         h6 = MaterialTheme.typography.titleSmall,
                                          text = MaterialTheme.typography.bodyMedium.copy(
                                              lineHeight = 24.sp,
                                              fontWeight = FontWeight.Light
                                          ),
                                          code = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
-                                         inlineCode = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+                                         inlineCode = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                                         quote = MaterialTheme.typography.bodyMedium,
+                                         paragraph = MaterialTheme.typography.bodyMedium,
+                                         ordered = MaterialTheme.typography.bodyMedium,
+                                         bullet = MaterialTheme.typography.bodyMedium,
+                                         list = MaterialTheme.typography.bodyMedium,
+                                         link = MaterialTheme.typography.bodyMedium
                                     )
                                 )
                             }

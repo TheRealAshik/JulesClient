@@ -153,6 +153,7 @@ fun HomeView(
         }
     }
 }
+}
 
 @Composable
 fun ActionButton(icon: ImageVector, label: String) {
