@@ -86,7 +86,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             />
 
             {/* Drawer */}
-            <div className={`fixed inset-y-0 left-0 w-[320px] bg-[#0E0E11] z-50 flex flex-col border-r border-white/5 transition-transform duration-300 ease-in-out ${isVisible ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`fixed inset-y-0 left-0 w-[320px] bg-[#121212] z-50 flex flex-col border-r border-white/5 transition-transform duration-300 ease-in-out ${isVisible ? 'translate-x-0' : '-translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-white/5">
@@ -105,7 +105,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search repositories & sessions..."
+                            placeholder="Search for repo or sessions"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-[#161619] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:bg-[#1E1E22] transition-all"
@@ -146,8 +146,10 @@ export const Drawer: React.FC<DrawerProps> = ({
                                             to={`/session/${session.name.replace('sessions/', '')}`}
                                             onClick={onClose}
                                             className={({ isActive }) => `
-                                                w-full flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors group
-                                                ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
+                                                w-full flex items-start gap-3 px-3 py-2.5 transition-colors group
+                                                ${isActive
+                                                    ? 'bg-white/5 border-l-2 border-indigo-500 rounded-r-lg'
+                                                    : 'hover:bg-white/5 border-l-2 border-transparent rounded-lg'}
                                             `}
                                         >
                                             {({ isActive }) => (
@@ -259,7 +261,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                             onClick={() => setIsCodebasesOpen(!isCodebasesOpen)}
                             className="w-full flex items-center justify-between px-3 py-2 text-zinc-400 hover:text-white transition-colors group"
                         >
-                            <span className="text-sm font-medium group-hover:text-zinc-200">Repositories</span>
+                            <span className="text-sm font-medium group-hover:text-zinc-200">Codebases</span>
                             <div className="flex items-center gap-2">
                                 {searchQuery && filteredSources.length > 0 && (
                                     <span className="text-[10px] bg-white/10 px-1.5 rounded text-zinc-300">{filteredSources.length}</span>
@@ -281,8 +283,10 @@ export const Drawer: React.FC<DrawerProps> = ({
                                         to={`/repository/${source.name.replace('sources/', '')}`}
                                         onClick={onClose}
                                         className={({ isActive }) => `
-                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group 
-                                            ${isActive ? 'bg-white/5' : 'hover:bg-white/5'}
+                                            w-full flex items-center gap-3 px-3 py-2.5 transition-colors group
+                                            ${isActive
+                                                ? 'bg-white/5 border-l-2 border-indigo-500 rounded-r-lg'
+                                                : 'hover:bg-white/5 border-l-2 border-transparent rounded-lg'}
                                         `}
                                     >
                                         {({ isActive }) => (
@@ -319,7 +323,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-white/5 bg-[#0E0E11]">
+                <div className="p-4 border-t border-white/5 bg-[#121212]">
                     <div className="mb-4">
                         <div className="flex justify-between items-end mb-2">
                             <span className="text-xs text-zinc-500">Daily session limit ({sessionsUsed}/{dailyLimit})</span>
@@ -333,16 +337,33 @@ export const Drawer: React.FC<DrawerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Link to="/settings" onClick={onClose} className="flex-1 flex items-center justify-center gap-2 bg-[#161619] hover:bg-[#1E1E22] border border-white/5 py-2 rounded-lg text-sm text-zinc-300 transition-colors">
-                            <Settings size={14} />
-                            Settings
-                        </Link>
-                        <button className="w-10 h-10 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors" title="Documentation">
-                            <FileText size={18} />
-                        </button>
-                        <button aria-label="Join Discord" className="w-10 h-10 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors">
+                        <a
+                            href="https://jules.google/docs"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 bg-[#161619] hover:bg-[#1E1E22] border border-white/5 py-2 rounded-lg text-sm text-zinc-300 hover:text-white transition-colors h-10"
+                        >
+                            <FileText size={16} />
+                            <span>Docs</span>
+                        </a>
+                        <a
+                            href="https://discord.gg/jules"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Join Discord"
+                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                        >
                             <Disc size={18} />
-                        </button>
+                        </a>
+                        <a
+                            href="https://twitter.com/jules"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Follow on X"
+                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[#161619] hover:bg-[#1E1E22] border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                        >
+                            <X size={18} />
+                        </a>
                     </div>
                 </div>
             </div>
