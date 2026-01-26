@@ -251,8 +251,8 @@ fun InputArea(
                                 onClick = { /* TODO: Attachments */ },
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .background(Color(0xFF1F1F23), RoundedCornerShape(6.dp))
-                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                    .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.LightGray, modifier = Modifier.size(14.dp))
                             }
