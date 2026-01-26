@@ -118,7 +118,13 @@ fun JulesAppContent(viewModel: SharedViewModel) {
             },
             onDeleteSession = { viewModel.deleteSession(it) },
             sessionsUsed = state.sessionsUsed,
-            dailyLimit = state.dailyLimit
+            dailyLimit = state.dailyLimit,
+            sources = state.sources,
+            currentSource = state.currentSource,
+            onSelectSource = {
+                viewModel.selectSource(it)
+                isDrawerOpen = false
+            }
         )
     }
 }
