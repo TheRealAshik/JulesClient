@@ -1,118 +1,142 @@
 package dev.therealashik.client.jules.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.ViewInAr
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.therealashik.client.jules.model.AutomationMode
+import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
-import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
 import dev.therealashik.client.jules.ui.JulesBackground
-import dev.therealashik.client.jules.ui.JulesSurface
+import dev.therealashik.client.jules.ui.components.InputArea
+import dev.therealashik.client.jules.ui.components.ProactiveSection
+import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
 
 @Composable
 fun HomeView(
     currentSource: JulesSource?,
     onSendMessage: (String, CreateSessionConfig) -> Unit,
-    isProcessing: Boolean
+    isProcessing: Boolean,
+    sessions: List<JulesSession> = emptyList(),
+    onSelectSession: ((JulesSession) -> Unit)? = null,
+    onResetKey: (() -> Unit)? = null
 ) {
-    var inputText by remember { mutableStateOf("") }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(JulesBackground)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
+            .verticalScroll(rememberScrollState()),
+        contentAlignment = Alignment.TopCenter
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.widthIn(max = 600.dp)
+            modifier = Modifier
+                .widthIn(max = 800.dp)
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Logo (Placeholder)
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .background(Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("J", fontSize = 40.sp, color = Color.White)
-            }
             
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Text(
-                "How can I help you today?",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Medium
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // Input Area
-            Card(
-                colors = CardDefaults.cardColors(containerColor = JulesSurface),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    TextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        ),
-                        placeholder = { Text("Describe your task...", color = Color.Gray) },
-                        minLines = 3
+            if (currentSource == null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .background(Color(0xFFF59E0B).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                    Text(
+                        "No repositories found. Ensure the Jules App is installed on your GitHub.",
+                        color = Color(0xFFF59E0B),
+                        fontSize = 14.sp
                     )
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Button(
-                            onClick = {
-                                if (inputText.isNotBlank() && currentSource != null) {
-                                    val config = CreateSessionConfig(
-                                        title = null,
-                                        requirePlanApproval = false,
-                                        startingBranch = "main",
-                                        automationMode = AutomationMode.AUTO_CREATE_PR
-                                    )
-                                    onSendMessage(inputText, config)
-                                }
-                            },
-                            enabled = inputText.isNotBlank() && currentSource != null && !isProcessing
-                        ) {
-                            if (isProcessing) {
-                                CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Color.White)
-                            } else {
-                                Text("Start Session")
-                            }
-                        }
-                    }
+                }
+            }
+
+            // Input Area
+            InputArea(
+                onSendMessage = onSendMessage,
+                isLoading = isProcessing,
+                currentSource = currentSource,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            // Proactive Section
+            ProactiveSection(
+                sessions = sessions,
+                onSelectSession = onSelectSession
+            )
+
+            // Footer
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ActionButton(Icons.Default.ViewInAr, "Render")
+                    ActionButton(Icons.Default.Terminal, "CLI")
+                    ActionButton(Icons.Default.Code, "API")
+                }
+
+                if (onResetKey != null) {
+                    Text(
+                        "Reset Key",
+                        fontSize = 12.sp,
+                        color = Color(0xFF52525B),
+                        modifier = Modifier
+                            .clickable { onResetKey() }
+                            .padding(8.dp)
+                    )
                 }
             }
             
-            if (currentSource == null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Please select a repository from the top header to begin.",
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
+            // Bottom padding for mobile
+            Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+fun ActionButton(icon: ImageVector, label: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF1E1E22))
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
+        Text(
+            label,
+            color = Color(0xFFA1A1AA),
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace
+        )
     }
 }
