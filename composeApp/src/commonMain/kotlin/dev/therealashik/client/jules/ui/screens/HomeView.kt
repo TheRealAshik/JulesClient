@@ -138,24 +138,7 @@ fun HomeView(
                 }
 
                 if (onResetKey != null) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF1E1E22))
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                            .clickable { onResetKey() }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
-                        Text(
-                            "Reset Key",
-                            color = Color(0xFFA1A1AA),
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                    ActionButton(Icons.Default.Refresh, "Reset Key", onClick = onResetKey)
                 }
             }
             
@@ -167,13 +150,14 @@ fun HomeView(
 }
 
 @Composable
-fun ActionButton(icon: ImageVector, label: String) {
+fun ActionButton(icon: ImageVector, label: String, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFF1E1E22))
             .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {

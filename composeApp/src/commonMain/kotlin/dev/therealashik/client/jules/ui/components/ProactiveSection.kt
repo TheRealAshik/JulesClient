@@ -90,7 +90,7 @@ fun ProactiveSection(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("0/5", color = Color.Gray, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(24.dp))
                     Switch(
                         checked = isEnabled,
                         onCheckedChange = { isEnabled = it },

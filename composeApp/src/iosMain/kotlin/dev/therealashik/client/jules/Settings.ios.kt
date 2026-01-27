@@ -20,4 +20,23 @@ actual object Settings {
         }
         return defaults.boolForKey(key)
     }
+
+    actual fun saveString(key: String, value: String) {
+        defaults.setObject(value, forKey = key)
+    }
+
+    actual fun getString(key: String, default: String): String {
+        return defaults.stringForKey(key) ?: default
+    }
+
+    actual fun saveInt(key: String, value: Int) {
+        defaults.setInteger(value.toLong(), forKey = key)
+    }
+
+    actual fun getInt(key: String, default: Int): Int {
+        if (defaults.objectForKey(key) == null) {
+            return default
+        }
+        return defaults.integerForKey(key).toInt()
+    }
 }

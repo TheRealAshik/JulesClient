@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -150,6 +151,13 @@ fun SessionView(
                             Spacer(modifier = Modifier.height(16.dp))
                             PullRequestCard(output.pullRequest)
                         }
+                    }
+                }
+
+                // Shimmer Loading State
+                if (isProcessing) {
+                    item {
+                        ShimmerMessage()
                     }
                 }
 

@@ -253,28 +253,25 @@ fun InputArea(
                         IconButton(
                             onClick = { /* TODO: Attachments */ },
                             modifier = Modifier
-                                .size(24.dp)
-                                .background(Color(0xFF1F1F23), RoundedCornerShape(6.dp))
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                .size(32.dp)
+                                .padding(4.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.LightGray, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xFFA1A1AA), modifier = Modifier.size(20.dp))
                         }
 
                         // Branch Selector
                         Box {
                             Row(
                                 modifier = Modifier
-                                    .height(24.dp)
-                                    .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
-                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .height(32.dp)
                                     .clickable { isBranchMenuOpen = true }
-                                    .padding(horizontal = 8.dp),
+                                    .padding(horizontal = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.AccountTree, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(11.dp))
-                                Text(selectedBranch, color = Color.LightGray, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(10.dp))
+                                Icon(Icons.Default.AccountTree, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(14.dp))
+                                Text(selectedBranch, color = Color(0xFFE4E4E7), fontSize = 13.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF71717A), modifier = Modifier.size(14.dp))
                             }
 
                             DropdownMenu(
@@ -309,15 +306,14 @@ fun InputArea(
                             IconButton(
                                 onClick = { isSettingsMenuOpen = true },
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
-                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .size(32.dp)
+                                    .padding(4.dp)
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = "Settings",
-                                    tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color.LightGray,
-                                    modifier = Modifier.size(12.dp)
+                                    tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color(0xFFA1A1AA),
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
 

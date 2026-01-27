@@ -88,15 +88,15 @@ fun Header(
                     Box {
                         Row(
                             modifier = Modifier
-                                .heightIn(min = 32.dp)
-                                .widthIn(max = 200.dp)
+                                .heightIn(min = 40.dp)
+                                .widthIn(max = 240.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF1A1A1D))
                                 .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                                 .clickable { expanded = true }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Gradient icon box
                             Box(
