@@ -244,12 +244,12 @@ fun Drawer(
                 ) {
                     // Progress
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Text(
-                            "Daily session limit ($sessionsUsed/$dailyLimit)",
+                            "Daily Usage ($sessionsUsed/$dailyLimit)",
                             fontSize = 12.sp,
                             color = Color(0xFF71717A)
                         )
@@ -258,7 +258,7 @@ fun Drawer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(Color(0xFF27272A), RoundedCornerShape(2.dp))
+                            .background(Color(0xFF3F3F46), RoundedCornerShape(2.dp))
                     ) {
                         Box(
                             modifier = Modifier
@@ -268,7 +268,7 @@ fun Drawer(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Buttons
                     Row(
@@ -281,7 +281,7 @@ fun Drawer(
                                 .weight(1f)
                                 .height(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surface)
+                                .background(Color(0xFF1E1E22))
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                                 .clickable { onNavigateToSettings?.invoke() },
                             contentAlignment = Alignment.Center
@@ -298,7 +298,7 @@ fun Drawer(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surface)
+                                .background(Color(0xFF1E1E22))
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                         ) {
                             // Using generic icon for Docs
@@ -311,7 +311,7 @@ fun Drawer(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surface)
+                                .background(Color(0xFF1E1E22))
                                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
                         ) {
                              // Using generic icon for Discord

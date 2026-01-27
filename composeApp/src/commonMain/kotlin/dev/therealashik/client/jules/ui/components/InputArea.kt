@@ -180,261 +180,263 @@ fun InputArea(
         }
     } else {
         // --- DEFAULT VARIANT (Hero Card) ---
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF141417)),
-            modifier = modifier
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = if (isExpanded) Color(0xFF6366F1).copy(alpha = 0.4f) else Color.White.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .animateContentSize()
-                .clickable(enabled = !isFocused) {
-                    focusRequester.requestFocus()
-                }
-                .then(
-                    if (isExpanded) Modifier.shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(16.dp),
-                        spotColor = Color(0xFF6366F1).copy(alpha = 0.15f)
-                    ) else Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
-                )
-        ) {
-            Column(
-                modifier = Modifier.padding(if (isExpanded) PaddingValues(12.dp) else PaddingValues(horizontal = 16.dp, vertical = 12.dp))
+        Column(modifier = modifier) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF141417)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = if (isExpanded) Color(0xFF6366F1).copy(alpha = 0.4f) else Color.White.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .animateContentSize()
+                    .clickable(enabled = !isFocused) {
+                        focusRequester.requestFocus()
+                    }
+                    .then(
+                        if (isExpanded) Modifier.shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(16.dp),
+                            spotColor = Color(0xFF6366F1).copy(alpha = 0.15f)
+                        ) else Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                    )
             ) {
-                TextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { isFocused = it.isFocused },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = Color(0xFFE4E4E7),
-                        unfocusedTextColor = Color(0xFFE4E4E7),
-                        cursorColor = Color(0xFF6366F1)
-                    ),
-                    placeholder = {
-                        Text(
-                            placeholderText,
-                            color = Color.Gray,
-                            modifier = Modifier.animateContentSize()
-                        )
-                    },
-                    minLines = if (isExpanded) 3 else 1,
-                    maxLines = if (isExpanded) 10 else 1
-                )
-
-                // Footer Controls
-                AnimatedVisibility(visible = isExpanded) {
-                    Row(
+                Column(
+                    modifier = Modifier.padding(if (isExpanded) PaddingValues(12.dp) else PaddingValues(horizontal = 16.dp, vertical = 12.dp))
+                ) {
+                    TextField(
+                        value = input,
+                        onValueChange = { input = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { isFocused = it.isFocused },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color(0xFFE4E4E7),
+                            unfocusedTextColor = Color(0xFFE4E4E7),
+                            cursorColor = Color(0xFF6366F1)
+                        ),
+                        placeholder = {
+                            Text(
+                                placeholderText,
+                                color = Color.Gray,
+                                modifier = Modifier.animateContentSize()
+                            )
+                        },
+                        minLines = if (isExpanded) 3 else 1,
+                        maxLines = if (isExpanded) 10 else 1
+                    )
+                }
+            }
+
+            // Footer Controls
+            AnimatedVisibility(visible = isExpanded) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Left Actions
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left Actions
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Plus Button
+                        IconButton(
+                            onClick = { /* TODO: Attachments */ },
+                            modifier = Modifier
+                                .size(24.dp)
+                                .background(Color(0xFF1F1F23), RoundedCornerShape(6.dp))
+                                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
                         ) {
-                            // Plus Button
-                            IconButton(
-                                onClick = { /* TODO: Attachments */ },
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.LightGray, modifier = Modifier.size(14.dp))
+                        }
+
+                        // Branch Selector
+                        Box {
+                            Row(
                                 modifier = Modifier
-                                    .size(24.dp)
-                                    .background(Color(0xFF1F1F23), RoundedCornerShape(6.dp))
-                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                                    .height(24.dp)
+                                    .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                    .clickable { isBranchMenuOpen = true }
+                                    .padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.LightGray, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.AccountTree, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(11.dp))
+                                Text(selectedBranch, color = Color.LightGray, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(10.dp))
                             }
 
-                            // Branch Selector
-                            Box {
-                                Row(
-                                    modifier = Modifier
-                                        .height(24.dp)
-                                        .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                        .clickable { isBranchMenuOpen = true }
-                                        .padding(horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(Icons.Default.AccountTree, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(11.dp))
-                                    Text(selectedBranch, color = Color.LightGray, fontSize = 10.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(10.dp))
-                                }
-
-                                DropdownMenu(
-                                    expanded = isBranchMenuOpen,
-                                    onDismissRequest = { isBranchMenuOpen = false },
-                                    modifier = Modifier.background(Color(0xFF121215))
-                                ) {
-                                    currentSource?.githubRepo?.branches?.forEach { branch ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Text(
-                                                    branch.displayName,
-                                                    color = if(branch.displayName == selectedBranch) Color(0xFF818CF8) else Color.LightGray
-                                                )
-                                            },
-                                            onClick = {
-                                                selectedBranch = branch.displayName
-                                                isBranchMenuOpen = false
-                                            },
-                                            leadingIcon = {
-                                                if (branch.displayName == selectedBranch) {
-                                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF818CF8))
-                                                }
+                            DropdownMenu(
+                                expanded = isBranchMenuOpen,
+                                onDismissRequest = { isBranchMenuOpen = false },
+                                modifier = Modifier.background(Color(0xFF121215))
+                            ) {
+                                currentSource?.githubRepo?.branches?.forEach { branch ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                branch.displayName,
+                                                color = if(branch.displayName == selectedBranch) Color(0xFF818CF8) else Color.LightGray
+                                            )
+                                        },
+                                        onClick = {
+                                            selectedBranch = branch.displayName
+                                            isBranchMenuOpen = false
+                                        },
+                                        leadingIcon = {
+                                            if (branch.displayName == selectedBranch) {
+                                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF818CF8))
                                             }
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Settings Button
-                            Box {
-                                IconButton(
-                                    onClick = { isSettingsMenuOpen = true },
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                ) {
-                                    Icon(
-                                        Icons.Default.Settings,
-                                        contentDescription = "Settings",
-                                        tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color.LightGray,
-                                        modifier = Modifier.size(12.dp)
+                                        }
                                     )
                                 }
+                            }
+                        }
 
-                                DropdownMenu(
-                                    expanded = isSettingsMenuOpen,
-                                    onDismissRequest = { isSettingsMenuOpen = false },
-                                    modifier = Modifier.background(Color(0xFF121215)).width(280.dp)
-                                ) {
-                                    Column(modifier = Modifier.padding(12.dp)) {
-                                        // Session Title
-                                        Text("SESSION TITLE", fontSize = 10.sp, color = Color.Gray, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        OutlinedTextField(
-                                            value = sessionTitle,
-                                            onValueChange = { sessionTitle = it },
-                                            placeholder = { Text("Optional title...", fontSize = 12.sp) },
-                                            textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
-                                            modifier = Modifier.fillMaxWidth().height(40.dp),
-                                            colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = Color(0xFF818CF8),
-                                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                                                focusedContainerColor = Color(0xFF18181B),
-                                                unfocusedContainerColor = Color(0xFF18181B)
-                                            )
+                        // Settings Button
+                        Box {
+                            IconButton(
+                                onClick = { isSettingsMenuOpen = true },
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(Color(0xFF1F1F23), RoundedCornerShape(8.dp))
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                            ) {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color.LightGray,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = isSettingsMenuOpen,
+                                onDismissRequest = { isSettingsMenuOpen = false },
+                                modifier = Modifier.background(Color(0xFF121215)).width(280.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    // Session Title
+                                    Text("SESSION TITLE", fontSize = 10.sp, color = Color.Gray, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    OutlinedTextField(
+                                        value = sessionTitle,
+                                        onValueChange = { sessionTitle = it },
+                                        placeholder = { Text("Optional title...", fontSize = 12.sp) },
+                                        textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
+                                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = Color(0xFF818CF8),
+                                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                            focusedContainerColor = Color(0xFF18181B),
+                                            unfocusedContainerColor = Color(0xFF18181B)
                                         )
+                                    )
 
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                    Spacer(modifier = Modifier.height(16.dp))
 
-                                        // Session Mode
-                                        Text("SESSION MODE", fontSize = 10.sp, color = Color.Gray, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                    // Session Mode
+                                    Text("SESSION MODE", fontSize = 10.sp, color = Color.Gray, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(6.dp))
 
-                                        val modes = listOf(
-                                            Triple("START", "Start immediately", Icons.Default.Send), // Default/Rocket equivalent
-                                            Triple("SCHEDULED", "Scheduled task", Icons.Default.Schedule),
-                                            Triple("INTERACTIVE", "Interactive plan", Icons.Default.ChatBubble),
-                                            Triple("REVIEW", "Review plan", Icons.Default.Search)
-                                        )
+                                    val modes = listOf(
+                                        Triple("START", "Start immediately", Icons.Default.Send), // Default/Rocket equivalent
+                                        Triple("SCHEDULED", "Scheduled task", Icons.Default.Schedule),
+                                        Triple("INTERACTIVE", "Interactive plan", Icons.Default.ChatBubble),
+                                        Triple("REVIEW", "Review plan", Icons.Default.Search)
+                                    )
 
-                                        modes.forEach { (mode, desc, icon) ->
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clickable {
-                                                        selectedMode = mode
-                                                        isSettingsMenuOpen = false
-                                                    }
-                                                    .background(if (selectedMode == mode) Color(0xFF818CF8).copy(alpha = 0.1f) else Color.Transparent, RoundedCornerShape(8.dp))
-                                                    .padding(8.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(icon, contentDescription = null, tint = if(selectedMode == mode) Color(0xFF818CF8) else Color.Gray, modifier = Modifier.size(16.dp))
-                                                Spacer(modifier = Modifier.width(12.dp))
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(
-                                                            if (mode == "START") "Start immediately" else if (mode == "SCHEDULED") "Scheduled task" else if (mode == "INTERACTIVE") "Interactive plan" else "Review plan",
-                                                            color = if(selectedMode == mode) Color.White else Color.LightGray,
-                                                            fontSize = 12.sp,
-                                                            fontWeight = FontWeight.Medium
-                                                        )
-                                                        if (mode == "SCHEDULED") {
-                                                            Spacer(modifier = Modifier.width(8.dp))
-                                                            Box(
-                                                                modifier = Modifier
-                                                                    .background(Color(0xFF6366F1).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                                    modes.forEach { (mode, desc, icon) ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    selectedMode = mode
+                                                    isSettingsMenuOpen = false
+                                                }
+                                                .background(if (selectedMode == mode) Color(0xFF818CF8).copy(alpha = 0.1f) else Color.Transparent, RoundedCornerShape(8.dp))
+                                                .padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(icon, contentDescription = null, tint = if(selectedMode == mode) Color(0xFF818CF8) else Color.Gray, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(
+                                                        if (mode == "START") "Start immediately" else if (mode == "SCHEDULED") "Scheduled task" else if (mode == "INTERACTIVE") "Interactive plan" else "Review plan",
+                                                        color = if(selectedMode == mode) Color.White else Color.LightGray,
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                    if (mode == "SCHEDULED") {
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .background(Color(0xFF6366F1).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                                                .padding(horizontal = 4.dp, vertical = 2.dp)
                                                             ) {
                                                                 Text("NEW", color = Color(0xFF818CF8), fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                                             }
-                                                        }
                                                     }
                                                 }
-                                                if (selectedMode == mode) {
-                                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(14.dp))
-                                                }
+                                            }
+                                            if (selectedMode == mode) {
+                                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(14.dp))
                                             }
                                         }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        // Send Button
-                        IconButton(
-                            onClick = {
-                                if (input.isNotBlank() && !isLoading) {
-                                    onSendMessage(
-                                        input,
-                                        CreateSessionConfig(
-                                            title = sessionTitle.takeIf { it.isNotBlank() },
-                                            startingBranch = selectedBranch,
-                                            automationMode = when (selectedMode) {
-                                                "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
-                                                else -> AutomationMode.AUTO_CREATE_PR
-                                            }
-                                        )
+                    // Send Button
+                    IconButton(
+                        onClick = {
+                            if (input.isNotBlank() && !isLoading) {
+                                onSendMessage(
+                                    input,
+                                    CreateSessionConfig(
+                                        title = sessionTitle.takeIf { it.isNotBlank() },
+                                        startingBranch = selectedBranch,
+                                        automationMode = when (selectedMode) {
+                                            "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
+                                            else -> AutomationMode.AUTO_CREATE_PR
+                                        }
                                     )
-                                    input = ""
-                                    sessionTitle = ""
-                                }
-                            },
-                            enabled = input.isNotBlank() && !isLoading,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .shadow(
-                                    elevation = if (input.isNotBlank()) 4.dp else 0.dp,
-                                    spotColor = Color(0xFF6366F1).copy(alpha = 0.25f),
-                                    shape = RoundedCornerShape(6.dp)
                                 )
-                                .background(
-                                    if (input.isNotBlank()) Color(0xFF4F46E5) else Color(0xFF27272A),
-                                    RoundedCornerShape(6.dp)
-                                )
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.ArrowForward, contentDescription = "Send", tint = if (input.isNotBlank()) Color.White else Color.Gray, modifier = Modifier.size(14.dp))
+                                input = ""
+                                sessionTitle = ""
                             }
+                        },
+                        enabled = input.isNotBlank() && !isLoading,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .shadow(
+                                elevation = if (input.isNotBlank()) 4.dp else 0.dp,
+                                spotColor = Color(0xFF6366F1).copy(alpha = 0.25f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .background(
+                                if (input.isNotBlank()) Color(0xFF4F46E5) else Color(0xFF27272A),
+                                RoundedCornerShape(6.dp)
+                            )
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.ArrowForward, contentDescription = "Send", tint = if (input.isNotBlank()) Color.White else Color.Gray, modifier = Modifier.size(14.dp))
                         }
                     }
                 }

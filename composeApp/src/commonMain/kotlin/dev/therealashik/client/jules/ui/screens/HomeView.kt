@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -137,14 +138,24 @@ fun HomeView(
                 }
 
                 if (onResetKey != null) {
-                    Text(
-                        "Reset Key",
-                        fontSize = 12.sp,
-                        color = Color(0xFF52525B),
+                    Row(
                         modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFF1E1E22))
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                             .clickable { onResetKey() }
-                            .padding(8.dp)
-                    )
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
+                        Text(
+                            "Reset Key",
+                            color = Color(0xFFA1A1AA),
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
             
