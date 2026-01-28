@@ -67,17 +67,6 @@ object GeminiService {
         return authRequest("$BASE_URL/sources$query")
     }
 
-    suspend fun listAllSources(): List<JulesSource> {
-        val allSources = mutableListOf<JulesSource>()
-        var pageToken: String? = null
-        do {
-            val response = listSources(pageSize = 50, pageToken = pageToken)
-            allSources.addAll(response.sources)
-            pageToken = response.nextPageToken
-        } while (pageToken != null)
-        return allSources
-    }
-
     suspend fun getSource(sourceName: String): JulesSource {
         val url = if (sourceName.startsWith("sources/")) "$BASE_URL/$sourceName" else "$BASE_URL/sources/$sourceName"
         return authRequest(url)
@@ -92,17 +81,6 @@ object GeminiService {
         val query = if (params.isNotEmpty()) "?${params.joinToString("&")}" else ""
 
         return authRequest("$BASE_URL/sessions$query")
-    }
-
-    suspend fun listAllSessions(): List<JulesSession> {
-        val allSessions = mutableListOf<JulesSession>()
-        var pageToken: String? = null
-        do {
-            val response = listSessions(pageSize = 50, pageToken = pageToken)
-            allSessions.addAll(response.sessions)
-            pageToken = response.nextPageToken
-        } while (pageToken != null)
-        return allSessions
     }
 
     suspend fun getSession(sessionName: String): JulesSession {

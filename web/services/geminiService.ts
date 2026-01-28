@@ -77,16 +77,9 @@ export const listSources = async (options?: ListSourcesOptions): Promise<ListSou
  * Fetch all sources with automatic pagination
  */
 export const listAllSources = async (): Promise<JulesSource[]> => {
-  const allSources: JulesSource[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    const response = await listSources({ pageSize: 50, pageToken });
-    allSources.push(...response.sources);
-    pageToken = response.nextPageToken;
-  } while (pageToken);
-
-  return allSources;
+  // Performance optimization: Only fetch the first page to avoid loading all sources upfront.
+  const response = await listSources({ pageSize: 50 });
+  return response.sources;
 };
 
 export const getSource = async (sourceName: string): Promise<JulesSource> => {
@@ -158,16 +151,10 @@ export const listSessions = async (options?: ListSessionsOptions): Promise<ListS
  * Fetch all sessions with automatic pagination
  */
 export const listAllSessions = async (): Promise<JulesSession[]> => {
-  const allSessions: JulesSession[] = [];
-  let pageToken: string | undefined;
-
-  do {
-    const response = await listSessions({ pageSize: 50, pageToken });
-    allSessions.push(...response.sessions);
-    pageToken = response.nextPageToken;
-  } while (pageToken);
-
-  return allSessions;
+  // Performance optimization: Only fetch the first page.
+  // Note: This means metrics like "Sessions Used" will be capped at the page size.
+  const response = await listSessions({ pageSize: 50 });
+  return response.sessions;
 };
 
 export interface CreateSessionOptions {

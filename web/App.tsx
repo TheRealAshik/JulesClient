@@ -181,9 +181,10 @@ export default function App() {
                 // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
                 // Terminal states: COMPLETED, FAILED
                 const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
+                const isTerminal = ['COMPLETED', 'FAILED'].includes(sess.state);
                 setIsProcessing(isActive);
 
-                if (activePollingSession.current === sessionName) {
+                if (activePollingSession.current === sessionName && !isTerminal) {
                     pollTimeout.current = window.setTimeout(poll, 2000);
                 }
             } catch (e) {

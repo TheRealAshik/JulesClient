@@ -50,9 +50,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -858,32 +861,40 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                         )
                 ) {
                     if (language == "diff") {
-                        Column {
-                            content.split('\n').forEach { line ->
-                                val (textColor, bgColor) = when {
-                                    line.startsWith('+') && !line.startsWith("+++") ->
-                                        Color(0xFF4ADE80) to Color(0xFF22C55E).copy(alpha = 0.05f)
-                                    line.startsWith('-') && !line.startsWith("---") ->
-                                        Color(0xFFF87171) to Color(0xFFEF4444).copy(alpha = 0.05f)
-                                    line.startsWith("@@") ->
-                                        Color(0xFF818CF8) to Color.Transparent
-                                    else ->
-                                        Color(0xFFA1A1AA) to Color.Transparent
-                                }
+                        val annotatedDiff = remember(content) {
+                            buildAnnotatedString {
+                                val lines = content.split('\n')
+                                lines.forEachIndexed { index, line ->
+                                    val (textColor, bgColor) = when {
+                                        line.startsWith('+') && !line.startsWith("+++") ->
+                                            Color(0xFF4ADE80) to Color(0xFF22C55E).copy(alpha = 0.05f)
+                                        line.startsWith('-') && !line.startsWith("---") ->
+                                            Color(0xFFF87171) to Color(0xFFEF4444).copy(alpha = 0.05f)
+                                        line.startsWith("@@") ->
+                                            Color(0xFF818CF8) to Color.Transparent
+                                        else ->
+                                            Color(0xFFA1A1AA) to Color.Transparent
+                                    }
 
-                                Text(
-                                    line,
-                                    color = textColor,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(bgColor)
-                                        .padding(horizontal = 12.dp, vertical = 2.dp),
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp
-                                )
+                                    withStyle(SpanStyle(color = textColor, background = bgColor)) {
+                                        append(line)
+                                    }
+                                    if (index < lines.lastIndex) {
+                                        append("\n")
+                                    }
+                                }
                             }
                         }
+
+                        Text(
+                            text = annotatedDiff,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            lineHeight = 20.sp
+                        )
                     } else {
                         SelectionContainer {
                             Text(

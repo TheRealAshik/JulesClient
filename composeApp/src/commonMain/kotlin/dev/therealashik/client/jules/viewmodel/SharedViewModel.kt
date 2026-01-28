@@ -100,7 +100,7 @@ class SharedViewModel : ViewModel() {
                 // Execute network calls on IO dispatcher
                 val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
                     val src = api.listSources()
-                    val sess = api.listAllSessions()
+                    val sess = api.listSessions(pageSize = 100).sessions
                     src to sess
                 }
 
