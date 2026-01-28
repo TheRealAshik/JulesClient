@@ -88,15 +88,15 @@ fun Header(
                     Box {
                         Row(
                             modifier = Modifier
-                                .heightIn(min = 32.dp)
-                                .widthIn(max = 200.dp)
+                                .heightIn(min = 40.dp)
+                                .widthIn(max = 240.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xFF1A1A1D))
                                 .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
                                 .clickable { expanded = true }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Gradient icon box
                             Box(
@@ -119,14 +119,33 @@ fun Header(
                             }
 
                             // Repo name
-                            Text(
-                                text = currentSource?.displayName ?: currentSource?.name?.split("/")?.takeLast(2)?.joinToString("/") ?: "Select Repository",
-                                fontSize = 12.sp,
-                                color = Color(0xFFD4D4D8),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
+                            Column(
+                                modifier = Modifier.weight(1f, fill = false),
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                val fullName = currentSource?.displayName ?: currentSource?.name ?: "Select/Repository"
+                                val parts = fullName.split("/")
+                                val orgName = if (parts.size >= 2) parts[parts.size - 2] else ""
+                                val repoName = parts.last()
+
+                                if (orgName.isNotEmpty()) {
+                                    Text(
+                                        text = orgName,
+                                        fontSize = 10.sp,
+                                        color = Color(0xFFA1A1AA),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Text(
+                                    text = repoName,
+                                    fontSize = 12.sp,
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                    color = Color(0xFFE4E4E7),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
 
                             Icon(
                                 Icons.Default.ExpandMore,

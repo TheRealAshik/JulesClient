@@ -88,8 +88,9 @@ fun ProactiveSection(
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("0/5", color = Color.Gray, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                    Spacer(modifier = Modifier.width(24.dp))
                     Switch(
                         checked = isEnabled,
                         onCheckedChange = { isEnabled = it },
@@ -207,7 +208,7 @@ fun TabButton(text: String, isActive: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text,
-            color = if (isActive) Color.White else Color.Gray,
+            color = if (isActive) Color.White else Color(0xFFA1A1AA),
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
@@ -226,7 +227,7 @@ fun CategoryPill(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Icon(icon, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
-        Text(text, color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(text, color = Color.Gray, fontSize = 12.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium)
     }
 }
 

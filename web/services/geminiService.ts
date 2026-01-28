@@ -20,7 +20,7 @@ export const getApiKey = () => API_KEY;
 const getHeaders = () => {
   return {
     "Content-Type": "application/json",
-    "X-Goog-Api-Key": API_KEY,
+    "x-goog-api-key": API_KEY,
   };
 };
 
@@ -179,20 +179,23 @@ export interface CreateSessionOptions {
 
 export const createSession = async (
   prompt: string,
-  sourceName: string,
+  sourceName?: string,
   options?: CreateSessionOptions
 ): Promise<JulesSession> => {
   const payload: Record<string, any> = {
-    prompt,
-    requirePlanApproval: options?.requirePlanApproval ?? true,
-    automationMode: options?.automationMode ?? "AUTO_CREATE_PR",
-    sourceContext: {
+    prompt
+  };
+
+  if (sourceName) {
+    payload.requirePlanApproval = options?.requirePlanApproval ?? true;
+    payload.automationMode = options?.automationMode ?? "AUTO_CREATE_PR";
+    payload.sourceContext = {
       source: sourceName,
       githubRepoContext: {
         startingBranch: options?.startingBranch || "main"
       }
-    }
-  };
+    };
+  }
 
   // Add optional title if provided
   if (options?.title) {
@@ -255,19 +258,21 @@ const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
 export interface ListActivitiesOptions {
   pageSize?: number;
   pageToken?: string;
+  createTime?: string;
 }
 
 export const listActivities = async (
-  sessionName: string,
+  sessionId: string,
   options?: ListActivitiesOptions
 ): Promise<ListActivitiesResponse> => {
   try {
     const params = new URLSearchParams();
     params.append('pageSize', String(options?.pageSize ?? 50));
     if (options?.pageToken) params.append('pageToken', options.pageToken);
+    if (options?.createTime) params.append('createTime', options.createTime);
 
     const res = await fetch(
-      `${BASE_URL}/${sessionName}/activities?${params.toString()}`,
+      `${BASE_URL}/sessions/${sessionId}/activities?${params.toString()}`,
       { headers: getHeaders() }
     );
 
@@ -291,12 +296,12 @@ export const listActivities = async (
 /**
  * Fetch all activities for a session with automatic pagination
  */
-export const listAllActivities = async (sessionName: string): Promise<JulesActivity[]> => {
+export const listAllActivities = async (sessionId: string): Promise<JulesActivity[]> => {
   const allActivities: JulesActivity[] = [];
   let pageToken: string | undefined;
 
   do {
-    const response = await listActivities(sessionName, { pageSize: 100, pageToken });
+    const response = await listActivities(sessionId, { pageSize: 100, pageToken });
     allActivities.push(...response.activities);
     pageToken = response.nextPageToken;
   } while (pageToken);
