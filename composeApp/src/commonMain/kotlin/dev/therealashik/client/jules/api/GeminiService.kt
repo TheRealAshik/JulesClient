@@ -26,7 +26,6 @@ object GeminiService {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
-                prettyPrint = true
                 isLenient = true
                 encodeDefaults = true
             })
