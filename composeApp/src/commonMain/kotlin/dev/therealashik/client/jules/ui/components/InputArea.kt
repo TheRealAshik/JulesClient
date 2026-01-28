@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,8 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.AutomationMode
 import dev.therealashik.client.jules.model.JulesSource
+import dev.therealashik.client.jules.utils.PlatformFile
+import dev.therealashik.client.jules.utils.rememberFilePickerLauncher
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val DEFAULT_PLACEHOLDERS = listOf(
     "Refactor this function...",
@@ -74,8 +78,15 @@ fun InputArea(
     }
     val placeholderText = DEFAULT_PLACEHOLDERS[placeholderIndex]
 
+    // Attachments
+    val attachments = remember { mutableStateListOf<PlatformFile>() }
+    val filePicker = rememberFilePickerLauncher { file ->
+        attachments.add(file)
+    }
+    val scope = rememberCoroutineScope()
+
     // Expansion Logic
-    val isExpanded = isFocused || input.isNotEmpty()
+    val isExpanded = isFocused || input.isNotEmpty() || attachments.isNotEmpty()
 
     // Branch Selection
     var selectedBranch by remember(currentSource) {
@@ -109,7 +120,7 @@ fun InputArea(
         ) {
             // Plus Button
             IconButton(
-                onClick = { /* TODO: Attachments */ },
+                onClick = { filePicker.launch() },
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
@@ -142,16 +153,34 @@ fun InputArea(
             )
 
             // Send Button
-            val isEnabled = input.isNotBlank() && !isLoading
+            val isEnabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading
             IconButton(
                 onClick = {
                     if (isEnabled) {
-                        if (onSendMessageMinimal != null) {
-                            onSendMessageMinimal(input)
-                        } else {
-                            onSendMessage(input, CreateSessionConfig(startingBranch = selectedBranch))
+                         scope.launch {
+                            var prompt = input
+                            if (attachments.isNotEmpty()) {
+                                val sb = StringBuilder()
+                                attachments.forEach { file ->
+                                    val content = try {
+                                        file.readText()
+                                    } catch (e: Exception) {
+                                        "Error reading file: ${e.message}"
+                                    }
+                                    sb.append("File: ${file.name}\n```\n$content\n```\n\n")
+                                }
+                                val filesContent = sb.toString().trim()
+                                prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
+                            }
+
+                            if (onSendMessageMinimal != null) {
+                                onSendMessageMinimal(prompt)
+                            } else {
+                                onSendMessage(prompt, CreateSessionConfig(startingBranch = selectedBranch))
+                            }
+                            input = ""
+                            attachments.clear()
                         }
-                        input = ""
                     }
                 },
                 enabled = isEnabled || isLoading,
@@ -232,6 +261,36 @@ fun InputArea(
                         minLines = if (isExpanded) 3 else 1,
                         maxLines = if (isExpanded) 10 else 1
                     )
+
+                    // Attachments Display
+                    if (attachments.isNotEmpty()) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(attachments) { file ->
+                                InputChip(
+                                    selected = true,
+                                    onClick = { attachments.remove(file) },
+                                    label = { Text(file.name, maxLines = 1, fontSize = 12.sp) },
+                                    trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) },
+                                    colors = InputChipDefaults.inputChipColors(
+                                        containerColor = Color(0xFF27272A),
+                                        labelColor = Color(0xFFE4E4E7),
+                                        selectedContainerColor = Color(0xFF27272A),
+                                        selectedLabelColor = Color(0xFFE4E4E7)
+                                    ),
+                                    border = InputChipDefaults.inputChipBorder(
+                                        enabled = true,
+                                        selected = true,
+                                        borderColor = Color.White.copy(alpha = 0.1f)
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -251,7 +310,7 @@ fun InputArea(
                     ) {
                         // Plus Button
                         IconButton(
-                            onClick = { /* TODO: Attachments */ },
+                            onClick = { filePicker.launch() },
                             modifier = Modifier
                                 .size(32.dp)
                                 .padding(4.dp)
@@ -400,39 +459,57 @@ fun InputArea(
                     // Send Button
                     IconButton(
                         onClick = {
-                            if (input.isNotBlank() && !isLoading) {
-                                onSendMessage(
-                                    input,
-                                    CreateSessionConfig(
-                                        title = sessionTitle.takeIf { it.isNotBlank() },
-                                        startingBranch = selectedBranch,
-                                        automationMode = when (selectedMode) {
-                                            "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
-                                            else -> AutomationMode.AUTO_CREATE_PR
+                            if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) {
+                                scope.launch {
+                                    var prompt = input
+                                    if (attachments.isNotEmpty()) {
+                                        val sb = StringBuilder()
+                                        attachments.forEach { file ->
+                                            val content = try {
+                                                file.readText()
+                                            } catch (e: Exception) {
+                                                "Error reading file: ${e.message}"
+                                            }
+                                            sb.append("File: ${file.name}\n```\n$content\n```\n\n")
                                         }
+                                        val filesContent = sb.toString().trim()
+                                        prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
+                                    }
+
+                                    onSendMessage(
+                                        prompt,
+                                        CreateSessionConfig(
+                                            title = sessionTitle.takeIf { it.isNotBlank() },
+                                            startingBranch = selectedBranch,
+                                            automationMode = when (selectedMode) {
+                                                "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
+                                                else -> AutomationMode.AUTO_CREATE_PR
+                                            }
+                                        )
                                     )
-                                )
-                                input = ""
-                                sessionTitle = ""
+                                    input = ""
+                                    sessionTitle = ""
+                                    attachments.clear()
+                                }
                             }
                         },
-                        enabled = input.isNotBlank() && !isLoading,
+                        enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading,
                         modifier = Modifier
                             .size(24.dp)
                             .shadow(
-                                elevation = if (input.isNotBlank()) 4.dp else 0.dp,
+                                elevation = if (input.isNotBlank() || attachments.isNotEmpty()) 4.dp else 0.dp,
                                 spotColor = Color(0xFF6366F1).copy(alpha = 0.25f),
                                 shape = RoundedCornerShape(6.dp)
                             )
                             .background(
-                                if (input.isNotBlank()) Color(0xFF4F46E5) else Color(0xFF27272A),
+                                if (input.isNotBlank() || attachments.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFF27272A),
                                 RoundedCornerShape(6.dp)
                             )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.ArrowForward, contentDescription = "Send", tint = if (input.isNotBlank()) Color.White else Color.Gray, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.ArrowForward, contentDescription = "Send", tint = if (input.isNotBlank() || attachments.isNotEmpty()) Color.White else Color.Gray, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
