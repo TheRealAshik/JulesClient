@@ -6,6 +6,7 @@ import dev.therealashik.client.jules.Settings
 import dev.therealashik.client.jules.api.GeminiService
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.ThemePreset
+import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
@@ -44,7 +45,8 @@ data class JulesUiState(
     val error: String? = null,
     val isLoading: Boolean = false,
     val defaultCardState: Boolean = false, // false = Collapsed, true = Expanded
-    val currentTheme: ThemePreset = ThemePreset.MIDNIGHT
+    val currentTheme: ThemePreset = ThemePreset.MIDNIGHT,
+    val attachments: List<PlatformFile> = emptyList()
 )
 
 // ==================== VIEW MODEL ====================
@@ -164,11 +166,25 @@ class SharedViewModel : ViewModel() {
                 is Screen.Session, is Screen.Repository, is Screen.Settings -> {
                     // Stop polling when leaving session
                     stopPolling()
-                    state.copy(currentScreen = Screen.Home, currentSession = null)
+                    state.copy(currentScreen = Screen.Home, currentSession = null, attachments = emptyList())
                 }
                 else -> state // Already at home or can't go back
             }
         }
+    }
+
+    // --- Attachments ---
+
+    fun addAttachments(files: List<PlatformFile>) {
+        _uiState.update { it.copy(attachments = it.attachments + files) }
+    }
+
+    fun removeAttachment(file: PlatformFile) {
+        _uiState.update { it.copy(attachments = it.attachments.filter { f -> f != file }) }
+    }
+
+    fun clearAttachments() {
+        _uiState.update { it.copy(attachments = emptyList()) }
     }
 
     // --- Actions ---
@@ -198,7 +214,8 @@ class SharedViewModel : ViewModel() {
                         sessionsUsed = calculateSessionsUsed(updatedSessions),
                         currentSession = session,
                         currentScreen = Screen.Session(session.name),
-                        isProcessing = false // Polling will take over
+                        isProcessing = false, // Polling will take over
+                        attachments = emptyList() // Clear attachments
                     )
                 }
                 startPolling(session.name)
@@ -211,7 +228,7 @@ class SharedViewModel : ViewModel() {
     fun sendMessage(text: String) {
         val session = _uiState.value.currentSession ?: return
         viewModelScope.launch {
-             _uiState.update { it.copy(isProcessing = true, error = null) }
+             _uiState.update { it.copy(isProcessing = true, error = null, attachments = emptyList()) } // Clear attachments immediately
              try {
                  withContext(Dispatchers.IO) {
                      api.sendMessage(session.name, text)

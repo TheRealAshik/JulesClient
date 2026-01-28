@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,12 +21,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import io.github.vinceglb.filekit.core.PlatformFile
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.AutomationMode
@@ -57,10 +63,22 @@ fun InputArea(
     currentSource: JulesSource?,
     modifier: Modifier = Modifier,
     variant: InputAreaVariant = InputAreaVariant.DEFAULT,
-    onSendMessageMinimal: ((String) -> Unit)? = null // For simple chat usage
+    onSendMessageMinimal: ((String) -> Unit)? = null, // For simple chat usage
+    attachments: List<PlatformFile> = emptyList(),
+    onAttachmentsSelected: (List<PlatformFile>) -> Unit = {},
+    onRemoveAttachment: (PlatformFile) -> Unit = {}
 ) {
     var input by remember { mutableStateOf("") }
     var isFocused by remember { mutableStateOf(false) }
+
+    val launcher = rememberFilePickerLauncher(
+        type = PickerType.File,
+        mode = PickerMode.Multiple()
+    ) { files ->
+        if (files != null) {
+            onAttachmentsSelected(files.toList())
+        }
+    }
 
     // Dynamic Placeholder Logic
     var placeholderIndex by remember { mutableStateOf(0) }
@@ -92,89 +110,96 @@ fun InputArea(
 
     if (variant == InputAreaVariant.CHAT) {
         // --- CHAT VARIANT (Compact floating bar) ---
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .background(
-                    Color(0xFF1C1C1F).copy(alpha = 0.95f),
-                    RoundedCornerShape(26.dp)
-                )
-                .border(
-                    1.dp,
-                    if (isFocused) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.1f),
-                    RoundedCornerShape(26.dp)
-                )
-                .padding(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Plus Button
-            IconButton(
-                onClick = { /* TODO: Attachments */ },
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color(0xFFA1A1AA) // Zinc-400
-                )
+        Column(modifier = modifier) {
+            if (attachments.isNotEmpty()) {
+                AttachmentPreviewRow(attachments, onRemoveAttachment)
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            TextField(
-                value = input,
-                onValueChange = { input = it },
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { isFocused = it.isFocused },
-                placeholder = { Text(placeholderText, color = Color(0xFF71717A)) },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    cursorColor = Color.White,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                ),
-                maxLines = 6
-            )
-
-            // Send Button
-            val isEnabled = input.isNotBlank() && !isLoading
-            IconButton(
-                onClick = {
-                    if (isEnabled) {
-                        if (onSendMessageMinimal != null) {
-                            onSendMessageMinimal(input)
-                        } else {
-                            onSendMessage(input, CreateSessionConfig(startingBranch = selectedBranch))
-                        }
-                        input = ""
-                    }
-                },
-                enabled = isEnabled || isLoading,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
+                    .fillMaxWidth()
                     .background(
-                        if (isEnabled) Color(0xFF4F46E5) else Color(0xFF27272A)
+                        Color(0xFF1C1C1F).copy(alpha = 0.95f),
+                        RoundedCornerShape(26.dp)
                     )
+                    .border(
+                        1.dp,
+                        if (isFocused) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.1f),
+                        RoundedCornerShape(26.dp)
+                    )
+                    .padding(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                } else {
+                // Plus Button
+                IconButton(
+                    onClick = { launcher.launch() },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                ) {
                     Icon(
-                        Icons.Default.ArrowForward,
-                        contentDescription = "Send",
-                        tint = if (isEnabled) Color.White else Color(0xFF71717A),
-                        modifier = Modifier.size(18.dp)
+                        Icons.Default.Add,
+                        contentDescription = "Add",
+                        tint = Color(0xFFA1A1AA) // Zinc-400
                     )
+                }
+
+                TextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { isFocused = it.isFocused },
+                    placeholder = { Text(placeholderText, color = Color(0xFF71717A)) },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.White,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    maxLines = 6
+                )
+
+                // Send Button
+                val isEnabled = input.isNotBlank() && !isLoading
+                IconButton(
+                    onClick = {
+                        if (isEnabled) {
+                            if (onSendMessageMinimal != null) {
+                                onSendMessageMinimal(input)
+                            } else {
+                                onSendMessage(input, CreateSessionConfig(startingBranch = selectedBranch))
+                            }
+                            input = ""
+                        }
+                    },
+                    enabled = isEnabled || isLoading,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isEnabled) Color(0xFF4F46E5) else Color(0xFF27272A)
+                        )
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Send",
+                            tint = if (isEnabled) Color.White else Color(0xFF71717A),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
@@ -206,6 +231,10 @@ fun InputArea(
                 Column(
                     modifier = Modifier.padding(if (isExpanded) PaddingValues(12.dp) else PaddingValues(horizontal = 16.dp, vertical = 12.dp))
                 ) {
+                    if (attachments.isNotEmpty()) {
+                        AttachmentPreviewRow(attachments, onRemoveAttachment)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     TextField(
                         value = input,
                         onValueChange = { input = it },
@@ -251,7 +280,7 @@ fun InputArea(
                     ) {
                         // Plus Button
                         IconButton(
-                            onClick = { /* TODO: Attachments */ },
+                            onClick = { launcher.launch() },
                             modifier = Modifier
                                 .size(32.dp)
                                 .padding(4.dp)
@@ -436,6 +465,51 @@ fun InputArea(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AttachmentPreviewRow(
+    attachments: List<PlatformFile>,
+    onRemoveAttachment: (PlatformFile) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(attachments) { file ->
+            Row(
+                modifier = Modifier
+                    .background(Color(0xFF27272A), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Description,
+                    contentDescription = null,
+                    tint = Color(0xFFA1A1AA),
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = file.name,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 120.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove",
+                    tint = Color(0xFF71717A),
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clickable { onRemoveAttachment(file) }
+                )
             }
         }
     }

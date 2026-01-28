@@ -20,6 +20,7 @@ kotlinx-datetime = "0.6.0"
 markdown-renderer = "0.27.0"
 ktor = "3.0.3"
 kotlinx-serialization = "1.8.0"
+filekit = "0.8.8"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -40,6 +41,7 @@ compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMul
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref = "filekit" }
 
 # New Dependencies
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }

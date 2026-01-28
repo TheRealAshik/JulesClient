@@ -64,6 +64,7 @@ import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesSurface
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.InputAreaVariant
+import io.github.vinceglb.filekit.core.PlatformFile
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
@@ -75,7 +76,10 @@ fun SessionView(
     defaultCardState: Boolean,
     onSendMessage: (String) -> Unit,
     onApprovePlan: (String?) -> Unit,
-    onNavigateHome: () -> Unit
+    onNavigateHome: () -> Unit,
+    attachments: List<PlatformFile> = emptyList(),
+    onAttachmentsSelected: (List<PlatformFile>) -> Unit = {},
+    onRemoveAttachment: (PlatformFile) -> Unit = {}
 ) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -236,7 +240,10 @@ fun SessionView(
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                attachments = attachments,
+                onAttachmentsSelected = onAttachmentsSelected,
+                onRemoveAttachment = onRemoveAttachment
             )
         }
     }

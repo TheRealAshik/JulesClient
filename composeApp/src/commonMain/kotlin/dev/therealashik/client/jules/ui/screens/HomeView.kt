@@ -39,6 +39,7 @@ import dev.therealashik.client.jules.ui.JulesPrimary
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.ProactiveSection
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
+import io.github.vinceglb.filekit.core.PlatformFile
 
 @Composable
 fun HomeView(
@@ -48,7 +49,10 @@ fun HomeView(
     sessions: List<JulesSession> = emptyList(),
     onSelectSession: ((JulesSession) -> Unit)? = null,
     onResetKey: (() -> Unit)? = null,
-    error: String? = null
+    error: String? = null,
+    attachments: List<PlatformFile> = emptyList(),
+    onAttachmentsSelected: (List<PlatformFile>) -> Unit = {},
+    onRemoveAttachment: (PlatformFile) -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -94,7 +98,10 @@ fun HomeView(
                     onSendMessage = onSendMessage,
                     isLoading = isProcessing,
                     currentSource = currentSource,
-                    modifier = Modifier.padding(bottom = 32.dp)
+                    modifier = Modifier.padding(bottom = 32.dp),
+                    attachments = attachments,
+                    onAttachmentsSelected = onAttachmentsSelected,
+                    onRemoveAttachment = onRemoveAttachment
                 )
 
                 if (error != null) {

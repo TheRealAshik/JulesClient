@@ -56,6 +56,7 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.datetime)
             implementation(libs.multiplatform.markdown.renderer)
+            implementation(libs.filekit.compose)
             
             // Icons
             implementation(compose.material)

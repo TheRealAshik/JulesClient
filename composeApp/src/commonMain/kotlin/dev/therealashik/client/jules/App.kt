@@ -61,7 +61,10 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             sessions = state.sessions,
                             onSelectSession = { viewModel.selectSession(it) },
                             onResetKey = { viewModel.setApiKey("") }, // Assuming setApiKey empty resets it or we need a proper reset
-                            error = state.error
+                            error = state.error,
+                            attachments = state.attachments,
+                            onAttachmentsSelected = { viewModel.addAttachments(it) },
+                            onRemoveAttachment = { viewModel.removeAttachment(it) }
                         )
                     }
                     is Screen.Session -> {
@@ -82,7 +85,10 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 },
                                 onNavigateHome = {
                                     viewModel.navigateBack()
-                                }
+                                },
+                                attachments = state.attachments,
+                                onAttachmentsSelected = { viewModel.addAttachments(it) },
+                                onRemoveAttachment = { viewModel.removeAttachment(it) }
                             )
                         } else {
                             // Loading state or mismatch
@@ -105,7 +111,10 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                                 isProcessing = state.isProcessing,
                                 sessions = state.sessions,
                                 onSelectSession = { viewModel.selectSession(it) },
-                                error = state.error
+                                error = state.error,
+                                attachments = state.attachments,
+                                onAttachmentsSelected = { viewModel.addAttachments(it) },
+                                onRemoveAttachment = { viewModel.removeAttachment(it) }
                             )
                         }
                     }
