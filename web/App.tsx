@@ -127,24 +127,41 @@ export default function App() {
         if (pollTimeout.current) clearTimeout(pollTimeout.current);
         activePollingSession.current = sessionName;
 
+        // Reset activities if switching sessions
+        if (activitiesRef.current.length > 0 && !activitiesRef.current[0].name.startsWith(sessionName)) {
+            activitiesRef.current = [];
+            setActivities([]);
+        }
+
         const poll = async () => {
             if (activePollingSession.current !== sessionName) return;
 
             try {
-                const response = await JulesApi.listActivities(sessionName);
+                const sessionId = sessionName.split('/').pop()!;
+                // Incremental fetch if we have existing activities
+                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
+                const options = (activitiesRef.current.length > 0 && lastActivity?.createTime)
+                    ? { createTime: lastActivity.createTime }
+                    : undefined;
+
+                const response = await JulesApi.listActivities(sessionId, options);
                 if (activePollingSession.current !== sessionName) return;
 
-                // Only update activities if they've changed (compare by length and last item name)
                 const newActivities = response.activities;
-                const prevActivities = activitiesRef.current;
-                const hasChanged =
-                    newActivities.length !== prevActivities.length ||
-                    (newActivities.length > 0 && prevActivities.length > 0 &&
-                        newActivities[newActivities.length - 1]?.name !== prevActivities[prevActivities.length - 1]?.name);
 
-                if (hasChanged) {
-                    activitiesRef.current = newActivities;
-                    setActivities(newActivities);
+                // Merge new activities
+                if (newActivities.length > 0) {
+                    const existingNames = new Set(activitiesRef.current.map(a => a.name));
+                    const uniqueNew = newActivities.filter(a => !existingNames.has(a.name));
+
+                    if (uniqueNew.length > 0) {
+                        const updated = [...activitiesRef.current, ...uniqueNew];
+                        activitiesRef.current = updated;
+                        setActivities(updated);
+                    }
+                } else if (activitiesRef.current.length === 0 && !options) {
+                    // Initial load returned empty
+                    setActivities([]);
                 }
 
                 // Also check session status for outputs and state
@@ -211,8 +228,22 @@ export default function App() {
                 // SEND MESSAGE TO EXISTING SESSION
                 await JulesApi.sendMessage(currentSession.name, text);
                 // Force immediate update - polling will set isProcessing based on API state
-                const response = await JulesApi.listActivities(currentSession.name);
-                setActivities(response.activities);
+                const sessionId = currentSession.name.split('/').pop()!;
+                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
+                const response = await JulesApi.listActivities(sessionId, {
+                    createTime: lastActivity?.createTime
+                });
+
+                // Merge
+                if (response.activities.length > 0) {
+                     const existingNames = new Set(activitiesRef.current.map(a => a.name));
+                     const uniqueNew = response.activities.filter(a => !existingNames.has(a.name));
+                     if (uniqueNew.length > 0) {
+                         const updated = [...activitiesRef.current, ...uniqueNew];
+                         activitiesRef.current = updated;
+                         setActivities(updated);
+                     }
+                }
                 // Polling will handle isProcessing based on session.state from API
             }
         } catch (e: any) {
