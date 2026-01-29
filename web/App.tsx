@@ -183,7 +183,9 @@ export default function App() {
                 const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
                 setIsProcessing(isActive);
 
-                if (activePollingSession.current === sessionName) {
+                const isTerminal = ['COMPLETED', 'FAILED'].includes(sess.state);
+
+                if (activePollingSession.current === sessionName && !isTerminal) {
                     pollTimeout.current = window.setTimeout(poll, 2000);
                 }
             } catch (e) {
