@@ -3,7 +3,8 @@ package dev.therealashik.client.jules.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.therealashik.client.jules.Settings
-import dev.therealashik.client.jules.api.GeminiService
+import dev.therealashik.client.jules.api.JulesApi
+import dev.therealashik.client.jules.api.RealJulesApi
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.ThemePreset
 import kotlinx.coroutines.Dispatchers
@@ -49,9 +50,9 @@ data class JulesUiState(
 
 // ==================== VIEW MODEL ====================
 
-class SharedViewModel : ViewModel() {
-
-    private val api = GeminiService
+class SharedViewModel(
+    private val api: JulesApi = RealJulesApi
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JulesUiState())
     val uiState: StateFlow<JulesUiState> = _uiState.asStateFlow()
@@ -321,6 +322,10 @@ class SharedViewModel : ViewModel() {
             val isProcessing = session.state == SessionState.QUEUED ||
                                session.state == SessionState.PLANNING ||
                                session.state == SessionState.IN_PROGRESS
+
+            if (session.state == SessionState.COMPLETED || session.state == SessionState.FAILED) {
+                stopPolling()
+            }
 
             _uiState.update { state ->
                 // Update session in the main list too if changed

@@ -9,6 +9,30 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
+interface JulesApi {
+    fun setApiKey(key: String)
+    fun getApiKey(): String
+    suspend fun listSources(pageSize: Int = 50, pageToken: String? = null): ListSourcesResponse
+    suspend fun listAllSources(): List<JulesSource>
+    suspend fun getSource(sourceName: String): JulesSource
+    suspend fun listSessions(pageSize: Int = 20, pageToken: String? = null): ListSessionsResponse
+    suspend fun listAllSessions(): List<JulesSession>
+    suspend fun getSession(sessionName: String): JulesSession
+    suspend fun createSession(
+        prompt: String,
+        sourceName: String,
+        title: String? = null,
+        requirePlanApproval: Boolean = true,
+        automationMode: AutomationMode = AutomationMode.AUTO_CREATE_PR,
+        startingBranch: String = "main"
+    ): JulesSession
+    suspend fun updateSession(sessionName: String, updates: Map<String, Any?>, updateMask: List<String>): JulesSession
+    suspend fun deleteSession(sessionName: String)
+    suspend fun listActivities(sessionName: String, pageSize: Int = 50, pageToken: String? = null): ListActivitiesResponse
+    suspend fun sendMessage(sessionName: String, prompt: String)
+    suspend fun approvePlan(sessionName: String, planId: String? = null)
+}
+
 object GeminiService {
     private const val BASE_URL = "https://jules.googleapis.com/v1alpha"
     
@@ -26,7 +50,6 @@ object GeminiService {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
-                prettyPrint = true
                 isLenient = true
                 encodeDefaults = true
             })
@@ -112,7 +135,7 @@ object GeminiService {
 
     suspend fun createSession(
         prompt: String,
-        sourceName: String, 
+        sourceName: String,
         title: String? = null,
         requirePlanApproval: Boolean = true,
         automationMode: AutomationMode = AutomationMode.AUTO_CREATE_PR,
@@ -215,4 +238,29 @@ object GeminiService {
              throw Exception("Approve Plan Error: ${response.status}")
         }
     }
+}
+
+object RealJulesApi : JulesApi {
+    override fun setApiKey(key: String) = GeminiService.setApiKey(key)
+    override fun getApiKey(): String = GeminiService.getApiKey()
+    override suspend fun listSources(pageSize: Int, pageToken: String?): ListSourcesResponse = GeminiService.listSources(pageSize, pageToken)
+    override suspend fun listAllSources(): List<JulesSource> = GeminiService.listAllSources()
+    override suspend fun getSource(sourceName: String): JulesSource = GeminiService.getSource(sourceName)
+    override suspend fun listSessions(pageSize: Int, pageToken: String?): ListSessionsResponse = GeminiService.listSessions(pageSize, pageToken)
+    override suspend fun listAllSessions(): List<JulesSession> = GeminiService.listAllSessions()
+    override suspend fun getSession(sessionName: String): JulesSession = GeminiService.getSession(sessionName)
+    override suspend fun createSession(
+        prompt: String,
+        sourceName: String,
+        title: String?,
+        requirePlanApproval: Boolean,
+        automationMode: AutomationMode,
+        startingBranch: String
+    ): JulesSession = GeminiService.createSession(prompt, sourceName, title, requirePlanApproval, automationMode, startingBranch)
+
+    override suspend fun updateSession(sessionName: String, updates: Map<String, Any?>, updateMask: List<String>): JulesSession = GeminiService.updateSession(sessionName, updates, updateMask)
+    override suspend fun deleteSession(sessionName: String) = GeminiService.deleteSession(sessionName)
+    override suspend fun listActivities(sessionName: String, pageSize: Int, pageToken: String?): ListActivitiesResponse = GeminiService.listActivities(sessionName, pageSize, pageToken)
+    override suspend fun sendMessage(sessionName: String, prompt: String) = GeminiService.sendMessage(sessionName, prompt)
+    override suspend fun approvePlan(sessionName: String, planId: String?) = GeminiService.approvePlan(sessionName, planId)
 }
