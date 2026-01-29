@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { JulesActivity, Step, formatRelativeTime } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const REMARK_PLUGINS = [remarkGfm];
 import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
@@ -112,7 +114,7 @@ const UserMessageBubble: React.FC<{ text: string, time?: string }> = memo(({ tex
                         !isExpanded && isLong && 'line-clamp-[12]'
                     )}>
                         <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
+                            remarkPlugins={REMARK_PLUGINS}
                             components={MarkdownComponents}
                         >
                             {text}
@@ -594,7 +596,7 @@ const ActivityItem: React.FC<{
                 <div className="min-w-0 flex-1 max-w-full sm:max-w-[90%] flex flex-col gap-1 overflow-hidden">
                     <div className="text-zinc-200 text-[15px] leading-relaxed pt-1.5 font-light break-words overflow-hidden">
                         <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
+                            remarkPlugins={REMARK_PLUGINS}
                             components={MarkdownComponents}
                         >
                             {agentText}
@@ -815,6 +817,26 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
         });
     }, [activities, sessionPrompt]);
 
+    // Pre-calculate expensive loop conditions to avoid O(N^2)
+    const { maxApprovedTime, lastSignificantIndex } = useMemo(() => {
+        let maxTime = "";
+        let lastSigIdx = -1;
+
+        for (let i = 0; i < activities.length; i++) {
+            const a = activities[i];
+            if (a.planApproved && a.createTime > maxTime) {
+                maxTime = a.createTime;
+            }
+            if (
+                a.progressUpdated || a.agentMessage || a.agentMessaged ||
+                a.planGenerated || a.sessionCompleted || a.sessionFailed
+            ) {
+                lastSigIdx = i;
+            }
+        }
+        return { maxApprovedTime: maxTime, lastSignificantIndex: lastSigIdx };
+    }, [activities]);
+
     return (
         <div className="space-y-6 sm:space-y-8 px-2 sm:px-4 w-full overflow-hidden">
             {/* Removed AnimatePresence to fix lag - animations were too heavy during polling */}
@@ -829,12 +851,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = memo(({ activities, isStr
                 )}
 
                 {activities.map((act, index) => {
-                    const isApproved = activities.some(a => a.planApproved && a.createTime > act.createTime);
-                    const activitiesAfter = activities.slice(index + 1);
-                    const isCurrentlyActive = isStreaming && !activitiesAfter.some(a =>
-                        a.progressUpdated || a.agentMessage || a.agentMessaged ||
-                        a.planGenerated || a.sessionCompleted || a.sessionFailed
-                    );
+                    // Optimized O(1) checks
+                    const isApproved = maxApprovedTime > act.createTime;
+                    const isCurrentlyActive = isStreaming && index >= lastSignificantIndex;
 
                     return (
                         <ActivityItem
