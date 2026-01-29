@@ -288,6 +288,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsBranchMenuOpen(!isBranchMenuOpen);
                             }}
+                            aria-label={`Select branch (current: ${selectedBranch})`}
+                            aria-haspopup="true"
+                            aria-expanded={isBranchMenuOpen}
                             style={{ maxWidth: BRANCH_BUTTON_MAX_WIDTH }}
                             className="flex items-center gap-1.5 px-2 bg-[#1f1f23] hover:bg-[#2a2a2f] border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6"
                         >
@@ -358,6 +361,9 @@ export const InputArea: React.FC<InputAreaProps> = ({
                                 e.stopPropagation();
                                 setIsModeMenuOpen(!isModeMenuOpen);
                             }}
+                            aria-label="Session settings"
+                            aria-haspopup="true"
+                            aria-expanded={isModeMenuOpen}
                             className={twMerge(
                                 "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
                                 isModeMenuOpen || sessionTitle
