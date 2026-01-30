@@ -19,6 +19,7 @@ export default function App() {
 
     const [currentSession, setCurrentSession] = useState<JulesSession | null>(null);
     const [sessions, setSessions] = useState<JulesSession[]>([]);
+    const [tempKey, setTempKey] = useState('');
     const [activities, setActivities] = useState<JulesActivity[]>([]);
     const [sessionsUsed, setSessionsUsed] = useState(0);
     const [dailyLimit] = useState(100); // Default to Pro plan
@@ -321,21 +322,38 @@ export default function App() {
 
                     <form onSubmit={(e) => {
                         e.preventDefault();
-                        const form = e.target as HTMLFormElement;
-                        const input = form.elements.namedItem('key') as HTMLInputElement;
-                        handleSetKey(input.value);
+                        handleSetKey(tempKey);
                     }}>
-                        <div className="relative mb-4">
-                            <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                            <input
-                                name="key"
-                                type="password"
-                                placeholder="sk-..."
-                                className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                                autoFocus
-                            />
+                        <div className="mb-4">
+                            <label htmlFor="apiKey" className="block text-xs font-medium text-zinc-400 mb-1.5 uppercase tracking-wide">
+                                API Key <span className="text-indigo-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                                <input
+                                    id="apiKey"
+                                    name="key"
+                                    type="password"
+                                    value={tempKey}
+                                    onChange={(e) => setTempKey(e.target.value)}
+                                    placeholder="sk-..."
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    autoFocus
+                                    required
+                                    aria-required="true"
+                                />
+                            </div>
                         </div>
-                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <button
+                            type="submit"
+                            disabled={!tempKey.trim()}
+                            className={`
+                                w-full font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2
+                                ${!tempKey.trim()
+                                    ? 'bg-[#27272a] text-zinc-500 cursor-not-allowed'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'}
+                            `}
+                        >
                             Enter App <ChevronRight size={16} />
                         </button>
                     </form>
