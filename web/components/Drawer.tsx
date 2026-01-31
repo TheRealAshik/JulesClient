@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { X, Search, ChevronDown, ChevronRight, MoreHorizontal, Github, FileText, CheckCircle2, Disc, ArrowUp, Loader2, Clock, MessageCircle, Pause, XCircle, AlertCircle, Lock, Trash2, Settings } from 'lucide-react';
 import { JulesSession, JulesSource, formatRelativeTime } from '../types';
@@ -39,17 +39,17 @@ export const Drawer: React.FC<DrawerProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
 
     // Filter logic
-    const filteredSessions = sortSessions(sessions.filter(session => {
+    const filteredSessions = useMemo(() => sortSessions(sessions.filter(session => {
         const query = searchQuery.toLowerCase();
         return (session.title?.toLowerCase().includes(query) ||
             session.prompt?.toLowerCase().includes(query));
-    }));
+    })), [sessions, searchQuery]);
 
-    const filteredSources = sources.filter(source => {
+    const filteredSources = useMemo(() => sources.filter(source => {
         const query = searchQuery.toLowerCase();
         const displayName = source.displayName || source.name;
         return displayName.toLowerCase().includes(query);
-    });
+    }), [sources, searchQuery]);
 
     // Auto-expand on search
     useEffect(() => {
