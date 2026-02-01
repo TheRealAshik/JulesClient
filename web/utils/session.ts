@@ -110,6 +110,14 @@ const getGroupScore = (state: SessionState): number => {
 };
 
 export const sortSessions = (sessions: JulesSession[]): JulesSession[] => {
+    // Optimization: Parse dates once to avoid O(N log N) date parsing
+    const timeMap = new Map<string, number>();
+    sessions.forEach(s => {
+        if (s.updateTime) {
+            timeMap.set(s.name, new Date(s.updateTime).getTime());
+        }
+    });
+
     return [...sessions].sort((a, b) => {
         // 1. Group Priority
         const groupA = getGroupScore(a.state);
@@ -127,8 +135,8 @@ export const sortSessions = (sessions: JulesSession[]): JulesSession[] => {
         }
 
         // 3. Last Update (Most recent first / Descending)
-        const timeA = a.updateTime ? new Date(a.updateTime).getTime() : 0;
-        const timeB = b.updateTime ? new Date(b.updateTime).getTime() : 0;
+        const timeA = timeMap.get(a.name) ?? 0;
+        const timeB = timeMap.get(b.name) ?? 0;
         return timeB - timeA;
     });
 };
