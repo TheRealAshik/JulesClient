@@ -22,13 +22,13 @@ export interface ThemeSettings {
 }
 
 export const DEFAULT_THEME: Theme = {
-    background: '#2e2e36',
-    surface: '#3b3b44',
-    surfaceHighlight: '#464652',
-    border: '#6b7280',
+    background: '#0c0c0c',
+    surface: '#161619',
+    surfaceHighlight: '#27272a',
+    border: '#27272a',
     primary: '#A855F7',
-    textMain: '#F3F4F6',
-    textMuted: '#9CA3AF',
+    textMain: '#E4E4E7',
+    textMuted: '#A1A1AA',
 };
 
 export const PRESET_THEMES: Record<string, Theme> = {
