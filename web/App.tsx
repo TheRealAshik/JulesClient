@@ -349,7 +349,7 @@ export default function App() {
     }
 
     return (
-        <div className="h-[100dvh] w-full bg-[#0c0c0c] text-textMain font-sans flex flex-col overflow-hidden">
+        <div className="h-[100dvh] w-full bg-[var(--color-background)] text-textMain font-sans flex flex-col overflow-hidden">
             <Header
                 onOpenDrawer={() => setIsDrawerOpen(true)}
                 currentSource={currentSource}

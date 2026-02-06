@@ -1,4 +1,4 @@
-# AGENT.md
+# AGENTS.md
 
 ## 🚀 Setup Commands
 
@@ -45,7 +45,7 @@ Open `iosApp/iosApp.xcodeproj` in Xcode or run via Android Studio configuration.
 - **Framework**: React 19 + TypeScript + Vite
 - **Styling**: Tailwind CSS
 - **Guidelines**:
-  - Refer to `web/AGENT.md` for detailed "Premium UI" and accessibility guidelines.
+  - Refer to `web/AGENTS.md` for detailed "Premium UI" and accessibility guidelines.
   - Use `pnpm` for package management.
 
 ---

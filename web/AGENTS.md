@@ -1,4 +1,4 @@
-# AGENT.md – High-Performance & Premium UI Guidelines
+# AGENTS.md – High-Performance & Premium UI Guidelines
 
 ## 🎯 **Core Directive**
 You are an expert engineer and designer. **Mediocrity is unacceptable.**
