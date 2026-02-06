@@ -17,7 +17,12 @@ import {
 
 class BrowserPlatform {
     async fetch(input: RequestInfo | URL, init?: RequestInit) {
-        const res = await window.fetch(input, init);
+        // Use global fetch which works in both browser and Node (18+)
+        const fetchFn = (typeof window !== 'undefined' && window.fetch)
+            ? window.fetch.bind(window)
+            : fetch;
+
+        const res = await fetchFn(input, init);
         return {
             ok: res.ok,
             status: res.status,
