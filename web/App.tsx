@@ -134,37 +134,35 @@ export default function App() {
             setActivities([]);
         }
 
-        const poll = async () => {
+        const runStream = async () => {
+            const sessionId = sessionName.split('/').pop()!;
+            try {
+                // @ts-ignore - streamActivities returns SDK stream, we iterate it
+                const stream = JulesApi.streamActivities(sessionId);
+                for await (const activity of stream) {
+                    if (activePollingSession.current !== sessionName) break;
+
+                    const mapped = JulesApi.mapActivity(activity);
+
+                    setActivities(prev => {
+                        if (prev.some(a => a.id === mapped.id)) return prev;
+                        const updated = [...prev, mapped];
+                        // Sort by createTime to be safe
+                        updated.sort((a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime());
+                        activitiesRef.current = updated;
+                        return updated;
+                    });
+                }
+            } catch (e) {
+                console.error("Streaming error", e);
+            }
+        };
+        runStream();
+
+        const pollSessionStatus = async () => {
             if (activePollingSession.current !== sessionName) return;
 
             try {
-                const sessionId = sessionName.split('/').pop()!;
-                // Incremental fetch if we have existing activities
-                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
-                const options = (activitiesRef.current.length > 0 && lastActivity?.createTime)
-                    ? { createTime: lastActivity.createTime }
-                    : undefined;
-
-                const response = await JulesApi.listActivities(sessionId, options);
-                if (activePollingSession.current !== sessionName) return;
-
-                const newActivities = response.activities;
-
-                // Merge new activities
-                if (newActivities.length > 0) {
-                    const existingNames = new Set(activitiesRef.current.map(a => a.name));
-                    const uniqueNew = newActivities.filter(a => !existingNames.has(a.name));
-
-                    if (uniqueNew.length > 0) {
-                        const updated = [...activitiesRef.current, ...uniqueNew];
-                        activitiesRef.current = updated;
-                        setActivities(updated);
-                    }
-                } else if (activitiesRef.current.length === 0 && !options) {
-                    // Initial load returned empty
-                    setActivities([]);
-                }
-
                 // Also check session status for outputs and state
                 const sess = await JulesApi.getSession(sessionName);
                 if (activePollingSession.current !== sessionName) return;
@@ -186,19 +184,19 @@ export default function App() {
 
                 const isTerminal = ['COMPLETED', 'FAILED'].includes(sess.state);
 
-                if (activePollingSession.current === sessionName && !isTerminal) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
+                if (!isTerminal) {
+                    pollTimeout.current = window.setTimeout(pollSessionStatus, 2000);
                 }
             } catch (e) {
                 console.error("Polling error", e);
                 // Retry on error
                 if (activePollingSession.current === sessionName) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
+                    pollTimeout.current = window.setTimeout(pollSessionStatus, 2000);
                 }
             }
         };
 
-        poll();
+        pollSessionStatus();
     }, []);
 
     // Memoized handler to prevent InputArea re-renders
@@ -231,24 +229,7 @@ export default function App() {
             } else {
                 // SEND MESSAGE TO EXISTING SESSION
                 await JulesApi.sendMessage(currentSession.name, text);
-                // Force immediate update - polling will set isProcessing based on API state
-                const sessionId = currentSession.name.split('/').pop()!;
-                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
-                const response = await JulesApi.listActivities(sessionId, {
-                    createTime: lastActivity?.createTime
-                });
-
-                // Merge
-                if (response.activities.length > 0) {
-                     const existingNames = new Set(activitiesRef.current.map(a => a.name));
-                     const uniqueNew = response.activities.filter(a => !existingNames.has(a.name));
-                     if (uniqueNew.length > 0) {
-                         const updated = [...activitiesRef.current, ...uniqueNew];
-                         activitiesRef.current = updated;
-                         setActivities(updated);
-                     }
-                }
-                // Polling will handle isProcessing based on session.state from API
+                // Streaming will handle the update
             }
         } catch (e: any) {
             setError(e.message || "An error occurred");
