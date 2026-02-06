@@ -58,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
               <span className="font-medium text-xs text-zinc-300 group-hover:text-white whitespace-nowrap inline-block animate-marquee-on-hover">
-                {currentSource ? (currentSource.displayName || currentSource.name.split('/').slice(-2).join('/')) : 'Select Repository'}
+                {currentSource ? (currentSource.displayName || (currentSource.name ? currentSource.name.split('/').slice(-2).join('/') : 'Unknown Source')) : 'Select Repository'}
               </span>
             </div>
             <ChevronDown size={11} className="text-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0" />

@@ -125,7 +125,7 @@ const mapSource = (s: any): JulesSource => {
     return {
         name: s.name,
         id: s.id,
-        displayName: repo ? `${repo.owner}/${repo.repo}` : s.name?.split('/').slice(-2).join('/'),
+        displayName: repo ? `${repo.owner}/${repo.repo}` : (s.name ? s.name.split('/').slice(-2).join('/') : ''),
         githubRepo: repo ? {
             owner: repo.owner,
             repo: repo.repo,

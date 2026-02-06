@@ -287,8 +287,8 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
         const match = patch.match(/^\+\+\+\s+(?:b\/)?(.+)$/m);
         if (match) {
             const fullPath = match[1].trim();
-            const parts = fullPath.split('/');
-            return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : fullPath;
+            const parts = fullPath ? fullPath.split('/') : [];
+            return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : (fullPath || '');
         }
         return null;
     };
@@ -464,7 +464,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
     const getBranchUrl = () => {
         if (!pr.branch || !pr.url) return null;
         try {
-            const urlParts = pr.url.split('/');
+            const urlParts = pr.url ? pr.url.split('/') : [];
             if (urlParts.length >= 5) {
                 const baseUrl = urlParts.slice(0, 5).join('/');
                 return `${baseUrl}/tree/${pr.branch}`;

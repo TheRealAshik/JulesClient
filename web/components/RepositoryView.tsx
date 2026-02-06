@@ -80,7 +80,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
                             </div>
                             <div className="min-w-0 flex-1">
                                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2 truncate">
-                                    {source.displayName || source.name.split('/').slice(-2).join('/')}
+                                    {source.displayName || (source.name ? source.name.split('/').slice(-2).join('/') : 'Unknown')}
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-zinc-500">
                                     <div className="flex items-center gap-1.5 bg-white/5 px-2 md:px-2.5 py-1 rounded-md border border-white/5">
@@ -352,7 +352,7 @@ const SessionListItem = ({ session, onClick }: { session: JulesSession, onClick:
                     </h4>
                     <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5 md:mt-1 font-light">
                         <span className="font-mono bg-white/5 px-1.5 py-0.5 rounded text-[10px] text-zinc-400">
-                            {session.name.slice(-4)}
+                            {session.name ? session.name.slice(-4) : ''}
                         </span>
                         <span>•</span>
                         <Clock size={11} className="md:w-3 md:h-3" />
