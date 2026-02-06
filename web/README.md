@@ -9,7 +9,7 @@ Jules Client is a sleek, AI-powered web interface designed to interact with **Ju
 - **🚀 Interactive Sessions**: Start AI-driven coding sessions with natural language prompts.
 - **📁 Repository Management**: Seamlessly browse and select repositories to work on.
 - **📝 Plan Approval**: Review and approve AI-generated plans before any code changes are applied.
-- **🔄 Real-time Updates**: Polling mechanism to keep track of AI activities and session status.
+- **🔄 Real-time Updates**: Streaming mechanism to keep track of AI activities and session status.
 - **🔑 Secure Configuration**: Easy API key setup with local persistence for quick access.
 - **🎨 Premium UI**: A dark-themed, responsive interface built with Inter typography and smooth transitions.
 
@@ -21,7 +21,7 @@ Jules Client is a sleek, AI-powered web interface designed to interact with **Ju
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) (CDN)
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Markdown**: [React Markdown](https://github.com/remarkjs/react-markdown)
-- **AI Integration**: [@google/genai](https://www.npmjs.com/package/@google/genai)
+- **AI Integration**: [@google/jules-sdk](https://www.npmjs.com/package/@google/jules-sdk)
 
 ## 🚀 Getting Started
 

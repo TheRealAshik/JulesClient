@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
+    "@google/jules-sdk": "^0.0.6",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.29.0",
@@ -37,6 +38,7 @@
     "playwright": "^1.58.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
+    "vite-plugin-node-polyfills": "^0.25.0",
     "vitest": "^4.0.18"
   }
 }

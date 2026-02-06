@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <header className="flex items-center justify-between px-3 sm:px-4 py-1.5 pt-[calc(0.375rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[#0c0c0c]/90 backdrop-blur-xl border-b border-white/5 transition-all">
+    <header className="flex items-center justify-between px-3 sm:px-4 py-1.5 pt-[calc(0.375rem+env(safe-area-inset-top))] sticky top-0 z-40 bg-[var(--color-background)]/90 backdrop-blur-xl border-b border-white/5 transition-all">
       {/* Left Section: Sidebar Trigger & Repo Selector */}
       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <button
@@ -58,16 +58,16 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div className="overflow-hidden flex-1 min-w-0">
               <span className="font-medium text-xs text-zinc-300 group-hover:text-white whitespace-nowrap inline-block animate-marquee-on-hover">
-                {currentSource ? (currentSource.displayName || currentSource.name.split('/').slice(-2).join('/')) : 'Select Repository'}
+                {currentSource ? (currentSource.displayName || (currentSource.name ? currentSource.name.split('/').slice(-2).join('/') : 'Unknown Source')) : 'Select Repository'}
               </span>
             </div>
             <ChevronDown size={11} className="text-zinc-500 group-hover:text-zinc-300 transition-colors flex-shrink-0" />
           </button>
 
           {isRepoOpen && (
-            <div className="absolute top-full left-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] bg-[#121215] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 flex flex-col ring-1 ring-black/50">
+            <div className="absolute top-full left-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] bg-[var(--color-surface)] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 flex flex-col ring-1 ring-black/50">
               <div className="p-3 border-b border-white/5">
-                <div className="flex items-center gap-2 bg-[#09090b] border border-white/5 rounded-lg px-3 py-2 focus-within:border-white/20 transition-colors">
+                <div className="flex items-center gap-2 bg-[var(--color-background)] border border-white/5 rounded-lg px-3 py-2 focus-within:border-white/20 transition-colors">
                   <Search size={14} className="text-zinc-500" />
                   <input
                     autoFocus

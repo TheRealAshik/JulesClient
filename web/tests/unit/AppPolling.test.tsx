@@ -14,6 +14,8 @@ vi.mock('../../services/geminiService', () => ({
     listAllSessions: vi.fn(),
     getSession: vi.fn(),
     listActivities: vi.fn(),
+    streamActivities: vi.fn(),
+    mapActivity: vi.fn((a) => a),
 }));
 
 // Mock scrollIntoView
@@ -45,6 +47,9 @@ describe('App Polling Logic', () => {
         localStorageMock.setItem('jules_api_key', 'test-key');
         (JulesApi.listSources as any).mockResolvedValue({ sources: [] });
         (JulesApi.listAllSessions as any).mockResolvedValue([]);
+        (JulesApi.streamActivities as any).mockReturnValue({
+            [Symbol.asyncIterator]: async function* () {}
+        });
     });
 
     it('should stop polling when session is COMPLETED', async () => {
@@ -57,7 +62,7 @@ describe('App Polling Logic', () => {
         };
 
         (JulesApi.getSession as any).mockResolvedValue(completedSession);
-        (JulesApi.listActivities as any).mockResolvedValue({ activities: [] });
+        // streamActivities mock defaults to empty
 
         // Render App with a route that triggers session loading
         render(
@@ -104,7 +109,6 @@ describe('App Polling Logic', () => {
         };
 
         (JulesApi.getSession as any).mockResolvedValue(failedSession);
-        (JulesApi.listActivities as any).mockResolvedValue({ activities: [] });
 
         render(
             <ThemeProvider>

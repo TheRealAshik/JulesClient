@@ -302,7 +302,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                                                 <div className="flex flex-col items-start flex-1 min-w-0">
                                                     <div className="flex items-center gap-1.5 w-full">
                                                         <span className={`text-sm truncate ${isActive ? 'text-white font-medium' : 'text-zinc-400'}`}>
-                                                            {source.displayName || source.name.split('/').slice(-2).join('/')}
+                                                            {source.displayName || (source.name ? source.name.split('/').slice(-2).join('/') : 'Unknown')}
                                                         </span>
                                                         {source.githubRepo?.isPrivate && (
                                                             <Lock size={10} className="text-zinc-500 flex-shrink-0" />
