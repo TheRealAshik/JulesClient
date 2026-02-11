@@ -2,16 +2,28 @@ package dev.therealashik.client.jules
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
 object AndroidContext {
     lateinit var context: Context
 }
 
 actual object Settings {
-    private const val PREF_NAME = "jules_preferences"
+    private const val PREF_NAME = "jules_secure_preferences"
 
     private val prefs: SharedPreferences by lazy {
-        AndroidContext.context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val masterKey = MasterKey.Builder(AndroidContext.context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+
+        EncryptedSharedPreferences.create(
+            AndroidContext.context,
+            PREF_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
     }
 
     actual fun saveBoolean(key: String, value: Boolean) {
