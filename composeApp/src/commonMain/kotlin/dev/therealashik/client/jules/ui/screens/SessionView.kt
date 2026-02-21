@@ -1,5 +1,6 @@
 package dev.therealashik.client.jules.ui.screens
 
+import dev.therealashik.client.jules.ui.components.DiffView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.animation.expandVertically
@@ -858,32 +859,7 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                         )
                 ) {
                     if (language == "diff") {
-                        Column {
-                            content.split('\n').forEach { line ->
-                                val (textColor, bgColor) = when {
-                                    line.startsWith('+') && !line.startsWith("+++") ->
-                                        Color(0xFF4ADE80) to Color(0xFF22C55E).copy(alpha = 0.05f)
-                                    line.startsWith('-') && !line.startsWith("---") ->
-                                        Color(0xFFF87171) to Color(0xFFEF4444).copy(alpha = 0.05f)
-                                    line.startsWith("@@") ->
-                                        Color(0xFF818CF8) to Color.Transparent
-                                    else ->
-                                        Color(0xFFA1A1AA) to Color.Transparent
-                                }
-
-                                Text(
-                                    line,
-                                    color = textColor,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(bgColor)
-                                        .padding(horizontal = 12.dp, vertical = 2.dp),
-                                    fontFamily = FontFamily.Monospace,
-                                    fontSize = 12.sp,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                        }
+                        DiffView(content)
                     } else {
                         SelectionContainer {
                             Text(
