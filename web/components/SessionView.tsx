@@ -25,35 +25,36 @@ export const SessionView: React.FC<SessionViewProps> = ({
     defaultCardCollapsed
 }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
-    const prevActivitiesLength = useRef(activities.length);
-    const prevScrollHeight = useRef(0);
-    const isFirstRender = useRef(true);
+    const isAtBottom = useRef(true); // Default to true so initial render scrolls to bottom
+    const prevActivityCount = useRef(activities.length);
 
-    // Auto-scroll to bottom on new activities
+    const handleScroll = useCallback(() => {
+        if (!scrollRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+        const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+        // Check if user is near bottom (100px tolerance)
+        isAtBottom.current = distanceToBottom < 100;
+    }, []);
+
+    // Auto-scroll to bottom on new activities or streaming updates
     useEffect(() => {
-        if (scrollRef.current) {
-            const container = scrollRef.current;
-            const { scrollTop, scrollHeight, clientHeight } = container;
+        if (!scrollRef.current) return;
 
-            // Check if we were at the bottom before the height change
-            // (using the scrollHeight from the last time this effect ran)
-            const wasAtBottom = prevScrollHeight.current - scrollTop - clientHeight < 150;
+        const { scrollHeight } = scrollRef.current;
+        const isNewActivity = activities.length > prevActivityCount.current;
+        const lastActivity = activities.at(-1);
+        const isUserMessage = lastActivity?.originator === 'user';
 
-            // Check if a new message was added and if it was from the user
-            const isNewActivity = activities.length > prevActivitiesLength.current;
-            const lastActivity = activities[activities.length - 1];
-            const isUserMessage = lastActivity?.originator === 'user';
-
-            // Scroll if we were already at bottom, or if user just sent a message, or on first render with content
-            if (wasAtBottom || (isNewActivity && isUserMessage) || (isFirstRender.current && activities.length > 0)) {
-                container.scrollTop = scrollHeight;
-            }
-
-            prevScrollHeight.current = scrollHeight;
+        // Scroll if:
+        // 1. We were already at the bottom (sticky scroll)
+        // 2. A new message arrived AND it's from the user (force scroll for user action)
+        if (isAtBottom.current || (isNewActivity && isUserMessage)) {
+            scrollRef.current.scrollTop = scrollHeight;
+            isAtBottom.current = true;
         }
-        prevActivitiesLength.current = activities.length;
-        isFirstRender.current = false;
-    }, [activities.length, isProcessing]);
+
+        prevActivityCount.current = activities.length;
+    }, [activities, isProcessing]);
 
     // Wrapper to adapt simple text callback to SessionCreateOptions signature
     const handleSendMessage = useCallback((text: string, _options: SessionCreateOptions) => {
@@ -72,6 +73,7 @@ export const SessionView: React.FC<SessionViewProps> = ({
             {/* Scrollable Chat Area */}
             <div
                 ref={scrollRef}
+                onScroll={handleScroll}
                 className="flex-1 overflow-y-auto px-4 sm:px-0 scroll-smooth"
             >
                 {/* 

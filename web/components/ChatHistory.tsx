@@ -1,3 +1,5 @@
+import { List } from "react-window";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 import React, { useState, memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -278,10 +280,39 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
 });
 CommandArtifact.displayName = 'CommandArtifact';
 
+const DiffRow = memo(({ index, style, data }: { index: number, style: React.CSSProperties, data: string[] }) => {
+    const line = data[index];
+    let color = "text-zinc-400";
+    let bg = "transparent";
+
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+        color = "text-green-400";
+        bg = "bg-green-500/5";
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+        color = "text-red-400";
+        bg = "bg-red-500/5";
+    } else if (line.startsWith('@@')) {
+        color = "text-indigo-400";
+    }
+
+    return (
+        <div style={style} className={`${bg} px-3 whitespace-pre flex items-center w-full min-w-max overflow-visible`}>
+            <span className={`${color} font-mono text-xs leading-relaxed`}>{line}</span>
+        </div>
+    );
+});
+DiffRow.displayName = 'DiffRow';
+
 const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean }> = memo(({ changeSet, defaultCollapsed }) => {
     const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
 
-    if (!changeSet?.gitPatch?.unidiffPatch) return null;
+    // Memoize lines
+    const lines = useMemo(() => {
+        if (!changeSet?.gitPatch?.unidiffPatch) return [];
+        return changeSet.gitPatch.unidiffPatch.split(String.fromCharCode(10));
+    }, [changeSet?.gitPatch?.unidiffPatch]);
+
+    if (!lines.length) return null;
 
     const getFileName = (patch: string) => {
         const match = patch.match(/^\+\+\+\s+(?:b\/)?(.+)$/m);
@@ -293,7 +324,9 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
         return null;
     };
 
-    const fileName = getFileName(changeSet.gitPatch.unidiffPatch);
+    const fileName = changeSet?.gitPatch?.unidiffPatch ? getFileName(changeSet.gitPatch.unidiffPatch) : null;
+    const itemSize = 20; // 20px per line
+    const listHeight = Math.min(lines.length * itemSize, 500);
 
     return (
         <div className="w-full min-w-0 max-w-[calc(100vw-4rem)] sm:max-w-xl md:max-w-2xl box-border">
@@ -348,29 +381,21 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
                             transition={{ duration: 0.2 }}
                             className="w-full overflow-hidden"
                         >
-                            <div className="overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-background w-full">
-                                <pre className="p-3 font-mono text-xs leading-relaxed w-max min-w-full">
-                                    {changeSet.gitPatch.unidiffPatch.split('\n').map((line: string, i: number) => {
-                                        let color = "text-zinc-400";
-                                        let bg = "transparent";
-
-                                        if (line.startsWith('+') && !line.startsWith('+++')) {
-                                            color = "text-green-400";
-                                            bg = "bg-green-500/5";
-                                        } else if (line.startsWith('-') && !line.startsWith('---')) {
-                                            color = "text-red-400";
-                                            bg = "bg-red-500/5";
-                                        } else if (line.startsWith('@@')) {
-                                            color = "text-indigo-400";
-                                        }
-
-                                        return (
-                                            <div key={i} className={`${bg} px-2 -mx-2`}>
-                                                <span className={`${color} whitespace-pre`}>{line}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </pre>
+                            <div className="border-t border-white/5 bg-background w-full" style={{ height: listHeight }}>
+                                <AutoSizer disableHeight>
+                                    {({ width }) => (
+                                        <List
+                                            height={listHeight}
+                                            width={width}
+                                            itemCount={lines.length}
+                                            itemSize={itemSize}
+                                            itemData={lines}
+                                            className="custom-scrollbar"
+                                        >
+                                            {DiffRow}
+                                        </List>
+                                    )}
+                                </AutoSizer>
                             </div>
                         </motion.div>
                     )}
