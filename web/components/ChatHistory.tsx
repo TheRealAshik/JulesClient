@@ -188,6 +188,7 @@ PlanStepItem.displayName = 'PlanStepItem';
 
 const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: number, defaultCollapsed?: boolean }> = memo(({ command, output, exitCode, defaultCollapsed }) => {
     const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
+
     const isFailed = exitCode !== undefined && exitCode !== 0;
 
     return (
@@ -281,6 +282,10 @@ CommandArtifact.displayName = 'CommandArtifact';
 const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean }> = memo(({ changeSet, defaultCollapsed }) => {
     const [isExpanded, setIsExpanded] = useState(!defaultCollapsed);
 
+    const diffLines = useMemo(() => {
+        return changeSet?.gitPatch?.unidiffPatch?.split("\n") || [];
+    }, [changeSet?.gitPatch?.unidiffPatch]);
+
     if (!changeSet?.gitPatch?.unidiffPatch) return null;
 
     const getFileName = (patch: string) => {
@@ -350,7 +355,7 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
                         >
                             <div className="overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-background w-full">
                                 <pre className="p-3 font-mono text-xs leading-relaxed w-max min-w-full">
-                                    {changeSet.gitPatch.unidiffPatch.split('\n').map((line: string, i: number) => {
+                                    {diffLines.map((line: string, i: number) => {
                                         let color = "text-zinc-400";
                                         let bg = "transparent";
 
