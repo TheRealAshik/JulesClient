@@ -35,7 +35,11 @@ import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
 import dev.therealashik.client.jules.ui.JulesBackground
+import dev.therealashik.client.jules.ui.JulesOpacity
 import dev.therealashik.client.jules.ui.JulesPrimary
+import dev.therealashik.client.jules.ui.JulesShapes
+import dev.therealashik.client.jules.ui.JulesSizes
+import dev.therealashik.client.jules.ui.JulesSpacing
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.ProactiveSection
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
@@ -65,7 +69,7 @@ fun HomeView(
             Column(
                 modifier = Modifier
                     .widthIn(max = 800.dp)
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                    .padding(horizontal = JulesSpacing.l, vertical = JulesSpacing.xxl),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
@@ -73,14 +77,14 @@ fun HomeView(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                            .background(Color(0xFFF59E0B).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(12.dp),
+                            .padding(bottom = JulesSpacing.xxl)
+                            .background(Color(0xFFF59E0B).copy(alpha = JulesOpacity.normal), JulesShapes.medium)
+                            .border(1.dp, Color(0xFFF59E0B).copy(alpha = JulesOpacity.focused), JulesShapes.medium)
+                            .padding(JulesSpacing.l),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(JulesSpacing.m)
                     ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(JulesSizes.iconMedium))
                         Text(
                             "No repositories found. Ensure the Jules App is installed on your GitHub.",
                             color = Color(0xFFF59E0B),
@@ -94,21 +98,21 @@ fun HomeView(
                     onSendMessage = onSendMessage,
                     isLoading = isProcessing,
                     currentSource = currentSource,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(bottom = JulesSpacing.m)
                 )
 
                 if (error != null) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                            .background(Color(0xFFEF4444).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                            .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                            .padding(12.dp),
+                            .padding(bottom = JulesSpacing.xxl)
+                            .background(Color(0xFFEF4444).copy(alpha = JulesOpacity.normal), JulesShapes.medium)
+                            .border(1.dp, Color(0xFFEF4444).copy(alpha = JulesOpacity.focused), JulesShapes.medium)
+                            .padding(JulesSpacing.l),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(JulesSpacing.m)
                     ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(JulesSizes.iconMedium))
                         Text(
                             error,
                             color = Color(0xFFEF4444),
@@ -127,11 +131,11 @@ fun HomeView(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 32.dp),
+                        .padding(top = JulesSpacing.xxxl),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)) {
                     ActionButton(Icons.Default.ViewInAr, "Render")
                     ActionButton(Icons.Default.Terminal, "CLI")
                     ActionButton(Icons.Default.Code, "API")
@@ -143,7 +147,7 @@ fun HomeView(
             }
             
             // Bottom padding for mobile
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(JulesSpacing.xxl))
         }
     }
 }
@@ -153,14 +157,14 @@ fun HomeView(
 fun ActionButton(icon: ImageVector, label: String, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(JulesSizes.touchTarget)
+            .clip(JulesShapes.small)
             .background(Color(0xFF1E1E22))
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+            .border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.small)
             .clickable(enabled = onClick != null) { onClick?.invoke() }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.s),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)
     ) {
         Icon(icon, contentDescription = null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
         Text(

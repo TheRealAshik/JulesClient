@@ -1,10 +1,13 @@
 package dev.therealashik.client.jules.ui
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.unit.dp
 
 // Colors extracted from Web:
 // Background: #0c0c0c
@@ -21,6 +24,38 @@ val JulesGreen = Color(0xFF34D399) // Emerald-400
 val JulesRed = Color(0xFFF87171)   // Red-400
 val JulesZinc = Color(0xFF71717A)  // Zinc-500
 val JulesIndigo = Color(0xFF818CF8) // Indigo-400
+
+object JulesSpacing {
+    val xs = 4.dp
+    val s = 8.dp
+    val m = 12.dp
+    val l = 16.dp
+    val xl = 20.dp
+    val xxl = 24.dp
+    val xxxl = 32.dp
+}
+
+object JulesShapes {
+    val small = RoundedCornerShape(8.dp)
+    val medium = RoundedCornerShape(12.dp)
+    val large = RoundedCornerShape(16.dp)
+    val pill = RoundedCornerShape(24.dp)
+    val circle = CircleShape
+}
+
+object JulesOpacity {
+    val subtle = 0.05f
+    val normal = 0.1f
+    val focused = 0.2f
+}
+
+object JulesSizes {
+    val touchTarget = 48.dp
+    val iconSmall = 16.dp
+    val iconMedium = 20.dp
+    val iconLarge = 24.dp
+    val avatar = 32.dp
+}
 
 enum class ThemePreset {
     MIDNIGHT,
