@@ -5,6 +5,8 @@ import { InputArea, SessionCreateOptions } from './InputArea';
 import { JulesActivity, JulesSession } from '../types';
 import { AlertCircle } from 'lucide-react';
 
+const SCROLL_TOLERANCE_PX = 100;
+
 interface SessionViewProps {
     session: JulesSession;
     activities: JulesActivity[];
@@ -32,8 +34,8 @@ export const SessionView: React.FC<SessionViewProps> = ({
         if (!scrollRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
         const distanceToBottom = scrollHeight - scrollTop - clientHeight;
-        // Check if user is near bottom (100px tolerance)
-        isAtBottom.current = distanceToBottom < 100;
+        // Check if user is near bottom
+        isAtBottom.current = distanceToBottom < SCROLL_TOLERANCE_PX;
     }, []);
 
     // Auto-scroll to bottom on new activities or streaming updates
