@@ -25,6 +25,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.SessionState
+import dev.therealashik.client.jules.ui.JulesOpacity
+import dev.therealashik.client.jules.ui.JulesShapes
+import dev.therealashik.client.jules.ui.JulesSizes
+import dev.therealashik.client.jules.ui.JulesSpacing
 
 @Composable
 fun ProactiveSection(
@@ -47,14 +51,14 @@ fun ProactiveSection(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(JulesSpacing.m)
     ) {
         // Tabs
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)
         ) {
             TabButton("Repo overview", activeTab == "overview") { activeTab = "overview" }
             TabButton("Suggested", activeTab == "suggested") { activeTab = "suggested" }
@@ -63,12 +67,12 @@ fun ProactiveSection(
 
         // Auto Find Issues Toggle Card
         Card(
-            shape = RoundedCornerShape(12.dp),
+            shape = JulesShapes.medium,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+            modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.medium)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier = Modifier.padding(JulesSpacing.l).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -80,11 +84,11 @@ fun ProactiveSection(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFF1E1E22), CircleShape)
-                            .border(1.dp, Color.White.copy(alpha = 0.05f), CircleShape),
+                            .background(Color(0xFF1E1E22), JulesShapes.circle)
+                            .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Lightbulb, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(JulesSizes.iconMedium))
                     }
                     Column {
                         Text("Automatically find issues", color = Color(0xFFF4F4F5), fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -94,7 +98,7 @@ fun ProactiveSection(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("0/5", color = Color.Gray, fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
-                    Spacer(modifier = Modifier.width(24.dp))
+                    Spacer(modifier = Modifier.width(JulesSpacing.xxl))
                     Switch(
                         checked = isEnabled,
                         onCheckedChange = { isEnabled = it },
@@ -122,39 +126,39 @@ fun ProactiveSection(
                 )
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.List, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(JulesSpacing.m)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)) {
+                    Icon(Icons.Default.List, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(JulesSizes.iconSmall))
                     Text("Active Session", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                 }
 
                 Card(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = JulesShapes.medium,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.medium)
                         .clickable { onSelectSession?.invoke(runningSession) }
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(JulesSpacing.l)) {
                         Row(
                             verticalAlignment = Alignment.Top,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(JulesSpacing.m),
                                 modifier = Modifier.weight(1f),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
-                                        .background(Color(0xFF6366F1).copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                                        .border(1.dp, Color(0xFF6366F1).copy(alpha = 0.2f), RoundedCornerShape(8.dp)),
+                                        .size(JulesSizes.avatar)
+                                        .background(Color(0xFF6366F1).copy(alpha = JulesOpacity.normal), JulesShapes.small)
+                                        .border(1.dp, Color(0xFF6366F1).copy(alpha = JulesOpacity.focused), JulesShapes.small),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.RocketLaunch, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(JulesSizes.iconSmall))
                                 }
                                 Text(
                                     (runningSession.title ?: "Untitled Session").replace("##", "").trim(),
@@ -163,16 +167,16 @@ fun ProactiveSection(
                                     maxLines = 1
                                 )
                             }
-                            Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(JulesSizes.iconSmall))
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(JulesSpacing.m))
 
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)) {
                             Box(modifier = Modifier
                                 .size(8.dp)
                                 .alpha(pulseAlpha)
-                                .background(Color(0xFF818CF8), CircleShape)
+                                .background(Color(0xFF818CF8), JulesShapes.circle)
                             )
                             Text(
                                 getSessionStatusText(runningSession.state),
@@ -187,13 +191,13 @@ fun ProactiveSection(
         }
 
         // Schedule Section
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(JulesSpacing.m)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)) {
+                Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(JulesSizes.iconSmall))
                 Text("Schedule", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            Row(horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 CategoryPill(Icons.Default.Bolt, "Performance")
                 CategoryPill(Icons.Default.Palette, "Design")
                 CategoryPill(Icons.Default.Security, "Security")
@@ -206,11 +210,11 @@ fun ProactiveSection(
 fun TabButton(text: String, isActive: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(JulesShapes.circle)
             .background(if (isActive) Color(0xFF27272A) else Color.Transparent)
-            .border(1.dp, if (isActive) Color.White.copy(alpha = 0.1f) else Color.Transparent, CircleShape)
+            .border(1.dp, if (isActive) Color.White.copy(alpha = JulesOpacity.normal) else Color.Transparent, JulesShapes.circle)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = JulesSpacing.l, vertical = 6.dp)
     ) {
         Text(
             text,
@@ -225,13 +229,13 @@ fun TabButton(text: String, isActive: Boolean, onClick: () -> Unit) {
 fun CategoryPill(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s),
         modifier = Modifier
-            .height(48.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .height(JulesSizes.touchTarget) // Ensuring 48dp minimum touch target
+            .clip(JulesShapes.small)
             .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.small)
+            .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.s)
     ) {
         Icon(icon, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
         Text(text, color = Color.Gray, fontSize = 12.sp, lineHeight = 12.sp, fontWeight = FontWeight.Medium)

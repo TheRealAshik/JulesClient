@@ -31,6 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.therealashik.client.jules.model.AutomationMode
 import dev.therealashik.client.jules.model.JulesSource
+import dev.therealashik.client.jules.ui.JulesOpacity
+import dev.therealashik.client.jules.ui.JulesShapes
+import dev.therealashik.client.jules.ui.JulesSizes
+import dev.therealashik.client.jules.ui.JulesSpacing
 import dev.therealashik.client.jules.utils.PlatformFile
 import dev.therealashik.client.jules.utils.rememberFilePickerLauncher
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
@@ -108,22 +112,22 @@ fun InputArea(
                 .fillMaxWidth()
                 .background(
                     Color(0xFF1C1C1F).copy(alpha = 0.95f),
-                    RoundedCornerShape(26.dp)
+                    JulesShapes.pill
                 )
                 .border(
                     1.dp,
-                    if (isFocused) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.1f),
-                    RoundedCornerShape(26.dp)
+                    if (isFocused) Color.White.copy(alpha = JulesOpacity.focused) else Color.White.copy(alpha = JulesOpacity.normal),
+                    JulesShapes.pill
                 )
-                .padding(6.dp),
+                .padding(JulesSpacing.s),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Plus Button
             IconButton(
                 onClick = { filePicker.launch() },
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
+                    .size(JulesSizes.touchTarget)
+                    .clip(JulesShapes.circle)
             ) {
                 Icon(
                     Icons.Default.Add,
@@ -185,8 +189,8 @@ fun InputArea(
                 },
                 enabled = isEnabled || isLoading,
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
+                    .size(JulesSizes.touchTarget)
+                    .clip(JulesShapes.circle)
                     .background(
                         if (isEnabled) Color(0xFF4F46E5) else Color(0xFF27272A)
                     )
@@ -211,14 +215,14 @@ fun InputArea(
         // --- DEFAULT VARIANT (Hero Card) ---
         Column(modifier = modifier) {
             Card(
-                shape = RoundedCornerShape(16.dp),
+                shape = JulesShapes.large,
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF141417)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(
                         width = 1.dp,
-                        color = if (isExpanded) Color(0xFF6366F1).copy(alpha = 0.4f) else Color.White.copy(alpha = 0.1f),
-                        shape = RoundedCornerShape(16.dp)
+                        color = if (isExpanded) Color(0xFF6366F1).copy(alpha = 0.4f) else Color.White.copy(alpha = JulesOpacity.normal),
+                        shape = JulesShapes.large
                     )
                     .animateContentSize()
                     .clickable(enabled = !isFocused) {
@@ -227,13 +231,13 @@ fun InputArea(
                     .then(
                         if (isExpanded) Modifier.shadow(
                             elevation = 8.dp,
-                            shape = RoundedCornerShape(16.dp),
+                            shape = JulesShapes.large,
                             spotColor = Color(0xFF6366F1).copy(alpha = 0.15f)
-                        ) else Modifier.shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp))
+                        ) else Modifier.shadow(elevation = 2.dp, shape = JulesShapes.large)
                     )
             ) {
                 Column(
-                    modifier = Modifier.padding(if (isExpanded) PaddingValues(12.dp) else PaddingValues(horizontal = 16.dp, vertical = 12.dp))
+                    modifier = Modifier.padding(if (isExpanded) PaddingValues(JulesSpacing.m) else PaddingValues(horizontal = JulesSpacing.l, vertical = JulesSpacing.m))
                 ) {
                     TextField(
                         value = input,
@@ -267,8 +271,8 @@ fun InputArea(
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                .padding(top = JulesSpacing.s),
+                            horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)
                         ) {
                             items(attachments) { file ->
                                 InputChip(
@@ -285,7 +289,7 @@ fun InputArea(
                                     border = InputChipDefaults.inputChipBorder(
                                         enabled = true,
                                         selected = true,
-                                        borderColor = Color.White.copy(alpha = 0.1f)
+                                        borderColor = Color.White.copy(alpha = JulesOpacity.normal)
                                     )
                                 )
                             }
@@ -299,30 +303,30 @@ fun InputArea(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = JulesSpacing.s),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Left Actions
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Plus Button
                         IconButton(
                             onClick = { filePicker.launch() },
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(JulesSizes.touchTarget) // Changed from 32dp
                                 .padding(4.dp)
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xFFA1A1AA), modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xFFA1A1AA), modifier = Modifier.size(JulesSizes.iconMedium))
                         }
 
                         // Branch Selector
                         Box {
                             Row(
                                 modifier = Modifier
-                                    .height(32.dp)
+                                    .height(JulesSizes.touchTarget) // Changed from 32dp
                                     .clickable { isBranchMenuOpen = true }
                                     .padding(horizontal = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -365,14 +369,14 @@ fun InputArea(
                             IconButton(
                                 onClick = { isSettingsMenuOpen = true },
                                 modifier = Modifier
-                                    .size(32.dp)
+                                    .size(JulesSizes.touchTarget) // Changed from 32dp
                                     .padding(4.dp)
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = "Settings",
                                     tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color(0xFFA1A1AA),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(JulesSizes.iconMedium)
                                 )
                             }
 
@@ -381,7 +385,7 @@ fun InputArea(
                                 onDismissRequest = { isSettingsMenuOpen = false },
                                 modifier = Modifier.background(Color(0xFF121215)).width(280.dp)
                             ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
+                                Column(modifier = Modifier.padding(JulesSpacing.m)) {
                                     // Session Title
                                     Text("SESSION TITLE", fontSize = 10.sp, color = Color(0xFFA1A1AA), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -393,13 +397,13 @@ fun InputArea(
                                         modifier = Modifier.fillMaxWidth().height(40.dp),
                                         colors = OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = Color(0xFF818CF8),
-                                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                                            unfocusedBorderColor = Color.White.copy(alpha = JulesOpacity.normal),
                                             focusedContainerColor = Color(0xFF18181B),
                                             unfocusedContainerColor = Color(0xFF18181B)
                                         )
                                     )
 
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Spacer(modifier = Modifier.height(JulesSpacing.l))
 
                                     // Session Mode
                                     Text("SESSION MODE", fontSize = 10.sp, color = Color(0xFFA1A1AA), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
@@ -420,12 +424,12 @@ fun InputArea(
                                                     selectedMode = mode
                                                     isSettingsMenuOpen = false
                                                 }
-                                                .background(if (selectedMode == mode) Color(0xFF818CF8).copy(alpha = 0.1f) else Color.Transparent, RoundedCornerShape(8.dp))
-                                                .padding(8.dp),
+                                                .background(if (selectedMode == mode) Color(0xFF818CF8).copy(alpha = JulesOpacity.normal) else Color.Transparent, JulesShapes.small)
+                                                .padding(JulesSpacing.s),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(icon, contentDescription = null, tint = if(selectedMode == mode) Color(0xFF818CF8) else Color.Gray, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Icon(icon, contentDescription = null, tint = if(selectedMode == mode) Color(0xFF818CF8) else Color.Gray, modifier = Modifier.size(JulesSizes.iconSmall))
+                                            Spacer(modifier = Modifier.width(JulesSpacing.m))
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Text(
@@ -435,7 +439,7 @@ fun InputArea(
                                                         fontWeight = FontWeight.Medium
                                                     )
                                                     if (mode == "SCHEDULED") {
-                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Spacer(modifier = Modifier.width(JulesSpacing.s))
                                                         Box(
                                                             modifier = Modifier
                                                                 .background(Color(0xFF6366F1).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
@@ -495,7 +499,7 @@ fun InputArea(
                         },
                         enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading,
                         modifier = Modifier
-                            .size(24.dp)
+                            .size(JulesSizes.touchTarget)
                             .shadow(
                                 elevation = if (input.isNotBlank() || attachments.isNotEmpty()) 4.dp else 0.dp,
                                 spotColor = Color(0xFF6366F1).copy(alpha = 0.25f),

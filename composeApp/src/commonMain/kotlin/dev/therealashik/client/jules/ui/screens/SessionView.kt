@@ -62,6 +62,10 @@ import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.JulesBackground
+import dev.therealashik.client.jules.ui.JulesOpacity
+import dev.therealashik.client.jules.ui.JulesShapes
+import dev.therealashik.client.jules.ui.JulesSizes
+import dev.therealashik.client.jules.ui.JulesSpacing
 import dev.therealashik.client.jules.ui.JulesSurface
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.InputAreaVariant
@@ -110,7 +114,7 @@ fun SessionView(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = JulesSpacing.l, vertical = JulesSpacing.m),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -130,7 +134,7 @@ fun SessionView(
                     )
                 }
             }
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+            HorizontalDivider(color = Color.White.copy(alpha = JulesOpacity.subtle))
 
             // Chat History
             LazyColumn(
@@ -138,8 +142,8 @@ fun SessionView(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(bottom = 160.dp, top = 16.dp)
+                    .padding(horizontal = JulesSpacing.l),
+                contentPadding = PaddingValues(bottom = 160.dp, top = JulesSpacing.l)
             ) {
                 items(activities) { activity ->
                     ActivityItem(activity, defaultCardState, onApprovePlan)
@@ -149,7 +153,7 @@ fun SessionView(
                 session.outputs.forEach { output ->
                     if (output.pullRequest != null) {
                         item {
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(JulesSpacing.l))
                             PullRequestCard(output.pullRequest)
                         }
                     }
@@ -172,12 +176,12 @@ fun SessionView(
                 // Completion / Failure Status (if no specific activity rendered it)
                 if (session.state == SessionState.COMPLETED) {
                      item {
-                         Spacer(modifier = Modifier.height(24.dp))
+                         Spacer(modifier = Modifier.height(JulesSpacing.xxl))
                          StatusBanner(true, "Session Completed Successfully")
                      }
                 } else if (session.state == SessionState.FAILED) {
                      item {
-                         Spacer(modifier = Modifier.height(24.dp))
+                         Spacer(modifier = Modifier.height(JulesSpacing.xxl))
                          StatusBanner(false, "Session Failed")
                      }
                 }
@@ -188,14 +192,14 @@ fun SessionView(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 16.dp)
-                                .background(Color(0xFFEF4444).copy(alpha = 0.1f), RoundedCornerShape(12.dp))
-                                .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                .padding(vertical = JulesSpacing.l)
+                                .background(Color(0xFFEF4444).copy(alpha = JulesOpacity.normal), JulesShapes.medium)
+                                .border(1.dp, Color(0xFFEF4444).copy(alpha = JulesOpacity.focused), JulesShapes.medium)
+                                .padding(JulesSpacing.m),
+                            horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Filled.Warning, null, tint = Color(0xFFEF4444), modifier = Modifier.size(16.dp))
+                            Icon(Icons.Filled.Warning, null, tint = Color(0xFFEF4444), modifier = Modifier.size(JulesSizes.iconSmall))
                             Text(error, color = Color(0xFFEF4444), fontSize = 14.sp)
                         }
                     }
@@ -236,8 +240,8 @@ fun SessionView(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
+                    .padding(horizontal = JulesSpacing.l)
+                    .padding(bottom = JulesSpacing.l)
             )
         }
     }
@@ -278,14 +282,14 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp) // Reduced vertical padding
+            .padding(vertical = JulesSpacing.m) // Increased vertical padding from 4.dp to 12.dp
     ) {
         // System Message
         if (activity.originator == "system" && !isPlan && !isProgress && !isCompleted && !isFailed) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = JulesSpacing.s),
                 contentAlignment = Alignment.Center
             ) {
                  Text(
@@ -293,9 +297,9 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF71717A), // Zinc-500
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.05f), CircleShape)
-                        .border(1.dp, Color.White.copy(alpha = 0.05f), CircleShape)
-                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                        .background(Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
+                        .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
+                        .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.xs)
                 )
             }
             return
@@ -315,9 +319,9 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                 if (!isUser) {
                      Box(
                         modifier = Modifier
-                            .size(32.dp)
-                            .background(Color(0xFF18181B), CircleShape)
-                            .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                            .size(JulesSizes.avatar)
+                            .background(Color(0xFF18181B), JulesShapes.circle)
+                            .border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.circle),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -327,10 +331,10 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                             modifier = Modifier.size(18.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(JulesSpacing.l))
                 }
 
-                val bubbleShape = RoundedCornerShape(20.dp)
+                val bubbleShape = JulesShapes.large
 
                 Column(
                     horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
@@ -345,10 +349,10 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                             .background(if (isUser) Color(0xFF27272A) else Color.Transparent)
                             .border(
                                 width = if (isUser) 1.dp else 0.dp,
-                                color = if (isUser) Color.White.copy(alpha = 0.05f) else Color.Transparent,
+                                color = if (isUser) Color.White.copy(alpha = JulesOpacity.subtle) else Color.Transparent,
                                 shape = bubbleShape
                             )
-                            .padding(if (isUser) 16.dp else 0.dp) // Increased padding
+                            .padding(if (isUser) JulesSpacing.l else 0.dp)
                             .animateContentSize()
                     ) {
                         // Expansion Logic for User Messages
@@ -398,7 +402,7 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                                             modifier = Modifier
                                                 .align(Alignment.BottomCenter)
                                                 .fillMaxWidth()
-                                                .height(48.dp)
+                                                .height(JulesSizes.touchTarget)
                                                 .background(
                                                     Brush.verticalGradient(
                                                         listOf(Color.Transparent, Color(0xFF27272A))
@@ -412,14 +416,14 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                                     TextButton(
                                         onClick = { isExpanded = !isExpanded },
                                         modifier = Modifier.align(Alignment.CenterHorizontally).height(32.dp),
-                                        contentPadding = PaddingValues(4.dp)
+                                        contentPadding = PaddingValues(JulesSpacing.xs)
                                     ) {
                                         Text(
                                             if (isExpanded) "Show less" else "Show more",
                                             fontSize = 12.sp,
                                             color = Color(0xFFA1A1AA)
                                         )
-                                        Spacer(Modifier.width(4.dp))
+                                        Spacer(Modifier.width(JulesSpacing.xs))
                                         Icon(
                                             if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                                             null,
@@ -475,12 +479,12 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                             fontSize = 10.sp,
                             color = Color(0xFF52525B),
                             fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = JulesSpacing.xs)
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(JulesSpacing.s))
         }
 
         // Indented Content (Plans, Artifacts, Progress)
@@ -491,7 +495,7 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
             // Progress Updates
             if (isProgress && activity.progressUpdated != null) {
                 ProgressItem(activity.progressUpdated)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Plan
@@ -499,13 +503,13 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
                 val plan = activity.planGenerated.plan
                 // val isApproved = activity.planApproved != null // Simplification
                 PlanCard(plan, defaultCardState, onApprove = { onApprovePlan(activity.name) })
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Artifacts
             activity.artifacts.forEach { artifact ->
                 ArtifactView(artifact, defaultCardState)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Completion / Failure
@@ -530,21 +534,21 @@ fun ProgressItem(progress: ProgressUpdate) {
         else -> Icons.Default.CheckCircle
     }
 
-    Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 4.dp)) {
+    Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = JulesSpacing.xs)) {
         Box(
             modifier = Modifier
-                .size(32.dp)
-                .background(Color(0xFF18181B), CircleShape)
-                .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                .size(JulesSizes.avatar)
+                .background(Color(0xFF18181B), JulesShapes.circle)
+                .border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.circle),
             contentAlignment = Alignment.Center
         ) {
             Icon(Icons.Default.SmartToy, null, tint = Color(0xFF818CF8).copy(0.7f), modifier = Modifier.size(18.dp))
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(JulesSpacing.l))
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, tint = Color(0xFFA1A1AA), modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(JulesSpacing.s))
                 Text(title, color = Color(0xFFE4E4E7), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
             if (!description.isNullOrBlank() && description != title) {
@@ -561,12 +565,12 @@ fun StatusBanner(success: Boolean, message: String) {
         modifier = Modifier
             .background(
                 if (success) Color(0xFF064E3B) else Color(0xFF7F1D1D),
-                RoundedCornerShape(8.dp)
+                JulesShapes.small
             )
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.s)
     ) {
         Text(if (success) "✓" else "⚠", color = Color.White, fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(JulesSpacing.s))
         Text(message, color = Color.White, style = MaterialTheme.typography.bodyMedium)
     }
 }
@@ -576,7 +580,7 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
     var isExpanded by remember { mutableStateOf(defaultExpanded) }
 
     Card(
-        modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+        modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.medium),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF121215))
     ) {
         Column {
@@ -585,11 +589,11 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { isExpanded = !isExpanded }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = JulesSpacing.xl, vertical = JulesSpacing.m),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.List, null, tint = Color(0xFF818CF8), modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Default.List, null, tint = Color(0xFF818CF8), modifier = Modifier.size(JulesSizes.iconSmall))
+                Spacer(modifier = Modifier.width(JulesSpacing.s))
                 Text("Execution Plan", style = MaterialTheme.typography.titleMedium, fontSize = 14.sp, color = Color.White)
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -600,15 +604,15 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
                     color = Color(0xFF71717A),
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
-                        .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .background(Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.small) // Was 4.dp
+                        .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.small) // Was 4.dp
+                        .padding(horizontal = JulesSpacing.s, vertical = 2.dp)
                 )
             }
 
             AnimatedVisibility(visible = isExpanded) {
                 Column {
-                    Column(Modifier.padding(8.dp)) {
+                    Column(Modifier.padding(JulesSpacing.s)) {
                         plan.steps.forEachIndexed { index, step ->
                             PlanStepItem(step, index)
                         }
@@ -619,7 +623,7 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(Color.Black.copy(0.2f))
-                            .padding(16.dp)
+                            .padding(JulesSpacing.l)
                     ) {
                         Button(
                             onClick = onApprove,
@@ -627,7 +631,7 @@ fun PlanCard(plan: Plan, defaultExpanded: Boolean, onApprove: () -> Unit) {
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("Start Coding")
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(JulesSpacing.s))
                             Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(14.dp))
                         }
                     }
@@ -644,21 +648,21 @@ fun PlanStepItem(step: Step, index: Int) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(JulesShapes.medium)
             .clickable { isExpanded = !isExpanded }
-            .padding(12.dp)
+            .padding(JulesSpacing.m)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .background(Color(0xFF18181B), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
+                    .background(Color(0xFF18181B), JulesShapes.circle)
+                    .border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.circle),
                 contentAlignment = Alignment.Center
             ) {
                 Text("${index + 1}", fontSize = 10.sp, fontFamily = FontFamily.Monospace, color = Color(0xFF71717A))
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(JulesSpacing.m))
             Text(step.title, modifier = Modifier.weight(1f), fontSize = 14.sp, color = Color(0xFFE4E4E7), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Icon(
                 Icons.Default.ExpandMore,
@@ -671,7 +675,7 @@ fun PlanStepItem(step: Step, index: Int) {
         AnimatedVisibility(visible = isExpanded) {
             Text(
                 step.description ?: "",
-                modifier = Modifier.padding(start = 36.dp, top = 8.dp),
+                modifier = Modifier.padding(start = 36.dp, top = JulesSpacing.s),
                 fontSize = 14.sp,
                 color = Color(0xFF9CA3AF),
                 lineHeight = 20.sp
@@ -686,12 +690,12 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
-            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp)),
+            .padding(vertical = JulesSpacing.l)
+            .border(1.dp, MaterialTheme.colorScheme.primary, JulesShapes.medium),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(JulesSpacing.l),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -699,13 +703,13 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(JulesSpacing.s))
             Text(
                 "The agent has proposed a plan. Please review the steps above and approve to proceed.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(JulesSpacing.l))
             Button(
                 onClick = onApprove,
                 modifier = Modifier.fillMaxWidth(),
@@ -751,11 +755,11 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
         val model = "data:$mime;base64,$base64Data"
 
         Card(
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+            shape = JulesShapes.small,
+            modifier = Modifier.fillMaxWidth().border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.small)
         ) {
             Column {
-                Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF1E1E1E)).padding(8.dp)) {
+                Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF1E1E1E)).padding(JulesSpacing.s)) {
                     Text("Generated Artifact", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
                 AsyncImage(
@@ -773,13 +777,13 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
 fun CodeBlock(title: String, subtitle: String? = null, content: String, language: String, exitCode: Int? = null, defaultExpanded: Boolean = false) {
     var isExpanded by remember { mutableStateOf(defaultExpanded) }
     val isError = exitCode != null && exitCode != 0
-    val borderColor = if (isError) Color(0xFFEF4444).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
-    val headerBg = if (isError) Color(0xFFEF4444).copy(alpha = 0.05f) else Color.White.copy(alpha = 0.02f)
+    val borderColor = if (isError) Color(0xFFEF4444).copy(alpha = 0.3f) else Color.White.copy(alpha = JulesOpacity.normal)
+    val headerBg = if (isError) Color(0xFFEF4444).copy(alpha = JulesOpacity.subtle) else Color.White.copy(alpha = 0.02f)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF09090B)),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth().border(1.dp, borderColor, RoundedCornerShape(12.dp))
+        shape = JulesShapes.medium,
+        modifier = Modifier.fillMaxWidth().border(1.dp, borderColor, JulesShapes.medium)
     ) {
         Column {
             // Header
@@ -788,7 +792,7 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                     .fillMaxWidth()
                     .background(headerBg)
                     .clickable { isExpanded = !isExpanded }
-                    .padding(12.dp),
+                    .padding(JulesSpacing.m),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -797,9 +801,9 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                         if (isError) Icons.Default.Warning else Icons.Default.Code,
                         null,
                         tint = if (isError) Color(0xFFF87171) else Color(0xFF71717A),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(JulesSizes.iconSmall)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(JulesSpacing.m))
                     Column(modifier = Modifier.weight(1f)) {
                          Text(
                              title,
@@ -831,14 +835,14 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                                 .border(1.dp, Color(0xFFEF4444).copy(0.2f), RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(JulesSpacing.s))
                     }
 
                     Icon(
                         if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         null,
                         tint = Color(0xFF71717A),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(JulesSizes.iconSmall)
                     )
                 }
             }
@@ -855,7 +859,7 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                         .background(if (isError) Color(0xFFEF4444).copy(0.02f) else Color.Black.copy(0.2f))
                         .border(
                              width = 1.dp,
-                             color = if (isError) Color(0xFFEF4444).copy(0.1f) else Color.White.copy(0.05f)
+                             color = if (isError) Color(0xFFEF4444).copy(0.1f) else Color.White.copy(JulesOpacity.subtle)
                         )
                 ) {
                     if (language == "diff") {
@@ -867,7 +871,7 @@ fun CodeBlock(title: String, subtitle: String? = null, content: String, language
                                 color = if (isError) Color(0xFFFCA5A5) else Color(0xFFA1A1AA),
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 12.sp,
-                                modifier = Modifier.padding(12.dp)
+                                modifier = Modifier.padding(JulesSpacing.m)
                             )
                         }
                     }
@@ -896,13 +900,13 @@ fun PullRequestCard(pr: PullRequestOutput) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+            .border(1.dp, Color.White.copy(alpha = JulesOpacity.normal), JulesShapes.medium),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
             modifier = Modifier
                 .background(Brush.verticalGradient(listOf(Color(0xFF18181B), Color(0xFF0F0F12))))
-                .padding(16.dp)
+                .padding(JulesSpacing.l)
         ) {
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -910,7 +914,7 @@ fun PullRequestCard(pr: PullRequestOutput) {
                          // Fallback icon for GitPullRequest since standard Icons might not have it
                          Icon(Icons.Default.Check, null, tint = Color(0xFF4ADE80), modifier = Modifier.size(14.dp))
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(JulesSpacing.m))
                     Column(Modifier.weight(1f)) {
                         Text("Pull Request Ready", style = MaterialTheme.typography.labelSmall, color = Color(0xFFE4E4E7))
                         Text("Click to review", style = MaterialTheme.typography.bodySmall, fontSize = 10.sp, color = Color(0xFF71717A))
@@ -932,7 +936,7 @@ fun PullRequestCard(pr: PullRequestOutput) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(JulesSpacing.l))
 
                 Text(pr.title, style = MaterialTheme.typography.titleMedium, fontSize = 16.sp, color = Color.White)
                 if (pr.description.isNotEmpty()) {
@@ -946,28 +950,28 @@ fun PullRequestCard(pr: PullRequestOutput) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(JulesSpacing.xl))
 
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Button(
                         onClick = { uriHandler.openUri(pr.url) },
                         modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = JulesShapes.small,
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.OpenInNew, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(JulesSpacing.s))
                         Text("View PR")
                     }
 
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(JulesSpacing.s))
 
                     IconButton(
                         onClick = { clipboardManager.setText(AnnotatedString(pr.url)) },
                         modifier = Modifier
                             .size(44.dp)
-                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
-                            .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                            .background(Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.small)
+                            .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.small)
                     ) {
                         Icon(Icons.Default.ContentCopy, contentDescription = "Copy URL", tint = Color(0xFFA1A1AA))
                     }
@@ -978,7 +982,7 @@ fun PullRequestCard(pr: PullRequestOutput) {
                     style = MaterialTheme.typography.bodySmall,
                     fontSize = 10.sp,
                     color = Color(0xFF52525B),
-                    modifier = Modifier.padding(top=12.dp).fillMaxWidth(),
+                    modifier = Modifier.padding(top=JulesSpacing.m).fillMaxWidth(),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     fontFamily = FontFamily.Monospace,
                     maxLines = 1,
