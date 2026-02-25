@@ -28,11 +28,8 @@ export function useJulesSession(
             setSessions(allSessions);
 
             // Calculate sessions in last 24 hours
-            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            const usedCount = allSessions.filter(s => {
-                const createDate = new Date(s.createTime);
-                return createDate > twentyFourHoursAgo;
-            }).length;
+            const twentyFourHoursAgoIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const usedCount = allSessions.filter(s => s.createTime > twentyFourHoursAgoIso).length;
 
             setSessionsUsed(usedCount);
         } catch (e) {
