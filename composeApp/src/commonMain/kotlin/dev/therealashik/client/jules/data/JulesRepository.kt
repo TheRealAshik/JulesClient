@@ -3,6 +3,7 @@ package dev.therealashik.client.jules.data
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import dev.therealashik.client.jules.api.JulesApi
+import dev.therealashik.client.jules.cache.CacheManager
 import dev.therealashik.client.jules.db.JulesDatabase
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
@@ -16,7 +17,8 @@ import kotlinx.serialization.json.Json
 
 class JulesRepository(
     private val db: JulesDatabase,
-    private val api: JulesApi
+    private val api: JulesApi,
+    private val cache: CacheManager
 ) {
     private val queries = db.julesDatabaseQueries
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -29,8 +31,23 @@ class JulesRepository(
             entities.map { json.decodeFromString(it.json_blob) }
         }
 
-    suspend fun refreshSources() {
+    suspend fun refreshSources(forceNetwork: Boolean = false) {
         withContext(Dispatchers.IO) {
+            val cacheKey = "sources_all"
+            
+            if (!forceNetwork) {
+                cache.get(cacheKey)?.let { cached ->
+                    val sources = json.decodeFromString<List<JulesSource>>(cached)
+                    queries.transaction {
+                        queries.deleteAllSources()
+                        sources.forEach { source ->
+                            queries.insertSource(source.name, json.encodeToString(source))
+                        }
+                    }
+                    return@withContext
+                }
+            }
+            
             try {
                 val remote = api.listAllSources()
                 queries.transaction {
@@ -39,9 +56,8 @@ class JulesRepository(
                         queries.insertSource(source.name, json.encodeToString(source))
                     }
                 }
+                cache.set(cacheKey, json.encodeToString(remote))
             } catch (e: Exception) {
-                // Log error or rethrow?
-                // For now just print
                 println("Failed to refresh sources: $e")
                 throw e
             }
@@ -56,8 +72,23 @@ class JulesRepository(
             entities.map { json.decodeFromString(it.json_blob) }
         }
 
-    suspend fun refreshSessions() {
+    suspend fun refreshSessions(forceNetwork: Boolean = false) {
         withContext(Dispatchers.IO) {
+            val cacheKey = "sessions_all"
+            
+            if (!forceNetwork) {
+                cache.get(cacheKey)?.let { cached ->
+                    val sessions = json.decodeFromString<List<JulesSession>>(cached)
+                    queries.transaction {
+                        queries.deleteAllSessions()
+                        sessions.forEach { session ->
+                            queries.insertSession(session.name, json.encodeToString(session), session.updateTime)
+                        }
+                    }
+                    return@withContext
+                }
+            }
+            
             try {
                 val remote = api.listAllSessions()
                 queries.transaction {
@@ -66,6 +97,7 @@ class JulesRepository(
                         queries.insertSession(session.name, json.encodeToString(session), session.updateTime)
                     }
                 }
+                cache.set(cacheKey, json.encodeToString(remote))
             } catch (e: Exception) {
                 println("Failed to refresh sessions: $e")
                 throw e
@@ -73,15 +105,25 @@ class JulesRepository(
         }
     }
 
-    suspend fun getSession(sessionId: String): JulesSession? {
+    suspend fun getSession(sessionId: String, forceNetwork: Boolean = false): JulesSession? {
         return withContext(Dispatchers.IO) {
+            val cacheKey = "session_$sessionId"
+            
+            if (!forceNetwork) {
+                cache.get(cacheKey)?.let { cached ->
+                    return@withContext json.decodeFromString<JulesSession>(cached)
+                }
+            }
+            
             val local = queries.getSession(sessionId).executeAsOneOrNull()
-            if (local != null) {
+            if (local != null && !forceNetwork) {
                 return@withContext json.decodeFromString<JulesSession>(local.json_blob)
             }
+            
             try {
                 val remote = api.getSession(sessionId)
                 queries.insertSession(remote.name, json.encodeToString(remote), remote.updateTime)
+                cache.set(cacheKey, json.encodeToString(remote))
                 remote
             } catch (e: Exception) {
                 null
@@ -99,8 +141,23 @@ class JulesRepository(
             }
     }
 
-    suspend fun refreshActivities(sessionId: String) {
+    suspend fun refreshActivities(sessionId: String, forceNetwork: Boolean = false) {
         withContext(Dispatchers.IO) {
+            val cacheKey = "activities_$sessionId"
+            
+            if (!forceNetwork) {
+                cache.get(cacheKey)?.let { cached ->
+                    val activities = json.decodeFromString<List<JulesActivity>>(cached)
+                    queries.transaction {
+                        queries.deleteAllActivitiesForSession(sessionId)
+                        activities.forEach { activity ->
+                            queries.insertActivity(activity.name, sessionId, json.encodeToString(activity), activity.createTime)
+                        }
+                    }
+                    return@withContext
+                }
+            }
+            
             try {
                 val allActivities = mutableListOf<JulesActivity>()
                 var pageToken: String? = null
@@ -116,10 +173,12 @@ class JulesRepository(
                         queries.insertActivity(activity.name, sessionId, json.encodeToString(activity), activity.createTime)
                     }
                 }
+                cache.set(cacheKey, json.encodeToString(allActivities))
 
                 // Also refresh the session details itself
                 val session = api.getSession(sessionId)
                 queries.insertSession(session.name, json.encodeToString(session), session.updateTime)
+                cache.set("session_$sessionId", json.encodeToString(session))
             } catch (e: Exception) {
                 println("Failed to refresh activities: $e")
                 throw e
@@ -144,6 +203,7 @@ class JulesRepository(
                 startingBranch = config.startingBranch
             )
             queries.insertSession(session.name, json.encodeToString(session), session.updateTime)
+            cache.delete("sessions_all") // Invalidate sessions list
             session
         }
     }
@@ -151,14 +211,16 @@ class JulesRepository(
     suspend fun sendMessage(sessionName: String, text: String) {
         withContext(Dispatchers.IO) {
             api.sendMessage(sessionName, text)
-            refreshActivities(sessionName)
+            cache.delete("activities_$sessionName") // Invalidate activities cache
+            refreshActivities(sessionName, forceNetwork = true)
         }
     }
 
     suspend fun approvePlan(sessionName: String, planId: String?) {
         withContext(Dispatchers.IO) {
             api.approvePlan(sessionName, planId)
-            refreshActivities(sessionName)
+            cache.delete("activities_$sessionName") // Invalidate activities cache
+            refreshActivities(sessionName, forceNetwork = true)
         }
     }
 
@@ -166,6 +228,27 @@ class JulesRepository(
         withContext(Dispatchers.IO) {
             api.deleteSession(sessionName)
             queries.deleteSession(sessionName)
+            cache.delete("sessions_all") // Invalidate sessions list
+            cache.delete("session_$sessionName") // Invalidate session cache
+            cache.delete("activities_$sessionName") // Invalidate activities cache
+        }
+    }
+    
+    // CACHE WARMING
+    suspend fun warmCache() {
+        withContext(Dispatchers.IO) {
+            try {
+                // Warm sources
+                refreshSources(forceNetwork = true)
+                
+                // Warm sessions
+                refreshSessions(forceNetwork = true)
+                
+                // TODO: Add selective cache warming for frequently accessed sessions
+                // TODO: Implement background cache refresh strategy
+            } catch (e: Exception) {
+                println("Cache warming failed: $e")
+            }
         }
     }
 }

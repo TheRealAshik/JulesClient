@@ -38,6 +38,11 @@ kotlin {
 
     jvm()
 
+    // TODO: Add WebAssembly (Wasm) target support
+    // wasmJs {
+    //     browser()
+    // }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
@@ -47,6 +52,7 @@ kotlin {
             implementation(libs.sqldelight.android)
         }
         commonMain.dependencies {
+            implementation(project(":julesSDK"))
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

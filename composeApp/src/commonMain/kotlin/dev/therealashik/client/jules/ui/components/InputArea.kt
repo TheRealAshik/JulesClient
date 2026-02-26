@@ -63,6 +63,8 @@ fun InputArea(
     onSendMessage: (String, CreateSessionConfig) -> Unit,
     isLoading: Boolean,
     currentSource: JulesSource?,
+    sources: List<JulesSource>,
+    onSourceChange: (JulesSource) -> Unit,
     modifier: Modifier = Modifier,
     variant: InputAreaVariant = InputAreaVariant.DEFAULT,
     onSendMessageMinimal: ((String) -> Unit)? = null // For simple chat usage
@@ -91,6 +93,16 @@ fun InputArea(
 
     // Expansion Logic
     val isExpanded = isFocused || input.isNotEmpty() || attachments.isNotEmpty()
+
+    // Repository Selection
+    var isRepoMenuOpen by remember { mutableStateOf(false) }
+    var repoSearch by remember { mutableStateOf("") }
+    val filteredSources = remember(sources, repoSearch) {
+        if (repoSearch.isEmpty()) sources
+        else sources.filter {
+            (it.displayName ?: it.name).contains(repoSearch, ignoreCase = true)
+        }
+    }
 
     // Branch Selection
     var selectedBranch by remember(currentSource) {
@@ -158,7 +170,7 @@ fun InputArea(
 
             // Send Button
             val isEnabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading
-            IconButton(
+            FilledIconButton(
                 onClick = {
                     if (isEnabled) {
                          scope.launch {
@@ -188,12 +200,13 @@ fun InputArea(
                     }
                 },
                 enabled = isEnabled || isLoading,
-                modifier = Modifier
-                    .size(JulesSizes.touchTarget)
-                    .clip(JulesShapes.circle)
-                    .background(
-                        if (isEnabled) Color(0xFF4F46E5) else Color(0xFF27272A)
-                    )
+                modifier = Modifier.size(JulesSizes.touchTarget),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = if (isEnabled) Color(0xFF4F46E5) else Color(0xFF27272A),
+                    contentColor = if (isEnabled) Color.White else Color(0xFF71717A),
+                    disabledContainerColor = Color(0xFF27272A),
+                    disabledContentColor = Color(0xFF71717A)
+                )
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -205,7 +218,6 @@ fun InputArea(
                     Icon(
                         Icons.Default.ArrowForward,
                         contentDescription = "Send",
-                        tint = if (isEnabled) Color.White else Color(0xFF71717A),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -313,20 +325,117 @@ fun InputArea(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Plus Button
-                        IconButton(
+                        FilledTonalIconButton(
                             onClick = { filePicker.launch() },
-                            modifier = Modifier
-                                .size(JulesSizes.touchTarget) // Changed from 32dp
-                                .padding(4.dp)
+                            modifier = Modifier.size(JulesSizes.touchTarget),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = Color(0xFF27272A),
+                                contentColor = Color(0xFFA1A1AA)
+                            )
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xFFA1A1AA), modifier = Modifier.size(JulesSizes.iconMedium))
+                            Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(JulesSizes.iconMedium))
+                        }
+
+                        // Repository Selector
+                        Box {
+                            Row(
+                                modifier = Modifier
+                                    .height(JulesSizes.touchTarget)
+                                    .clickable { isRepoMenuOpen = true }
+                                    .padding(horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.Terminal, contentDescription = null, tint = Color(0xFF818CF8), modifier = Modifier.size(14.dp))
+                                Text(
+                                    currentSource?.displayName ?: currentSource?.name ?: "Select Repo",
+                                    color = Color(0xFFE4E4E7),
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 120.dp)
+                                )
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF71717A), modifier = Modifier.size(14.dp))
+                            }
+
+                            if (isRepoMenuOpen) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { isRepoMenuOpen = false },
+                                    containerColor = Color(0xFF121215),
+                                    contentColor = Color.White
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp)
+                                            .padding(bottom = 16.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color(0xFF09090B), RoundedCornerShape(8.dp))
+                                                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.Search, null, tint = Color(0xFF71717A), modifier = Modifier.size(14.dp))
+                                            androidx.compose.foundation.text.BasicTextField(
+                                                value = repoSearch,
+                                                onValueChange = { repoSearch = it },
+                                                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp),
+                                                singleLine = true,
+                                                decorationBox = { innerTextField ->
+                                                    if (repoSearch.isEmpty()) {
+                                                        Text("Find a repository...", color = Color(0xFF52525B), fontSize = 14.sp)
+                                                    }
+                                                    innerTextField()
+                                                }
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                                            items(filteredSources) { source ->
+                                                val isSelected = currentSource?.name == source.name
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .heightIn(min = 44.dp)
+                                                        .background(if (isSelected) Color.White.copy(0.05f) else Color.Transparent)
+                                                        .clickable {
+                                                            onSourceChange(source)
+                                                            isRepoMenuOpen = false
+                                                        }
+                                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        source.displayName ?: source.name,
+                                                        fontSize = 14.sp,
+                                                        color = if (isSelected) Color.White else Color(0xFF9CA3AF),
+                                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                        modifier = Modifier.weight(1f),
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                    if (isSelected) {
+                                                        Icon(Icons.Default.Check, null, tint = Color(0xFF818CF8), modifier = Modifier.size(14.dp))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         // Branch Selector
                         Box {
                             Row(
                                 modifier = Modifier
-                                    .height(JulesSizes.touchTarget) // Changed from 32dp
+                                    .height(JulesSizes.touchTarget)
                                     .clickable { isBranchMenuOpen = true }
                                     .padding(horizontal = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -366,16 +475,17 @@ fun InputArea(
 
                         // Settings Button
                         Box {
-                            IconButton(
+                            FilledTonalIconButton(
                                 onClick = { isSettingsMenuOpen = true },
-                                modifier = Modifier
-                                    .size(JulesSizes.touchTarget) // Changed from 32dp
-                                    .padding(4.dp)
+                                modifier = Modifier.size(JulesSizes.touchTarget),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8).copy(alpha = 0.2f) else Color(0xFF27272A),
+                                    contentColor = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color(0xFFA1A1AA)
+                                )
                             ) {
                                 Icon(
                                     Icons.Default.Settings,
                                     contentDescription = "Settings",
-                                    tint = if(sessionTitle.isNotEmpty()) Color(0xFF818CF8) else Color(0xFFA1A1AA),
                                     modifier = Modifier.size(JulesSizes.iconMedium)
                                 )
                             }
@@ -461,7 +571,7 @@ fun InputArea(
                     }
 
                     // Send Button
-                    IconButton(
+                    FilledIconButton(
                         onClick = {
                             if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) {
                                 scope.launch {
@@ -498,22 +608,18 @@ fun InputArea(
                             }
                         },
                         enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading,
-                        modifier = Modifier
-                            .size(JulesSizes.touchTarget)
-                            .shadow(
-                                elevation = if (input.isNotBlank() || attachments.isNotEmpty()) 4.dp else 0.dp,
-                                spotColor = Color(0xFF6366F1).copy(alpha = 0.25f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .background(
-                                if (input.isNotBlank() || attachments.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFF27272A),
-                                RoundedCornerShape(6.dp)
-                            )
+                        modifier = Modifier.size(JulesSizes.touchTarget),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = if (input.isNotBlank() || attachments.isNotEmpty()) Color(0xFF4F46E5) else Color(0xFF27272A),
+                            contentColor = if (input.isNotBlank() || attachments.isNotEmpty()) Color.White else Color.Gray,
+                            disabledContainerColor = Color(0xFF27272A),
+                            disabledContentColor = Color.Gray
+                        )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.size(12.dp), color = Color.White, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.ArrowForward, contentDescription = "Send", tint = if (input.isNotBlank() || attachments.isNotEmpty()) Color.White else Color.Gray, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.ArrowForward, contentDescription = "Send", modifier = Modifier.size(14.dp))
                         }
                     }
                 }

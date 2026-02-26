@@ -47,6 +47,8 @@ import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
 @Composable
 fun HomeView(
     currentSource: JulesSource?,
+    sources: List<JulesSource>,
+    onSourceChange: (JulesSource) -> Unit,
     onSendMessage: (String, CreateSessionConfig) -> Unit,
     isProcessing: Boolean,
     sessions: List<JulesSession> = emptyList(),
@@ -98,6 +100,8 @@ fun HomeView(
                     onSendMessage = onSendMessage,
                     isLoading = isProcessing,
                     currentSource = currentSource,
+                    sources = sources,
+                    onSourceChange = onSourceChange,
                     modifier = Modifier.padding(bottom = JulesSpacing.m)
                 )
 
