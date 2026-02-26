@@ -16,6 +16,7 @@ import kotlinx.datetime.minus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -292,23 +293,30 @@ class SharedViewModel(
     private fun startPolling(sessionName: String) {
         stopPolling()
         pollJob = viewModelScope.launch {
-            while(true) {
-                refreshSession(sessionName)
-                delay(2000)
+            var currentDelay = 2000L
+            while (true) {
+                val success = refreshSession(sessionName)
+                if (success) {
+                    currentDelay = 2000L
+                } else {
+                    currentDelay = (currentDelay * 2).coerceAtMost(30000L)
+                }
+                delay(currentDelay)
             }
         }
     }
 
-    private suspend fun refreshSession(sessionName: String) {
+    private suspend fun refreshSession(sessionName: String): Boolean {
         try {
             // Check if we are still looking at this session
-            if (_uiState.value.currentSession?.name != sessionName) return
+            if (_uiState.value.currentSession?.name != sessionName) return true
 
-            // Refresh activities and session details
-            repository.refreshActivities(sessionName)
-
-            // Get updated session from repository (it should be cached now)
-            val session = repository.getSession(sessionName) ?: return
+            // Parallel fetch
+            val (activitiesResp, session) = withContext(Dispatchers.IO) {
+                val actDeferred = async { api.listActivities(sessionName) }
+                val sessDeferred = async { api.getSession(sessionName) }
+                actDeferred.await() to sessDeferred.await()
+            }
 
             val isProcessing = session.state == SessionState.QUEUED ||
                                session.state == SessionState.PLANNING ||
@@ -324,8 +332,10 @@ class SharedViewModel(
                     isProcessing = isProcessing
                 )
             }
+            return true
         } catch (e: Exception) {
             println("Polling error: $e")
+            return false
         }
     }
 }
