@@ -37,6 +37,7 @@ import androidx.compose.ui.zIndex
 import dev.therealashik.client.jules.model.JulesSession
 import dev.therealashik.client.jules.model.JulesSource
 import dev.therealashik.client.jules.utils.getSessionDisplayInfo
+import dev.therealashik.client.jules.utils.openUrl
 import dev.therealashik.client.jules.ui.*
 
 @Composable
@@ -294,7 +295,7 @@ fun Drawer(
 
                         // Docs
                         FilledTonalIconButton(
-                            onClick = { /* TODO */ },
+                            onClick = { openUrl("https://docs.jules.ai") },
                             modifier = Modifier.size(40.dp),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = JulesDrawerButtonBg,
@@ -306,7 +307,7 @@ fun Drawer(
 
                          // Discord
                         FilledTonalIconButton(
-                            onClick = { /* TODO */ },
+                            onClick = { openUrl("https://discord.gg/jules") },
                             modifier = Modifier.size(40.dp),
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = JulesDrawerButtonBg,

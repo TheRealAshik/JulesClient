@@ -38,6 +38,11 @@ kotlin {
 
     jvm()
 
+    // TODO: Add WebAssembly (Wasm) target support
+    // wasmJs {
+    //     browser()
+    // }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)

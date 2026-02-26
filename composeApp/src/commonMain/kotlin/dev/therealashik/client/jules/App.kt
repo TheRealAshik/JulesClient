@@ -20,6 +20,8 @@ import dev.therealashik.client.jules.viewmodel.SharedViewModel
 
 @Composable
 fun App() {
+    // TODO: Implement proper navigation with Compose Navigation library
+    // TODO: Add deep linking support
     val viewModel = viewModel { SharedViewModel() }
     val state by viewModel.uiState.collectAsState()
 

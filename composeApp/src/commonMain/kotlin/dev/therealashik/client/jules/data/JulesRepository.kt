@@ -243,6 +243,9 @@ class JulesRepository(
                 
                 // Warm sessions
                 refreshSessions(forceNetwork = true)
+                
+                // TODO: Add selective cache warming for frequently accessed sessions
+                // TODO: Implement background cache refresh strategy
             } catch (e: Exception) {
                 println("Cache warming failed: $e")
             }

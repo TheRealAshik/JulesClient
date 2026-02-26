@@ -55,6 +55,9 @@ data class JulesUiState(
 
 // ==================== VIEW MODEL ====================
 
+// TODO: Split this ViewModel into smaller, feature-specific ViewModels
+// TODO: Add proper error handling with retry mechanisms
+// TODO: Implement offline mode support
 class SharedViewModel(
     private val api: JulesApi = RealJulesApi,
     private val repository: JulesRepository = JulesData.repository

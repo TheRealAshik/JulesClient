@@ -22,6 +22,9 @@ class JulesClient(
         const val SDK_VERSION = "1.0.0"
     }
 
+    // TODO: Add request/response interceptors for logging and monitoring
+    // TODO: Implement rate limiting to prevent API quota exhaustion
+    // TODO: Add WebSocket support for real-time activity streaming
     private val client = HttpClient {
         install(ContentNegotiation) {
             json(Json {
@@ -160,6 +163,7 @@ class JulesClient(
         automationMode: AutomationMode = AutomationMode.AUTO_CREATE_PR,
         startingBranch: String = "main"
     ): JulesSession {
+        // TODO: Add support for repoless sessions (omit sourceContext when sourceName is empty)
         val request = CreateSessionRequest(
             prompt = prompt,
             sourceContext = SourceContext(
