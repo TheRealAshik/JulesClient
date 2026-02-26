@@ -49,3 +49,98 @@ INSERT OR REPLACE INTO activityEntity(name, session_name, json_blob, create_time
 
 deleteAllActivitiesForSession:
 DELETE FROM activityEntity WHERE session_name = ?;
+
+-- Cache tables
+CREATE TABLE cacheEntry (
+  key TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  size_bytes INTEGER NOT NULL,
+  access_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE cacheMetadata (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  total_size INTEGER DEFAULT 0,
+  entry_count INTEGER DEFAULT 0,
+  last_pruned INTEGER DEFAULT 0,
+  hit_count INTEGER DEFAULT 0,
+  miss_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE customTheme (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  theme_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  is_active INTEGER DEFAULT 0
+);
+
+-- Cache queries
+insertCacheEntry:
+INSERT OR REPLACE INTO cacheEntry(key, value, created_at, expires_at, size_bytes, access_count)
+VALUES (?, ?, ?, ?, ?, COALESCE((SELECT access_count FROM cacheEntry WHERE key = ?), 0));
+
+getCacheEntry:
+SELECT * FROM cacheEntry WHERE key = ? AND expires_at > ?;
+
+deleteCacheEntry:
+DELETE FROM cacheEntry WHERE key = ?;
+
+clearCache:
+DELETE FROM cacheEntry;
+
+getCacheSize:
+SELECT COALESCE(SUM(size_bytes), 0) as total FROM cacheEntry;
+
+getCacheCount:
+SELECT COUNT(*) FROM cacheEntry;
+
+pruneExpiredCache:
+DELETE FROM cacheEntry WHERE expires_at <= ?;
+
+evictLRU:
+DELETE FROM cacheEntry WHERE key IN (
+  SELECT key FROM cacheEntry ORDER BY access_count ASC, created_at ASC LIMIT ?
+);
+
+incrementAccessCount:
+UPDATE cacheEntry SET access_count = access_count + 1 WHERE key = ?;
+
+getCacheMetadata:
+SELECT * FROM cacheMetadata WHERE id = 1;
+
+updateCacheMetadata:
+INSERT OR REPLACE INTO cacheMetadata(id, total_size, entry_count, last_pruned, hit_count, miss_count)
+VALUES (1, ?, ?, ?, ?, ?);
+
+incrementHitCount:
+UPDATE cacheMetadata SET hit_count = hit_count + 1 WHERE id = 1;
+
+incrementMissCount:
+UPDATE cacheMetadata SET miss_count = miss_count + 1 WHERE id = 1;
+
+-- Theme queries
+insertCustomTheme:
+INSERT OR REPLACE INTO customTheme(id, name, theme_json, created_at, updated_at, is_active)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getCustomTheme:
+SELECT * FROM customTheme WHERE id = ?;
+
+getAllCustomThemes:
+SELECT * FROM customTheme ORDER BY created_at DESC;
+
+getActiveCustomTheme:
+SELECT * FROM customTheme WHERE is_active = 1 LIMIT 1;
+
+deleteCustomTheme:
+DELETE FROM customTheme WHERE id = ?;
+
+deactivateAllThemes:
+UPDATE customTheme SET is_active = 0;
+
+activateTheme:
+UPDATE customTheme SET is_active = 1 WHERE id = ?;

@@ -237,6 +237,8 @@ fun SessionView(
                 onSendMessageMinimal = onSendMessage,
                 isLoading = isProcessing,
                 currentSource = null,
+                sources = emptyList(),
+                onSourceChange = {},
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()

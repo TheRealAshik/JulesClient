@@ -25,6 +25,19 @@ val JulesRed = Color(0xFFF87171)   // Red-400
 val JulesZinc = Color(0xFF71717A)  // Zinc-500
 val JulesIndigo = Color(0xFF818CF8) // Indigo-400
 
+// Drawer Colors
+val JulesDrawerBackground = Color(0xFF161619)
+val JulesDrawerBorder = Color.White.copy(alpha = 0.05f)
+val JulesDrawerBackdrop = Color.Black.copy(alpha = 0.6f)
+val JulesDrawerSearchBg = Color(0xFF161619)
+val JulesDrawerSearchBgFocused = Color(0xFF1E1E22)
+val JulesDrawerSearchBorder = Color.White.copy(alpha = 0.1f)
+val JulesDrawerSearchBorderFocused = Color(0xFF6366F1).copy(alpha = 0.5f)
+val JulesDrawerItemSelected = Color.White.copy(alpha = 0.05f)
+val JulesDrawerButtonBg = Color(0xFF1E1E22)
+val JulesDrawerProgressBg = Color(0xFF3F3F46)
+val JulesDrawerProgressFill = Color(0xFF6366F1)
+
 object JulesSpacing {
     val xs = 4.dp
     val s = 8.dp
@@ -55,6 +68,8 @@ object JulesSizes {
     val iconMedium = 20.dp
     val iconLarge = 24.dp
     val avatar = 32.dp
+    val drawerWidth = 320.dp
+    val drawerHeaderHeight = 48.dp
 }
 
 enum class ThemePreset {

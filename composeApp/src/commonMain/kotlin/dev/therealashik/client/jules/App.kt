@@ -42,9 +42,6 @@ fun JulesAppContent(viewModel: SharedViewModel) {
         Column(modifier = Modifier.fillMaxSize()) {
             Header(
                 onOpenDrawer = { isDrawerOpen = true },
-                currentSource = state.currentSource,
-                sources = state.sources,
-                onSourceChange = { viewModel.selectSource(it) },
                 isLoading = state.isProcessing || state.isLoading,
                 onOpenSettings = { viewModel.navigateToSettings() }
             )
@@ -54,6 +51,8 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                     is Screen.Home -> {
                         HomeView(
                             currentSource = state.currentSource,
+                            sources = state.sources,
+                            onSourceChange = { viewModel.selectSource(it) },
                             onSendMessage = { text, config ->
                                 viewModel.createSession(text, config)
                             },
