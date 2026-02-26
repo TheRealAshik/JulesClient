@@ -10,6 +10,7 @@ import dev.therealashik.client.jules.ui.ThemePreset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -312,11 +313,11 @@ class SharedViewModel(
             // Check if we are still looking at this session
             if (_uiState.value.currentSession?.name != sessionName) return
 
-            // Parallel fetch could be better but sequential is safer for now
+            // Execute concurrent requests to reduce latency
             val (activitiesResp, session) = withContext(Dispatchers.IO) {
-                val act = api.listActivities(sessionName)
-                val sess = api.getSession(sessionName)
-                act to sess
+                val actDeferred = async { api.listActivities(sessionName) }
+                val sessDeferred = async { api.getSession(sessionName) }
+                actDeferred.await() to sessDeferred.await()
             }
 
             val isProcessing = session.state == SessionState.QUEUED ||
