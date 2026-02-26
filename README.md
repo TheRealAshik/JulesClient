@@ -246,9 +246,9 @@ See [AGENTS.md](AGENTS.md) for comprehensive development guidelines.
 
 ## Documentation
 
+- **[SDK Documentation](docs/SDK.md)** - Complete SDK API reference and usage guide
 - **[AGENTS.md](AGENTS.md)** - Comprehensive development guide for AI agents and developers
 - **[WEB_MIGRATION.md](WEB_MIGRATION.md)** - Guide for migrating from the legacy web app
-- **[API Documentation](docs/API.md)** - SDK API reference (coming soon)
 
 ## Roadmap
 

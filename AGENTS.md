@@ -435,6 +435,7 @@ Current behavior: [description]"
 - [Ktor](https://ktor.io/)
 - [SQLDelight](https://cashapp.github.io/sqldelight/)
 - [Material Design 3](https://m3.material.io/)
+- [SDK Documentation](docs/SDK.md) - Complete Jules SDK API reference
 
 ## Getting Help
 
