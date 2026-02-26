@@ -5,8 +5,8 @@ import app.cash.sqldelight.coroutines.mapToList
 import dev.therealashik.client.jules.api.JulesApi
 import dev.therealashik.client.jules.cache.CacheManager
 import dev.therealashik.client.jules.db.JulesDatabase
-import dev.therealashik.client.jules.model.*
-import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
+import dev.therealashik.jules.sdk.model.*
+import dev.therealashik.client.jules.model.CreateSessionConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow

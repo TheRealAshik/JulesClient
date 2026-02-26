@@ -28,27 +28,18 @@ enum class CacheSizeLimit(val displayName: String, val bytes: Long) {
 @Serializable
 data class CacheConfig(
     val enabled: Boolean = true,
-    val expiration: String = CacheExpiration.ONE_HOUR.name,
-    val sizeLimit: String = CacheSizeLimit.FIFTY_MB.name,
+    val defaultExpiration: CacheExpiration = CacheExpiration.ONE_HOUR,
+    val sizeLimit: CacheSizeLimit = CacheSizeLimit.FIFTY_MB,
     val preloadOnStart: Boolean = false,
     val wifiOnly: Boolean = true
 ) {
-    fun getExpirationMs(): Long = try {
-        CacheExpiration.valueOf(expiration).milliseconds
-    } catch (e: Exception) {
-        CacheExpiration.ONE_HOUR.milliseconds
-    }
-
-    fun getSizeLimitBytes(): Long = try {
-        CacheSizeLimit.valueOf(sizeLimit).bytes
-    } catch (e: Exception) {
-        CacheSizeLimit.FIFTY_MB.bytes
-    }
+    fun getExpirationMs(): Long = defaultExpiration.milliseconds
+    fun getSizeLimitBytes(): Long = sizeLimit.bytes
 }
 
 @Serializable
 data class CacheStats(
-    val totalSize: Long = 0,
+    val totalSizeBytes: Long = 0,
     val entryCount: Int = 0,
     val hitCount: Long = 0,
     val missCount: Long = 0,

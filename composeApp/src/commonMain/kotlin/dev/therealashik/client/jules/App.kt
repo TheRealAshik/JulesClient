@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.therealashik.client.jules.data.JulesData
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesTheme
 import dev.therealashik.client.jules.ui.LoginScreen
@@ -13,7 +14,7 @@ import dev.therealashik.client.jules.ui.components.Header
 import dev.therealashik.client.jules.ui.screens.HomeView
 import dev.therealashik.client.jules.ui.screens.RepositoryView
 import dev.therealashik.client.jules.ui.screens.SessionView
-import dev.therealashik.client.jules.ui.screens.SettingsView
+import dev.therealashik.client.jules.ui.screens.SettingsScreen
 import androidx.compose.material3.MaterialTheme
 import dev.therealashik.client.jules.viewmodel.Screen
 import dev.therealashik.client.jules.viewmodel.SharedViewModel
@@ -25,11 +26,11 @@ fun App() {
     val viewModel = viewModel { SharedViewModel() }
     val state by viewModel.uiState.collectAsState()
 
-    JulesTheme(preset = state.currentTheme) {
-        // Handle Back Navigation
-        BackHandler(enabled = state.currentScreen !is Screen.Home) {
-            viewModel.navigateBack()
-        }
+    JulesTheme(themeManager = JulesData.themeManager) {
+        // Handle Back Navigation - Platform specific implementation needed
+        // BackHandler(enabled = state.currentScreen !is Screen.Home) {
+        //    viewModel.navigateBack()
+        // }
 
         JulesAppContent(viewModel)
     }
@@ -102,6 +103,8 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             // Should not happen, fallback to Home
                             HomeView(
                                 currentSource = null,
+                                sources = state.sources,
+                                onSourceChange = { viewModel.selectSource(it) },
                                 onSendMessage = { text, config -> viewModel.createSession(text, config) },
                                 isProcessing = state.isProcessing,
                                 sessions = state.sessions,
@@ -111,14 +114,12 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                         }
                     }
                     is Screen.Settings -> {
-                        SettingsView(
-                            defaultCardState = state.defaultCardState,
-                            currentTheme = state.currentTheme,
-                            currentApiKey = state.apiKey ?: "",
-                            onUpdateCardState = { viewModel.updateDefaultCardState(it) },
-                            onThemeChange = { viewModel.setTheme(it) },
-                            onApiKeyChange = { viewModel.setApiKey(it) },
-                            onBack = { viewModel.navigateBack() }
+                        SettingsScreen(
+                            themeManager = JulesData.themeManager,
+                            cacheManager = JulesData.cacheManager,
+                            settingsStorage = JulesData.settingsStorage,
+                            onNavigateBack = { viewModel.navigateBack() },
+                            onEditTheme = {} // TODO: Implement navigation to theme editor
                         )
                     }
                 }

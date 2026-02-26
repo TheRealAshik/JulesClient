@@ -34,8 +34,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import dev.therealashik.client.jules.model.JulesSession
-import dev.therealashik.client.jules.model.JulesSource
+import dev.therealashik.jules.sdk.model.JulesSession
+import dev.therealashik.jules.sdk.model.JulesSource
 import dev.therealashik.client.jules.utils.getSessionDisplayInfo
 import dev.therealashik.client.jules.utils.openUrl
 import dev.therealashik.client.jules.ui.*
@@ -125,7 +125,7 @@ fun Drawer(
                             contentColor = Color(0xFF9CA3AF)
                         )
                     ) {
-                        Icon(Icons.Default.Close, null, modifier = Modifier.size(JulesSpacing.iconMedium))
+                        Icon(Icons.Default.Close, null, modifier = Modifier.size(JulesSizes.iconMedium))
                     }
                 }
                 Divider(color = JulesDrawerBorder)
@@ -154,7 +154,7 @@ fun Drawer(
                         Icons.Default.Search,
                         contentDescription = null,
                         tint = if (isFocused) JulesPrimary else JulesZinc,
-                        modifier = Modifier.size(JulesSpacing.iconSmall)
+                        modifier = Modifier.size(JulesSizes.iconSmall)
                     )
 
                     BasicTextField(
@@ -356,7 +356,7 @@ fun DrawerSectionHeader(
             if (isExpanded) Icons.Default.ExpandMore else Icons.Default.KeyboardArrowRight,
             contentDescription = null,
             tint = JulesZinc,
-            modifier = Modifier.size(JulesSpacing.iconSmall)
+            modifier = Modifier.size(JulesSizes.iconSmall)
         )
     }
 }
@@ -443,7 +443,7 @@ fun SessionItem(
                 Icon(
                     Icons.Default.MoreVert,
                     contentDescription = "Options",
-                    modifier = Modifier.size(JulesSpacing.iconSmall)
+                    modifier = Modifier.size(JulesSizes.iconSmall)
                 )
             }
 
@@ -481,7 +481,7 @@ fun SourceItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(JulesSpacing.iconSmall).background(Color(0xFF27272A), RoundedCornerShape(4.dp)),
+            modifier = Modifier.size(JulesSizes.iconSmall).background(Color(0xFF27272A), RoundedCornerShape(4.dp)),
             contentAlignment = Alignment.Center
         ) {
              Text("G", fontSize = 10.sp, color = Color.Gray)

@@ -1,6 +1,6 @@
 package dev.therealashik.client.jules.utils
 
-import dev.therealashik.client.jules.model.SessionState
+import dev.therealashik.jules.sdk.model.SessionState
 
 data class SessionDisplayInfo(
     val label: String,

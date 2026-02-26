@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import dev.therealashik.client.jules.cache.CacheManager
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.storage.SettingsStorage
+import dev.therealashik.client.jules.storage.getCacheConfig
+import dev.therealashik.client.jules.storage.saveCacheConfig
 import dev.therealashik.client.jules.theme.ThemeManager
 import dev.therealashik.client.jules.ui.JulesSpacing
 import kotlinx.coroutines.launch
@@ -151,7 +153,7 @@ fun SettingsScreen(
                                 }
                                 IconButton(onClick = {
                                     scope.launch {
-                                        themeManager.deleteTheme(customTheme.id)
+                                        themeManager.deleteCustomTheme(customTheme.id)
                                     }
                                 }) {
                                     Icon(Icons.Default.Delete, "Delete")
