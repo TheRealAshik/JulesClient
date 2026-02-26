@@ -233,4 +233,19 @@ class JulesRepository(
             cache.delete("activities_$sessionName") // Invalidate activities cache
         }
     }
+    
+    // CACHE WARMING
+    suspend fun warmCache() {
+        withContext(Dispatchers.IO) {
+            try {
+                // Warm sources
+                refreshSources(forceNetwork = true)
+                
+                // Warm sessions
+                refreshSessions(forceNetwork = true)
+            } catch (e: Exception) {
+                println("Cache warming failed: $e")
+            }
+        }
+    }
 }

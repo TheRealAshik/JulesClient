@@ -190,11 +190,89 @@ fun SettingsScreen(
                     Divider()
                     Spacer(Modifier.height(JulesSpacing.m))
                     
+                    // Expiration
+                    Text("Default Expiration", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(JulesSpacing.s))
+                    
+                    var expandedExpiration by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expandedExpiration,
+                        onExpandedChange = { expandedExpiration = it }
+                    ) {
+                        OutlinedTextField(
+                            value = cacheConfig.defaultExpiration.displayName,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedExpiration) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedExpiration,
+                            onDismissRequest = { expandedExpiration = false }
+                        ) {
+                            CacheExpiration.entries.forEach { exp ->
+                                DropdownMenuItem(
+                                    text = { Text(exp.displayName) },
+                                    onClick = {
+                                        cacheConfig = cacheConfig.copy(defaultExpiration = exp)
+                                        scope.launch {
+                                            settingsStorage.saveCacheConfig(cacheConfig)
+                                        }
+                                        expandedExpiration = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(JulesSpacing.m))
+                    
+                    // Size Limit
+                    Text("Size Limit", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(JulesSpacing.s))
+                    
+                    var expandedSize by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expandedSize,
+                        onExpandedChange = { expandedSize = it }
+                    ) {
+                        OutlinedTextField(
+                            value = cacheConfig.sizeLimit.displayName,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandedSize) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedSize,
+                            onDismissRequest = { expandedSize = false }
+                        ) {
+                            CacheSizeLimit.entries.forEach { limit ->
+                                DropdownMenuItem(
+                                    text = { Text(limit.displayName) },
+                                    onClick = {
+                                        cacheConfig = cacheConfig.copy(sizeLimit = limit)
+                                        scope.launch {
+                                            settingsStorage.saveCacheConfig(cacheConfig)
+                                        }
+                                        expandedSize = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(Modifier.height(JulesSpacing.m))
+                    Divider()
+                    Spacer(Modifier.height(JulesSpacing.m))
+                    
                     Text("Statistics", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(JulesSpacing.s))
                     Text("Size: ${cacheStats.totalSizeBytes / 1024} KB")
                     Text("Entries: ${cacheStats.entryCount}")
                     Text("Hit rate: ${(cacheStats.hitRate * 100).toInt()}%")
+                    Text("Hits: ${cacheStats.hitCount}")
+                    Text("Misses: ${cacheStats.missCount}")
                     
                     Spacer(Modifier.height(JulesSpacing.m))
                     
