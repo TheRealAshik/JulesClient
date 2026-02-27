@@ -53,6 +53,31 @@ object JulesSizes {
     val drawerHeaderHeight = 48.dp
 }
 
+// Colors
+val JulesGreen = Color(0xFF10B981)
+val JulesRed = Color(0xFFEF4444)
+val JulesIndigo = Color(0xFF6366F1)
+val JulesSurface = Color(0xFF161619)
+val JulesBackground = Color(0xFF0C0C0C)
+val JulesPrimary = Color(0xFF6366F1)
+val JulesTextMain = Color(0xFFE4E4E7)
+val JulesTextMuted = Color(0xFFA1A1AA)
+val JulesZinc = Color(0xFFA1A1AA)
+
+// Drawer Colors
+val JulesDrawerBackdrop = Color.Black.copy(alpha = 0.5f)
+val JulesDrawerBackground = Color(0xFF18181B)
+val JulesDrawerBorder = Color(0xFF27272A)
+val JulesDrawerSearchBg = Color(0xFF27272A)
+val JulesDrawerSearchBgFocused = Color(0xFF3F3F46)
+val JulesDrawerSearchBorder = Color.Transparent
+val JulesDrawerSearchBorderFocused = Color(0xFF6366F1)
+val JulesDrawerProgressBg = Color(0xFF27272A)
+val JulesDrawerProgressFill = Color(0xFF6366F1)
+val JulesDrawerButtonBg = Color(0xFF27272A)
+val JulesDrawerItemSelected = Color(0xFF27272A)
+
+
 // Convert Theme data model to ColorScheme
 fun Theme.toColorScheme(): ColorScheme {
     return darkColorScheme(

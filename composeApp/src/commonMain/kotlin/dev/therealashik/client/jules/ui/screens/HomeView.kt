@@ -32,8 +32,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.therealashik.client.jules.model.JulesSession
-import dev.therealashik.client.jules.model.JulesSource
+import dev.therealashik.jules.sdk.model.JulesSession
+import dev.therealashik.jules.sdk.model.JulesSource
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesOpacity
 import dev.therealashik.client.jules.ui.JulesPrimary
@@ -42,7 +42,7 @@ import dev.therealashik.client.jules.ui.JulesSizes
 import dev.therealashik.client.jules.ui.JulesSpacing
 import dev.therealashik.client.jules.ui.components.InputArea
 import dev.therealashik.client.jules.ui.components.ProactiveSection
-import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
+import dev.therealashik.client.jules.model.CreateSessionConfig
 
 @Composable
 fun HomeView(

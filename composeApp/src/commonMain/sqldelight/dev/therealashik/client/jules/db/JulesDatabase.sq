@@ -93,7 +93,7 @@ clearCache:
 DELETE FROM cacheEntry;
 
 getCacheSize:
-SELECT COALESCE(SUM(size_bytes), 0) as total FROM cacheEntry;
+SELECT COALESCE(SUM(size_bytes), 0) AS total_size FROM cacheEntry;
 
 getCacheCount:
 SELECT COUNT(*) FROM cacheEntry;

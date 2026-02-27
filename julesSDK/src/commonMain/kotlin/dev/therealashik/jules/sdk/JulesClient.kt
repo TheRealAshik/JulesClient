@@ -3,6 +3,8 @@ package dev.therealashik.jules.sdk
 import dev.therealashik.jules.sdk.model.*
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.timeout
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -26,6 +28,7 @@ class JulesClient(
     // TODO: Implement rate limiting to prevent API quota exhaustion
     // TODO: Add WebSocket support for real-time activity streaming
     private val client = HttpClient {
+        install(HttpTimeout)
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true

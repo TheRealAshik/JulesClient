@@ -36,7 +36,7 @@ class CacheManager(
             queries.incrementAccessCount(key)
             queries.incrementHitCount()
             updateStats()
-            entry.value
+            entry.value_
         } else {
             queries.incrementMissCount()
             updateStats()
@@ -102,7 +102,7 @@ class CacheManager(
     private fun loadStats(): CacheStats {
         val metadata = queries.getCacheMetadata().executeAsOneOrNull()
         return CacheStats(
-            totalSize = queries.getCacheSize().executeAsOne(),
+            totalSizeBytes = queries.getCacheSize().executeAsOne(),
             entryCount = queries.getCacheCount().executeAsOne().toInt(),
             hitCount = metadata?.hit_count ?: 0,
             missCount = metadata?.miss_count ?: 0,

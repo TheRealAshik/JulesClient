@@ -32,7 +32,7 @@ fun ThemeEditorScreen(
 ) {
     val scope = rememberCoroutineScope()
     var themeName by remember { mutableStateOf(existingTheme?.name ?: "My Theme") }
-    var theme by remember { mutableStateOf(existingTheme?.theme ?: Theme()) }
+    var theme by remember { mutableStateOf(existingTheme?.theme ?: dev.therealashik.client.jules.model.ThemePreset.MIDNIGHT.theme) }
     var showColorPicker by remember { mutableStateOf<String?>(null) }
     
     Scaffold(
@@ -48,9 +48,9 @@ fun ThemeEditorScreen(
                     IconButton(onClick = {
                         scope.launch {
                             if (existingTheme != null) {
-                                themeManager.updateTheme(existingTheme.id, themeName, theme)
+                                themeManager.updateCustomTheme(existingTheme.id, themeName, theme)
                             } else {
-                                themeManager.createTheme(themeName, theme)
+                                themeManager.createCustomTheme(themeName, theme)
                             }
                             onNavigateBack()
                         }
