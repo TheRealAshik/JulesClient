@@ -51,6 +51,7 @@ class AndroidPlatformFile(
 }
 
 @Composable
+@Suppress("RememberReturnType")
 actual fun rememberFilePickerLauncher(onFilePicked: (PlatformFile) -> Unit): FilePickerLauncher {
     val context = LocalContext.current
     val contentResolver = context.contentResolver
@@ -59,7 +60,7 @@ actual fun rememberFilePickerLauncher(onFilePicked: (PlatformFile) -> Unit): Fil
             onFilePicked(AndroidPlatformFile(uri, contentResolver))
         }
     }
-    return remember {
+    return remember(launcher) {
         FilePickerLauncher {
             launcher.launch("*/*")
         }
