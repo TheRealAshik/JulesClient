@@ -60,6 +60,7 @@ import coil3.compose.AsyncImage
 import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.model.DefaultMarkdownColors
 import com.mikepenz.markdown.model.DefaultMarkdownTypography
+import dev.therealashik.jules.sdk.model.*
 import dev.therealashik.client.jules.model.*
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesOpacity
@@ -151,10 +152,11 @@ fun SessionView(
 
                 // Session Outputs (PR Cards)
                 session.outputs.forEach { output ->
-                    if (output.pullRequest != null) {
+                    val pr = output.pullRequest
+                    if (pr != null) {
                         item {
                             Spacer(modifier = Modifier.height(JulesSpacing.l))
-                            PullRequestCard(output.pullRequest)
+                            PullRequestCard(pr)
                         }
                     }
                 }
@@ -251,9 +253,11 @@ fun SessionView(
 
 private fun getTextContent(content: MessageContent?): String? {
     if (content == null) return null
-    if (!content.text.isNullOrBlank()) return content.text
-    if (!content.parts.isNullOrEmpty()) {
-        return content.parts.joinToString("") { it.text }
+    val text = content.text
+    if (!text.isNullOrBlank()) return text
+    val parts = content.parts
+    if (parts != null && parts.isNotEmpty()) {
+        return parts.joinToString("") { it.text }
     }
     return null
 }
@@ -495,14 +499,16 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
         Column(modifier = Modifier.padding(start = 40.dp)) {
 
             // Progress Updates
-            if (isProgress && activity.progressUpdated != null) {
-                ProgressItem(activity.progressUpdated)
+            val progressUpdate = activity.progressUpdated
+            if (isProgress && progressUpdate != null) {
+                ProgressItem(progressUpdate)
                 Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Plan
-            if (isPlan && activity.planGenerated != null) {
-                val plan = activity.planGenerated.plan
+            val planGenerated = activity.planGenerated
+            if (isPlan && planGenerated != null) {
+                val plan = planGenerated.plan
                 // val isApproved = activity.planApproved != null // Simplification
                 PlanCard(plan, defaultCardState, onApprove = { onApprovePlan(activity.name) })
                 Spacer(modifier = Modifier.height(JulesSpacing.s))
@@ -726,16 +732,20 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
 @OptIn(ExperimentalEncodingApi::class)
 @Composable
 fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
-    if (artifact.bashOutput != null) {
+    val bashOutput = artifact.bashOutput
+    val changeSet = artifact.changeSet
+    val media = artifact.media
+
+    if (bashOutput != null) {
         CodeBlock(
-            title = artifact.bashOutput.command,
-            content = artifact.bashOutput.output,
+            title = bashOutput.command,
+            content = bashOutput.output,
             language = "bash",
-            exitCode = artifact.bashOutput.exitCode,
+            exitCode = bashOutput.exitCode,
             defaultExpanded = defaultExpanded
         )
-    } else if (artifact.changeSet != null) {
-        val patch = artifact.changeSet.gitPatch?.unidiffPatch ?: ""
+    } else if (changeSet != null) {
+        val patch = changeSet.gitPatch?.unidiffPatch ?: ""
 
         // Extract filename
         val match = Regex("^\\+\\+\\+\\s+(?:b/)?(.+)$", RegexOption.MULTILINE).find(patch)
@@ -745,15 +755,15 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
         }
 
         CodeBlock(
-            title = artifact.changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
+            title = changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
             subtitle = fileName,
             content = patch,
             language = "diff",
             defaultExpanded = defaultExpanded
         )
-    } else if (artifact.media != null) {
-        val base64Data = artifact.media.data
-        val mime = artifact.media.mimeType
+    } else if (media != null) {
+        val base64Data = media.data
+        val mime = media.mimeType
         val model = "data:$mime;base64,$base64Data"
 
         Card(

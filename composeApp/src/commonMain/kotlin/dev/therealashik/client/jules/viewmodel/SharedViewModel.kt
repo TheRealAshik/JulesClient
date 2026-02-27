@@ -7,8 +7,9 @@ import dev.therealashik.client.jules.api.JulesApi
 import dev.therealashik.client.jules.api.RealJulesApi
 import dev.therealashik.client.jules.data.JulesData
 import dev.therealashik.client.jules.data.JulesRepository
-import dev.therealashik.client.jules.model.*
-import dev.therealashik.client.jules.ui.ThemePreset
+import dev.therealashik.jules.sdk.model.*
+import dev.therealashik.client.jules.model.ThemePreset
+import dev.therealashik.client.jules.model.CreateSessionConfig
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -362,9 +363,4 @@ class SharedViewModel(
     }
 }
 
-data class CreateSessionConfig(
-    val title: String? = null,
-    val requirePlanApproval: Boolean = true,
-    val automationMode: AutomationMode = AutomationMode.AUTO_CREATE_PR,
-    val startingBranch: String = "main"
-)
+// Moved to model package

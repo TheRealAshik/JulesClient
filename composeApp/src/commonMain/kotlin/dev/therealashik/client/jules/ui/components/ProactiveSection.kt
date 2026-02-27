@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.therealashik.client.jules.model.JulesSession
-import dev.therealashik.client.jules.model.SessionState
+import dev.therealashik.jules.sdk.model.JulesSession
+import dev.therealashik.jules.sdk.model.SessionState
 import dev.therealashik.client.jules.ui.JulesOpacity
 import dev.therealashik.client.jules.ui.JulesShapes
 import dev.therealashik.client.jules.ui.JulesSizes

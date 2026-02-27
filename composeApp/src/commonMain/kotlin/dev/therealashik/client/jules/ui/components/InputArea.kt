@@ -27,17 +27,18 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.therealashik.client.jules.model.AutomationMode
-import dev.therealashik.client.jules.model.JulesSource
+import dev.therealashik.jules.sdk.model.AutomationMode
+import dev.therealashik.jules.sdk.model.JulesSource
 import dev.therealashik.client.jules.ui.JulesOpacity
 import dev.therealashik.client.jules.ui.JulesShapes
 import dev.therealashik.client.jules.ui.JulesSizes
 import dev.therealashik.client.jules.ui.JulesSpacing
 import dev.therealashik.client.jules.utils.PlatformFile
 import dev.therealashik.client.jules.utils.rememberFilePickerLauncher
-import dev.therealashik.client.jules.viewmodel.CreateSessionConfig
+import dev.therealashik.client.jules.model.CreateSessionConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
