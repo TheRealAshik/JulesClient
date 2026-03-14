@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -356,7 +357,7 @@ fun InputArea(
                                             containerColor = Color.Transparent,
                                             labelColor = MaterialTheme.colorScheme.onSurface
                                         ),
-                                        border = AssistChipDefaults.assistChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                     )
 
                                     if (isRepoMenuOpen) {
@@ -448,7 +449,7 @@ fun InputArea(
                                             containerColor = Color.Transparent,
                                             labelColor = MaterialTheme.colorScheme.onSurface
                                         ),
-                                        border = AssistChipDefaults.assistChipBorder(borderColor = MaterialTheme.colorScheme.outlineVariant)
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                     )
 
                                     DropdownMenu(
