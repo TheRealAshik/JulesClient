@@ -11,7 +11,7 @@ import {
     Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
     Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Command, Clock, Bot, Download, ArrowRight, MoreVertical, XCircle, GitBranch
+    Clock, Bot, Download, ArrowRight, MoreVertical, XCircle, GitBranch
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
