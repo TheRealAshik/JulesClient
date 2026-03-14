@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import * as JulesApi from '../services/geminiService';
+import { GeminiService } from '../services/geminiService';
 import { JulesSession, JulesActivity, JulesSource } from '../types';
 import { SessionCreateOptions } from '../components/InputArea';
 
@@ -10,6 +10,7 @@ interface SessionListActions {
 }
 
 export function useActiveSession(
+    service: GeminiService | null,
     currentSource: JulesSource | null,
     navigate: (path: string) => void,
     sessionListActions: SessionListActions
@@ -45,7 +46,7 @@ export function useActiveSession(
                     ? { createTime: lastActivity.createTime }
                     : undefined;
 
-                const response = await JulesApi.listActivities(sessionId, options);
+                const response = await service.listActivities(sessionId, options);
                 if (activePollingSession.current !== sessionName) return;
 
                 const newActivities = response.activities;
@@ -66,7 +67,7 @@ export function useActiveSession(
                 }
 
                 // Also check session status for outputs and state
-                const sess = await JulesApi.getSession(sessionName);
+                const sess = await service.getSession(sessionName);
                 if (activePollingSession.current !== sessionName) return;
 
                 setCurrentSession(prev => {
@@ -99,7 +100,7 @@ export function useActiveSession(
         };
 
         poll();
-    }, []);
+    }, [service]);
 
     // Cleanup polling on unmount
     useEffect(() => {
@@ -114,6 +115,7 @@ export function useActiveSession(
         setIsProcessing(true);
 
         try {
+            if (!service) throw new Error("API service not initialized");
             if (!currentSession) {
                 // CREATE NEW SESSION
                 if (!currentSource) {
@@ -123,7 +125,7 @@ export function useActiveSession(
                 // Map UI Mode to API Options
                 const requireApproval = options.mode === 'REVIEW' || options.mode === 'SCHEDULED' || options.mode === 'INTERACTIVE';
 
-                const session = await JulesApi.createSession(text, currentSource.name, {
+                const session = await service.createSession(text, currentSource.name, {
                     title: options.title,
                     requirePlanApproval: requireApproval,
                     startingBranch: options.branch || 'main',
@@ -136,11 +138,11 @@ export function useActiveSession(
                 startPolling(session.name);
             } else {
                 // SEND MESSAGE TO EXISTING SESSION
-                await JulesApi.sendMessage(currentSession.name, text);
+                await service.sendMessage(currentSession.name, text);
                 // Force immediate update - polling will set isProcessing based on API state
                 const sessionId = currentSession.name.split('/').pop()!;
                 const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
-                const response = await JulesApi.listActivities(sessionId, {
+                const response = await service.listActivities(sessionId, {
                     createTime: lastActivity?.createTime
                 });
 
@@ -160,19 +162,19 @@ export function useActiveSession(
             setError(e.message || "An error occurred");
             setIsProcessing(false);
         }
-    }, [currentSession, currentSource, navigate, startPolling, sessionListActions]);
+    }, [currentSession, currentSource, navigate, startPolling, sessionListActions, service]);
 
     const handleApprovePlan = useCallback(async (activityName: string) => {
-        if (!currentSession) return;
+        if (!currentSession || !service) return;
         setIsProcessing(true);
         try {
-            await JulesApi.approvePlan(currentSession.name);
+            await service.approvePlan(currentSession.name);
         } catch (e: any) {
             setError(e.message);
         } finally {
             setIsProcessing(false);
         }
-    }, [currentSession]);
+    }, [currentSession, service]);
 
     const handleSelectSession = useCallback((session: JulesSession) => {
         setCurrentSession(session);
@@ -181,8 +183,9 @@ export function useActiveSession(
     }, [navigate, startPolling]);
 
     const handleDeleteSession = useCallback(async (sessionName: string) => {
+        if (!service) return;
         try {
-            await JulesApi.deleteSession(sessionName);
+            await service.deleteSession(sessionName);
             sessionListActions.removeSession(sessionName);
 
             // If the deleted session is the current one, redirect to home
@@ -194,11 +197,12 @@ export function useActiveSession(
         } catch (e: any) {
             setError(e.message || "Failed to delete session");
         }
-    }, [currentSession, navigate, sessionListActions]);
+    }, [currentSession, navigate, sessionListActions, service]);
 
     const handleUpdateSession = useCallback(async (sessionName: string, updates: Partial<JulesSession>, updateMask: string[]) => {
+        if (!service) return;
         try {
-            const updated = await JulesApi.updateSession(sessionName, updates, updateMask);
+            const updated = await service.updateSession(sessionName, updates, updateMask);
             sessionListActions.updateSession(sessionName, updated);
             if (currentSession?.name === sessionName) {
                 setCurrentSession(updated);
@@ -206,7 +210,7 @@ export function useActiveSession(
         } catch (e: any) {
             setError(e.message || "Failed to update session");
         }
-    }, [currentSession, sessionListActions]);
+    }, [currentSession, sessionListActions, service]);
 
     return {
         currentSession,

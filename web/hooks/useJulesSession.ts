@@ -1,3 +1,4 @@
+import { GeminiService } from '../services/geminiService';
 import { useSessionList } from './useSessionList';
 import { useActiveSession } from './useActiveSession';
 import { JulesSource } from '../types';
@@ -7,9 +8,10 @@ export function useJulesSession(
     currentSource: JulesSource | null,
     navigate: (path: string) => void
 ) {
-    const sessionList = useSessionList(apiKey);
+    const sessionList = useSessionList(service);
 
     const activeSession = useActiveSession(
+        service,
         currentSource,
         navigate,
         {

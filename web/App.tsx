@@ -27,7 +27,7 @@ export default function App() {
     }, [apiKey, pagination]);
 
     // Initialize API key from local storage or environment
-    useEffect(() {
+    useEffect(() => {
         // Check environment variables first (injected by Vite)
         const envKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
         const storedKey = localStorage.getItem('jules_api_key');
