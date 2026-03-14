@@ -8,10 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const REMARK_PLUGINS = [remarkGfm];
 import {
-    Check, CheckCircle2, CircleDashed, GitPullRequest, Terminal,
-    Loader2, Sparkles, GitMerge, ListTodo, ChevronRight,
+    Check, CheckCircle2, GitPullRequest, Terminal,
+    Loader2, Sparkles, ListTodo, ChevronRight,
     ChevronDown, Copy, ExternalLink, FileDiff, FileText, Image as ImageIcon,
-    Clock, Bot, Download, ArrowRight, MoreVertical, XCircle, GitBranch
+    Bot, Download, XCircle, GitBranch
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { twMerge } from 'tailwind-merge';
