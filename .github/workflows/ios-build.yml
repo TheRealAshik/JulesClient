@@ -24,8 +24,6 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build KMP Framework
-      run: ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
 
     - name: Build iOS App (Simulator)
       run: |
