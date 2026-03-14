@@ -245,7 +245,7 @@ export const InputArea: React.FC<InputAreaProps> = memo(({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         aria-label="Add attachment"
-                        className="w-6 h-6 aspect-square flex-shrink-0 flex items-center justify-center rounded-md bg-surfaceHighlight hover:bg-surface border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
+                        className="appearance-none min-w-0 min-h-0 p-0 w-6 h-6 aspect-square flex-shrink-0 flex items-center justify-center rounded-md bg-surfaceHighlight hover:bg-surface border border-white/10 text-zinc-400 hover:text-white transition-all duration-150"
                     >
                         <Plus size={14} />
                     </motion.button>
@@ -263,7 +263,7 @@ export const InputArea: React.FC<InputAreaProps> = memo(({
                             aria-haspopup="true"
                             aria-expanded={isBranchMenuOpen}
                             style={{ maxWidth: BRANCH_BUTTON_MAX_WIDTH }}
-                            className="flex items-center gap-1.5 px-2 bg-surfaceHighlight hover:bg-surface border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6"
+                            className="appearance-none min-w-0 min-h-0 py-0 flex items-center gap-1.5 px-2 bg-surfaceHighlight hover:bg-surface border border-white/10 rounded-lg text-[10px] font-mono text-zinc-300 hover:text-white transition-all duration-150 h-6"
                         >
                             <GitBranch size={11} className="text-indigo-400 flex-shrink-0" />
                             <span className="truncate">{selectedBranch}</span>
@@ -340,7 +340,7 @@ export const InputArea: React.FC<InputAreaProps> = memo(({
                             aria-haspopup="true"
                             aria-expanded={isModeMenuOpen}
                             className={twMerge(
-                                "flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
+                                "appearance-none min-w-0 min-h-0 p-0 flex items-center justify-center rounded-lg transition-all duration-150 border h-6 w-6 aspect-square",
                                 isModeMenuOpen || sessionTitle
                                     ? 'bg-surface text-white border-white/15'
                                     : 'bg-surfaceHighlight hover:bg-surface text-zinc-400 hover:text-white border-white/10'
@@ -437,7 +437,7 @@ export const InputArea: React.FC<InputAreaProps> = memo(({
                             disabled={!input.trim() || isLoading}
                             aria-label="Send message"
                             className={twMerge(
-                                "w-6 h-6 aspect-square flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
+                                "appearance-none min-w-0 min-h-0 p-0 w-6 h-6 aspect-square flex items-center justify-center rounded-md transition-all duration-150 flex-shrink-0",
                                 input.trim()
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/25'
                                     : 'bg-surfaceHighlight text-zinc-500 cursor-not-allowed border border-white/5'
