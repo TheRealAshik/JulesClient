@@ -34,7 +34,7 @@ describe('useJulesSession Performance', () => {
       return { state: 'IN_PROGRESS', outputs: [] };
     });
 
-    const { result } = renderHook(() => useJulesSession('api-key', null, vi.fn()));
+    const { result } = renderHook(() => useJulesSession(JulesApi as any, null, vi.fn()));
 
     await act(async () => {
       result.current.startPolling('sessions/test-session');
@@ -52,7 +52,7 @@ describe('useJulesSession Performance', () => {
     // If sequential, timeDiff should be >= delay (100ms)
     // If parallel, timeDiff should be close to 0 (definitely < delay)
 
-    // We expect sequential behavior currently
-    // expect(timeDiff).toBeGreaterThanOrEqual(delay - 20); // allow some jitter
+    // We expect parallel behavior now
+    expect(Math.abs(timeDiff)).toBeLessThan(delay);
   });
 });
