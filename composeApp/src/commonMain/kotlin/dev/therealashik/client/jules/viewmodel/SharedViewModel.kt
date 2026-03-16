@@ -128,7 +128,7 @@ class SharedViewModel(
 
     fun addAccount(name: String, apiKey: String) {
         val newAccount = Account(
-            id = kotlinx.datetime.Clock.System.now().toEpochMilliseconds().toString(),
+            id = dev.therealashik.client.jules.utils.TimeUtils.now().toString(),
             name = name,
             apiKey = apiKey
         )
