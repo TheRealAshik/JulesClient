@@ -62,7 +62,7 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             isProcessing = state.isProcessing,
                             sessions = state.sessions,
                             onSelectSession = { viewModel.selectSession(it) },
-                            onResetKey = { viewModel.setApiKey("") }, // Assuming setApiKey empty resets it or we need a proper reset
+                            onResetKey = { viewModel.resetActiveAccount() }, // Assuming setApiKey empty resets it or we need a proper reset
                             error = state.error
                         )
                     }
@@ -118,8 +118,11 @@ fun JulesAppContent(viewModel: SharedViewModel) {
                             themeManager = JulesData.themeManager,
                             cacheManager = JulesData.cacheManager,
                             settingsStorage = JulesData.settingsStorage,
-                            apiKey = state.apiKey ?: "",
-                            onApiKeyChange = { viewModel.setApiKey(it) },
+                            accounts = state.accounts,
+                            activeAccountId = state.activeAccountId,
+                            onAddAccount = { name, key -> viewModel.addAccount(name, key) },
+                            onSwitchAccount = { viewModel.switchAccount(it) },
+                            onRemoveAccount = { viewModel.removeAccount(it) },
                             onNavigateBack = { viewModel.navigateBack() },
                             onEditTheme = {} // TODO: Implement navigation to theme editor
                         )

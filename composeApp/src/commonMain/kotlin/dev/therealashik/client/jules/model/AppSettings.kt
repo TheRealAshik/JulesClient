@@ -2,6 +2,13 @@ package dev.therealashik.client.jules.model
 
 import kotlinx.serialization.Serializable
 
+@Serializable
+data class Account(
+    val id: String,
+    val name: String,
+    val apiKey: String
+)
+
 // TODO: Add user preferences (language, notifications, auto-refresh intervals)
 // TODO: Add multi-account support
 @Serializable
@@ -9,7 +16,9 @@ data class AppSettings(
     val activeThemeId: String? = null,
     val activePreset: String = ThemePreset.MIDNIGHT.name,
     val cacheConfig: CacheConfig = CacheConfig(),
-    val defaultCardCollapsed: Boolean = false
+    val defaultCardCollapsed: Boolean = false,
+    val accounts: List<Account> = emptyList(),
+    val activeAccountId: String? = null
 ) {
     fun getActiveTheme(): Theme = try {
         ThemePreset.valueOf(activePreset).theme
