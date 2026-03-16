@@ -46,7 +46,12 @@ export function useActiveSession(
                     ? { createTime: lastActivity.createTime }
                     : undefined;
 
-                const response = await service.listActivities(sessionId, options);
+                // Execute API calls concurrently to minimize latency
+                const [response, sess] = await Promise.all([
+                    service.listActivities(sessionId, options),
+                    service.getSession(sessionName)
+                ]);
+
                 if (activePollingSession.current !== sessionName) return;
 
                 const newActivities = response.activities;
@@ -65,10 +70,6 @@ export function useActiveSession(
                     // Initial load returned empty
                     setActivities([]);
                 }
-
-                // Also check session status for outputs and state
-                const sess = await service.getSession(sessionName);
-                if (activePollingSession.current !== sessionName) return;
 
                 setCurrentSession(prev => {
                     // Only update if state has changed to avoid unnecessary re-renders
