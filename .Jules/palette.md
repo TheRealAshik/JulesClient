@@ -1,0 +1,6 @@
+## 2024-03-15 - Interactive Toggle Accessibility
+**Learning:** Custom UI switches built with `div` or `button` elements need specific ARIA roles (`role="switch"`) and states (`aria-checked`) to communicate correctly to screen readers. Relying solely on visual cues or generic `button` roles hides the current toggle state from assistive technologies.
+**Action:** Always verify custom toggle or switch components include `role="switch"` and bind `aria-checked` to the boolean state of the toggle.
+## 2024-03-16 - Accessible Custom Toggle Switches
+**Learning:** When implementing custom toggle switches (e.g., div elements styled as switches instead of native checkbox inputs), assigning `role="switch"` and `aria-checked` is not enough for complete accessibility. They also require `tabIndex={0}` to be focusable via keyboard, an `onKeyDown` handler to toggle state via 'Enter' and 'Space' keys, clear `focus-visible` styles, and explicit `aria-labelledby` / `aria-describedby` attributes to associate them with adjacent text.
+**Action:** Always ensure custom interactive controls receive keyboard event handlers, tab navigation support, and correct label associations, rather than just ARIA roles and visual styling.

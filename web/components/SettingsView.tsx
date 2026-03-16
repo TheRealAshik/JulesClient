@@ -70,6 +70,7 @@ const CategoryItem: React.FC<{
     onClick: () => void;
 }> = ({ icon, label, description, onClick }) => (
     <button
+        aria-label={`${label}${description ? `: ${description}` : ''}`}
         onClick={onClick}
         className="w-full flex items-center gap-4 p-4 hover:bg-white/5 active:bg-white/10 transition-colors text-left"
     >
@@ -101,6 +102,9 @@ const ToggleSwitch: React.FC<{
             )}
         </div>
         <button
+            role="switch"
+            aria-checked={checked}
+            aria-label={label}
             onClick={() => onChange(!checked)}
             className={`
         relative w-12 h-7 rounded-full transition-colors flex-shrink-0
@@ -193,7 +197,7 @@ export const SettingsView: React.FC = () => {
     // Mobile Back Header
     const MobileHeader: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
         <div className="flex-shrink-0 px-4 py-3 border-b border-white/5 bg-[var(--color-surface)]/80 backdrop-blur-sm sticky top-0 z-10 flex items-center gap-3">
-            <button onClick={onBack} className="p-2 -ml-2 hover:bg-white/5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors">
+            <button aria-label="Go back to settings menu" onClick={onBack} className="p-2 -ml-2 hover:bg-white/5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors">
                 <ArrowLeft size={20} />
             </button>
             <h1 className="text-lg font-semibold text-[var(--color-text-main)]">{title}</h1>

@@ -1,3 +1,6 @@
 ## 2024-03-16 - Virtualizing Code Diffs with React Window
 **Learning:** Rendering large lists natively using `.map` block blocks the main thread, causing severe lag when large un-virtualized patches (e.g., git patch diffs) expand or collapse in `CodeChangeArtifact`.
 **Action:** Always employ virtualized components (e.g., `react-window` combined with `react-virtualized-auto-sizer`) when rendering lists of unknown lengths (like diffs, messages, logs) in performance-critical sections to preserve UI reactivity.
+## 2024-05-18 - [Optimizing Hook Performance with Promise.all]
+**Learning:** The polling mechanism in `useActiveSession.ts` previously fetched `listActivities` and then `getSession` sequentially. These operations are independent and can be parallelized, significantly cutting latency. However, modifying this affected the `useJulesSession.bench.test.tsx` because of how `GeminiService` mocking was set up (passing a string `'api-key'` into `useJulesSession` instead of a service instance context/mock when checking concurrency tests).
+**Action:** Used `Promise.all` to fetch both API requests concurrently in `useActiveSession.ts`, ensuring lower latency. Fixed the `tests/performance/useJulesSession.bench.test.tsx` test mock argument (`JulesApi as any`) so it behaves like the `GeminiService` class and passes successfully.
