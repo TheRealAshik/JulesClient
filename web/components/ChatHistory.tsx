@@ -378,29 +378,22 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
                             transition={{ duration: 0.2 }}
                             className="w-full overflow-hidden"
                         >
-                            <div className="overflow-x-auto custom-scrollbar max-h-[500px] border-t border-white/5 bg-background w-full">
-                                <pre className="p-3 font-mono text-xs leading-relaxed w-max min-w-full">
-                                    {diffLines.map((line: string, i: number) => {
-                                        let color = "text-zinc-400";
-                                        let bg = "transparent";
-
-                                        if (line.startsWith('+') && !line.startsWith('+++')) {
-                                            color = "text-green-400";
-                                            bg = "bg-green-500/5";
-                                        } else if (line.startsWith('-') && !line.startsWith('---')) {
-                                            color = "text-red-400";
-                                            bg = "bg-red-500/5";
-                                        } else if (line.startsWith('@@')) {
-                                            color = "text-indigo-400";
-                                        }
-
-                                        return (
-                                            <div key={i} className={`${bg} px-2 -mx-2`}>
-                                                <span className={`${color} whitespace-pre`}>{line}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </pre>
+                            <div className="border-t border-white/5 bg-background w-full h-[300px] max-h-[500px]">
+                                <AutoSizer>
+                                    {({ height, width }: { height: number; width: number }) => (
+                                        <List
+                                            className="custom-scrollbar font-mono text-xs"
+                                            height={height}
+                                            itemCount={diffLines.length}
+                                            itemSize={20}
+                                            width={width}
+                                            itemData={diffLines}
+                                            overscanCount={10}
+                                        >
+                                            {DiffRow}
+                                        </List>
+                                    )}
+                                </AutoSizer>
                             </div>
                         </motion.div>
                     )}
