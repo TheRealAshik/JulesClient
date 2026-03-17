@@ -112,7 +112,7 @@ export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [
                                 </div>
                                 <span className="text-sm font-medium text-zinc-200 truncate">{runningSession.title || 'Untitled Session'}</span>
                             </div>
-                            <button className="text-zinc-500 hover:text-white transition-colors flex-shrink-0">
+                            <button aria-label="Session options" className="text-zinc-500 hover:text-white transition-colors flex-shrink-0">
                                 <MoreHorizontal size={16} />
                             </button>
                         </div>
