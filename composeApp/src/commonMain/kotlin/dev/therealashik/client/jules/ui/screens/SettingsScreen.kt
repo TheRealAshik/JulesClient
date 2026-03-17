@@ -26,8 +26,11 @@ fun SettingsScreen(
     themeManager: ThemeManager,
     cacheManager: CacheManager,
     settingsStorage: SettingsStorage,
-    apiKey: String,
-    onApiKeyChange: (String) -> Unit,
+    accounts: List<Account>,
+    activeAccountId: String?,
+    onAddAccount: (String, String) -> Unit,
+    onSwitchAccount: (String) -> Unit,
+    onRemoveAccount: (String) -> Unit,
     onNavigateBack: () -> Unit,
     onEditTheme: (CustomTheme?) -> Unit
 ) {
@@ -66,28 +69,104 @@ fun SettingsScreen(
             Text("Account", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(JulesSpacing.m))
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(JulesSpacing.l)) {
-                    Text("Jules API Key", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(JulesSpacing.s))
-                    OutlinedTextField(
-                        value = apiKey,
-                        onValueChange = onApiKeyChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text("Enter your API key") },
-                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Password
-                        )
-                    )
-                    Spacer(Modifier.height(JulesSpacing.s))
-                    Text(
-                        "Your API key is stored locally on your device.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            var showAddAccountDialog by remember { mutableStateOf(false) }
+
+            if (accounts.isEmpty()) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(JulesSpacing.l)) {
+                        Text("No accounts configured.", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
+            } else {
+                accounts.forEach { account ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = JulesSpacing.s)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSwitchAccount(account.id) }
+                                .padding(JulesSpacing.l),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = account.id == activeAccountId,
+                                    onClick = { onSwitchAccount(account.id) }
+                                )
+                                Spacer(Modifier.width(JulesSpacing.s))
+                                Column {
+                                    Text(account.name, style = MaterialTheme.typography.bodyLarge)
+                                    val maskedKey = if (account.apiKey.length > 4) "***${account.apiKey.takeLast(4)}" else "***"
+                                    Text(maskedKey, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            IconButton(onClick = { onRemoveAccount(account.id) }) {
+                                Icon(Icons.Default.Delete, "Delete Account")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(JulesSpacing.s))
+            Button(
+                onClick = { showAddAccountDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, "Add Account")
+                Spacer(Modifier.width(JulesSpacing.s))
+                Text("Add Account")
+            }
+
+            if (showAddAccountDialog) {
+                var newName by remember { mutableStateOf("") }
+                var newApiKey by remember { mutableStateOf("") }
+
+                AlertDialog(
+                    onDismissRequest = { showAddAccountDialog = false },
+                    title = { Text("Add Account") },
+                    text = {
+                        Column {
+                            OutlinedTextField(
+                                value = newName,
+                                onValueChange = { newName = it },
+                                label = { Text("Account Name") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(JulesSpacing.s))
+                            OutlinedTextField(
+                                value = newApiKey,
+                                onValueChange = { newApiKey = it },
+                                label = { Text("API Key") },
+                                singleLine = true,
+                                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                if (newName.isNotBlank() && newApiKey.isNotBlank()) {
+                                    onAddAccount(newName, newApiKey)
+                                    showAddAccountDialog = false
+                                }
+                            }
+                        ) {
+                            Text("Add")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showAddAccountDialog = false }) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
 
             Spacer(Modifier.height(JulesSpacing.xl))

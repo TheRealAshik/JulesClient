@@ -10,6 +10,8 @@ import dev.therealashik.client.jules.data.JulesRepository
 import dev.therealashik.jules.sdk.model.*
 import dev.therealashik.client.jules.model.ThemePreset
 import dev.therealashik.client.jules.model.CreateSessionConfig
+import dev.therealashik.client.jules.model.Account
+import dev.therealashik.client.jules.model.AppSettings
 import dev.therealashik.client.jules.utils.TimeUtils
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -38,7 +40,8 @@ sealed class Screen {
 }
 
 data class JulesUiState(
-    val apiKey: String? = null,
+    val accounts: List<Account> = emptyList(),
+    val activeAccountId: String? = null,
     val sources: List<JulesSource> = emptyList(),
     val currentSource: JulesSource? = null,
     val sessions: List<JulesSession> = emptyList(),
@@ -71,6 +74,8 @@ class SharedViewModel(
     private var activitiesJob: Job? = null
 
     init {
+        loadInitialData()
+
         // Observe sessions and sources from DB
         repository.sessions.onEach { sessions ->
             _uiState.update {
@@ -94,19 +99,129 @@ class SharedViewModel(
 
     // --- Initialization ---
 
-    fun setApiKey(key: String) {
-        // Allow setting empty key to "logout" or reset, but always save it
-        api.setApiKey(key)
-        Settings.saveString("api_key", key)
-        _uiState.update { it.copy(apiKey = key) }
-        
-        if (key.isNotBlank()) {
-            loadInitialData()
+
+    // --- AppSettings Management ---
+
+    private fun loadAppSettings(): AppSettings {
+        val json = Settings.getString("app_settings", "")
+        return if (json.isBlank()) {
+            AppSettings()
+        } else {
+            try {
+                kotlinx.serialization.json.Json.decodeFromString(AppSettings.serializer(), json)
+            } catch (e: Exception) {
+                AppSettings()
+            }
         }
     }
 
+    private fun saveAppSettings(settings: AppSettings) {
+        try {
+            val json = kotlinx.serialization.json.Json.encodeToString(AppSettings.serializer(), settings)
+            Settings.saveString("app_settings", json)
+        } catch (e: Exception) {
+            // Ignore encoding errors
+        }
+    }
+
+    // --- Account Management ---
+
+    fun addAccount(name: String, apiKey: String) {
+        val newAccount = Account(
+            id = dev.therealashik.client.jules.utils.TimeUtils.now().toString(),
+            name = name,
+            apiKey = apiKey
+        )
+
+        val currentSettings = loadAppSettings()
+        val updatedAccounts = currentSettings.accounts.toMutableList()
+        updatedAccounts.add(newAccount)
+        
+        val updatedSettings = currentSettings.copy(
+            accounts = updatedAccounts,
+            activeAccountId = newAccount.id
+        )
+
+        saveAppSettings(updatedSettings)
+
+        api.setApiKey(apiKey)
+        _uiState.update { it.copy(accounts = updatedAccounts, activeAccountId = newAccount.id) }
+
+        refreshAll()
+    }
+
+    fun switchAccount(accountId: String) {
+        val currentSettings = loadAppSettings()
+        val account = currentSettings.accounts.find { it.id == accountId }
+
+        if (account != null) {
+            val updatedSettings = currentSettings.copy(activeAccountId = accountId)
+            saveAppSettings(updatedSettings)
+            saveAppSettings(updatedSettings)
+
+            api.setApiKey(account.apiKey)
+            _uiState.update { it.copy(activeAccountId = accountId, error = null) }
+            refreshAll()
+        }
+    }
+
+    fun removeAccount(accountId: String) {
+        val currentSettings = loadAppSettings()
+        val updatedAccounts = currentSettings.accounts.toMutableList()
+        updatedAccounts.removeAll { it.id == accountId }
+
+        var nextActiveId = currentSettings.activeAccountId
+        if (currentSettings.activeAccountId == accountId) {
+            val nextActive = updatedAccounts.firstOrNull()
+            nextActiveId = nextActive?.id
+            if (nextActive != null) {
+                api.setApiKey(nextActive.apiKey)
+                _uiState.update { it.copy(accounts = updatedAccounts, activeAccountId = nextActive.id) }
+                refreshAll()
+            } else {
+                api.setApiKey("")
+                _uiState.update { it.copy(accounts = updatedAccounts, activeAccountId = null, sessions = emptyList(), sources = emptyList(), currentSession = null, currentSource = null) }
+            }
+        } else {
+            _uiState.update { it.copy(accounts = updatedAccounts) }
+        }
+
+        val updatedSettings = currentSettings.copy(
+            accounts = updatedAccounts,
+            activeAccountId = nextActiveId
+        )
+        saveAppSettings(updatedSettings)
+    }
+
+    fun resetActiveAccount() {
+        val currentSettings = loadAppSettings()
+        val updatedSettings = currentSettings.copy(activeAccountId = null)
+        saveAppSettings(updatedSettings)
+
+        api.setApiKey("")
+        _uiState.update { it.copy(activeAccountId = null, sessions = emptyList(), sources = emptyList(), currentSession = null, currentSource = null) }
+    }
+
+
     private fun loadInitialData() {
-        // Load settings
+        var appSettings = loadAppSettings()
+
+        // Migrate legacy settings if AppSettings is new
+        if (appSettings.accounts.isEmpty()) {
+            val oldKey = Settings.getString("api_key", "")
+            if (oldKey.isNotBlank()) {
+                val migratedAccount = Account(id = "default", name = "Default", apiKey = oldKey)
+                appSettings = appSettings.copy(
+                    accounts = listOf(migratedAccount),
+                    activeAccountId = "default"
+                )
+                saveAppSettings(appSettings)
+                // Clear old key
+                Settings.saveString("api_key", "")
+            }
+        }
+
+        // Ensure default properties from legacy settings are merged if needed
         val savedCardState = Settings.getBoolean("default_card_state", false)
         val savedThemeStr = Settings.getString("theme", ThemePreset.MIDNIGHT.name)
         val savedTheme = try {
@@ -115,14 +230,28 @@ class SharedViewModel(
             ThemePreset.MIDNIGHT
         }
         
-        // Load API Key
-        val savedKey = Settings.getString("api_key", "")
-        if (savedKey.isNotBlank()) {
-             api.setApiKey(savedKey)
-             _uiState.update { it.copy(apiKey = savedKey) }
+        val activeAccount = appSettings.accounts.find { it.id == appSettings.activeAccountId } ?: appSettings.accounts.firstOrNull()
+
+        if (activeAccount != null) {
+            if (appSettings.activeAccountId != activeAccount.id) {
+                appSettings = appSettings.copy(activeAccountId = activeAccount.id)
+                saveAppSettings(appSettings)
+            }
+            api.setApiKey(activeAccount.apiKey)
+        } else {
+            if (appSettings.activeAccountId != null) {
+                appSettings = appSettings.copy(activeAccountId = null)
+                saveAppSettings(appSettings)
+            }
+            api.setApiKey("")
         }
 
-        _uiState.update { it.copy(defaultCardState = savedCardState, currentTheme = savedTheme) }
+        _uiState.update { it.copy(
+            defaultCardState = savedCardState,
+            currentTheme = savedTheme,
+            accounts = appSettings.accounts,
+            activeAccountId = appSettings.activeAccountId
+        ) }
 
         if (api.getApiKey().isBlank()) {
              return
