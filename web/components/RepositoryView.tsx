@@ -6,6 +6,8 @@ import {
     ArrowRight, Activity, Zap, Layers, ChevronRight,
     AlertCircle, Archive, Calendar
 } from 'lucide-react';
+import { List } from 'react-window';
+import { AutoSizer } from 'react-virtualized-auto-sizer';
 
 interface RepositoryViewProps {
     source: JulesSource;
@@ -71,7 +73,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
     return (
         <div className="flex-1 flex flex-col h-full bg-background overflow-y-auto animate-in fade-in duration-300">
             {/* Hero Header */}
-            <div className="w-full bg-background border-b border-white/5 pt-6 md:pt-8 px-4 sm:px-8 pb-0">
+            <div className="w-full bg-background border-b border-white/5 pt-6 md:pt-8 px-4 sm:px-8 pb-0 flex-shrink-0">
                 <div className="max-w-6xl mx-auto">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 md:mb-8">
                         <div className="flex items-start gap-4 md:gap-5">
@@ -131,12 +133,12 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-8 py-6 md:py-8">
+            <div className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-8 py-6 md:py-8 flex flex-col min-h-0">
 
                 {activeTab === 'overview' && (
-                    <div className="space-y-6 md:space-y-8 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex-1 flex flex-col space-y-6 md:space-y-8 animate-in slide-in-from-bottom-2 duration-300 min-h-0">
                         {/* Stats Grid - 2 cols on mobile, 3 on desktop */}
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 flex-shrink-0">
                             <StatCard
                                 label="Active"
                                 value={stats.activeCount}
@@ -164,8 +166,8 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
                         </div>
 
                         {/* Recent Sessions List */}
-                        <div className="flex flex-col gap-4">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex-1 flex flex-col gap-4 min-h-0">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 flex-shrink-0">
                                 <h2 className="text-lg md:text-xl font-semibold text-white">History</h2>
 
                                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -193,7 +195,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
                             </div>
 
                             {displaySessions.length === 0 ? (
-                                <div className="h-64 flex flex-col items-center justify-center bg-background border border-dashed border-white/10 rounded-2xl p-4 text-center">
+                                <div className="h-64 flex flex-col items-center justify-center bg-background border border-dashed border-white/10 rounded-2xl p-4 text-center flex-shrink-0">
                                     <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-zinc-500 mb-4">
                                         {filter === 'all' ? <Terminal size={24} /> : <Search size={24} />}
                                     </div>
@@ -209,14 +211,20 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
                                     )}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 gap-3">
-                                    {displaySessions.map(session => (
-                                        <SessionListItem
-                                            key={session.name}
-                                            session={session}
-                                            onClick={() => onSelectSession(session)}
-                                        />
-                                    ))}
+                                <div className="flex-1 min-h-[300px]">
+                                    <AutoSizer>
+                                        {({ height, width }) => (
+                                            <List
+                                                height={height}
+                                                itemCount={displaySessions.length}
+                                                itemSize={88}
+                                                width={width}
+                                                itemData={{ sessions: displaySessions, onSelectSession }}
+                                            >
+                                                {VirtualSessionRow}
+                                            </List>
+                                        )}
+                                    </AutoSizer>
                                 </div>
                             )}
                         </div>
@@ -225,7 +233,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
 
                 {/* Other tabs remain same but with minor mobile tweaks */}
                 {activeTab === 'environment' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in slide-in-from-bottom-2 duration-300 flex-shrink-0">
                         <div className="bg-background border border-white/5 rounded-2xl p-5 md:p-6 shadow-sm">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
@@ -259,7 +267,7 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
                 )}
 
                 {activeTab === 'knowledge' && (
-                    <div className="flex flex-col items-center justify-center py-20 bg-background border border-white/5 rounded-2xl border-dashed animate-in slide-in-from-bottom-2 duration-300 p-4 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 bg-background border border-white/5 rounded-2xl border-dashed animate-in slide-in-from-bottom-2 duration-300 p-4 text-center flex-shrink-0">
                         <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center text-zinc-500 mb-6 shadow-inner">
                             <Book size={32} />
                         </div>
@@ -280,6 +288,24 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
 }
 
 // --- Sub Components ---
+
+const VirtualSessionRow = ({ index, style, data }: any) => {
+    const session = data.sessions[index];
+    const { onSelectSession } = data;
+
+    // Adjust style to add a gap between rows
+    const modifiedStyle = {
+        ...style,
+        height: (style.height as number) - 12,
+        top: (style.top as number) + 6,
+    };
+
+    return (
+        <div style={modifiedStyle}>
+            <SessionListItem session={session} onClick={() => onSelectSession(session)} />
+        </div>
+    );
+};
 
 const TabItem = ({ label, icon, isActive, onClick }: any) => (
     <button
@@ -333,7 +359,7 @@ const SessionListItem = ({ session, onClick }: { session: JulesSession, onClick:
     return (
         <button
             onClick={onClick}
-            className="w-full text-left group flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-background hover:bg-surface border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all shadow-sm gap-3 sm:gap-4 relative overflow-hidden"
+            className="w-full h-full text-left group flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-background hover:bg-surface border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all shadow-sm gap-3 sm:gap-4 relative overflow-hidden"
         >
             <div className="flex items-start gap-3 sm:gap-4 overflow-hidden relative z-10">
                 <div className={`
