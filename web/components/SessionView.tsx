@@ -15,7 +15,7 @@ interface SessionViewProps {
     defaultCardCollapsed: boolean;
 }
 
-export const SessionView: React.FC<SessionViewProps> = ({
+export const SessionView: React.FC<SessionViewProps> = React.memo(({
     session,
     activities,
     isProcessing,
@@ -117,4 +117,5 @@ export const SessionView: React.FC<SessionViewProps> = ({
             </div>
         </div>
     );
-};
+});
+SessionView.displayName = 'SessionView';

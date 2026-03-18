@@ -10,7 +10,7 @@ interface HeaderProps {
   isLoading?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({
+export const Header: React.FC<HeaderProps> = React.memo(({
   onOpenDrawer,
   currentSource,
   sources,
@@ -144,4 +144,5 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
     </header>
   );
-};
+});
+Header.displayName = 'Header';
