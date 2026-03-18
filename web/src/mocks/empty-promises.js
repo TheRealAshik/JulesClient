@@ -1,0 +1,10 @@
+export default {};
+export const writeFile = () => {};
+export const readFile = () => {};
+export const rm = () => {};
+export const access = () => {};
+export const accessSync = () => {};
+export const existsSync = () => {};
+export const createReadStream = () => {};
+export const createWriteStream = () => {};
+export const constants = {};
