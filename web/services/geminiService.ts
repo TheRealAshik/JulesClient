@@ -59,18 +59,27 @@ export class GeminiService {
 
   async listSources(options?: ListSourcesOptions): Promise<ListSourcesResponse> {
     try {
-      const sources: JulesSource[] = [];
-      const iterator = this.client.sources({ pageSize: options?.pageSize });
-      let limit = options?.pageSize ?? this.paginationSettings.pageSize;
+      // The SDK's iterator for sources does not natively expose a page token in the same way ListSessionsResponse does.
+      // To strictly maintain the pagination contract for the UI without breaking `nextPageToken`,
+      // we fall back to manual fetch for paginated `listSources` calls.
+      const params = new URLSearchParams();
+      params.append('pageSize', String(options?.pageSize ?? this.paginationSettings.pageSize));
+      if (options?.pageToken) params.append('pageToken', options.pageToken);
 
-      for await (const source of iterator) {
-        sources.push(mapSource(source));
-        if (sources.length >= limit) break;
-      }
+      const queryString = params.toString();
+      const url = `${this.baseUrl}/sources${queryString ? `?${queryString}` : ''}`;
+
+      const res = await fetch(url, { headers: this.getHeaders() });
+
+      if (res.status === 401) throw new Error("Invalid API Key");
+      if (!res.ok) throw new Error("Failed to fetch sources");
+
+      const data = await res.json();
+      const sources = (data.sources || []).map(mapSource);
 
       return {
         sources,
-        nextPageToken: undefined // The SDK's source manager abstracts pagination
+        nextPageToken: data.nextPageToken || data.next_page_token
       };
     } catch (error) {
       console.error("listSources error:", error);
@@ -160,9 +169,6 @@ export class GeminiService {
     }
 
     try {
-      // The SDK uses jules.session(config) for interactive and jules.run(config) for automated.
-      // Based on UI logic, it expects interactive SessionClient if requireApproval is true, otherwise run.
-      // The SDK session() handles both conceptually but let's stick to session() and let the backend decide based on config.
       const sessionClient = await this.client.session(config);
       const sessionInfo = await sessionClient.info();
       return mapSession(sessionInfo, prompt);
@@ -223,28 +229,15 @@ export class GeminiService {
 
   async getActivity(activityName: string): Promise<JulesActivity> {
     try {
-      // activityName format: sessions/{sessionId}/activities/{activityId}
       const parts = activityName.split('/');
-      let sessionId = "";
-      let activityId = "";
-
-      if (parts.length >= 4) {
-          sessionId = parts[1];
-          activityId = parts[3];
-          const activity = await this.client.session(sessionId).activities.get(activityId);
-          return mapActivity(activity);
-      } else {
-           // Fallback to fetch if path format doesn't match
-           const url = activityName.startsWith('sessions/')
-            ? `${this.baseUrl}/${activityName}`
-            : activityName;
-
-          const res = await fetch(url, { headers: this.getHeaders() });
-          if (!res.ok) throw new Error("Failed to get activity");
-
-          const data = await res.json();
-          return mapActivity(data);
+      if (parts.length < 4 || parts[0] !== 'sessions' || parts[2] !== 'activities') {
+        throw new Error(`Invalid activityName format: ${activityName}`);
       }
+
+      const sessionId = parts[1];
+      const activityId = parts[3];
+      const activity = await this.client.session(sessionId).activities.get(activityId);
+      return mapActivity(activity);
     } catch (error) {
       console.error("getActivity error:", error);
       throw error;
@@ -269,7 +262,6 @@ export class GeminiService {
 
   async approvePlan(sessionName: string, planId?: string): Promise<boolean> {
       const cleanId = sessionName.replace('sessions/', '');
-      // The SDK approve method doesn't take planId directly, it approves the pending plan automatically
       await this.client.session(cleanId).approve();
       return true;
   }

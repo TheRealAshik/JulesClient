@@ -14,13 +14,66 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       nodePolyfills({
-        include: ['path', 'fs', 'os', 'crypto', 'buffer', 'readline', 'events', 'util', 'stream', 'timers'],
+        include: ['path', 'os', 'crypto', 'buffer', 'events', 'util', 'stream', 'vm'],
         globals: {
           Buffer: true,
           global: true,
           process: true,
-        },
+        }
       }),
+      {
+         name: 'mock-sdk-fs',
+         enforce: 'pre',
+         resolveId(id) {
+           if (id === 'node:fs' || id === 'fs' || id === 'node:fs/promises' || id === 'fs/promises') {
+              return '\0mock-sdk-fs';
+           }
+           if (id === 'node:timers/promises') {
+              return '\0mock-sdk-timers';
+           }
+           if (id === 'readline' || id === 'node:readline') {
+              return '\0mock-sdk-readline';
+           }
+         },
+         load(id) {
+           if (id === '\0mock-sdk-fs') {
+              return `
+                export const writeFile = () => {};
+                export const readFile = () => {};
+                export const rm = () => {};
+                export const access = () => {};
+                export const accessSync = () => {};
+                export const existsSync = () => {};
+                export const createReadStream = () => {};
+                export const createWriteStream = () => {};
+                export const readdir = () => {};
+                export const mkdir = () => {};
+                export const stat = () => {};
+                export const open = () => {};
+                export const appendFile = () => {};
+                export const constants = {};
+                export default {
+                  writeFile, readFile, rm, access, accessSync, existsSync, createReadStream, createWriteStream,
+                  readdir, mkdir, stat, open, appendFile, constants
+                };
+              `;
+           }
+           if (id === '\0mock-sdk-timers') {
+              return `
+                 export const setTimeout = (ms) => new Promise(resolve => window.setTimeout(resolve, ms));
+                 export default { setTimeout };
+              `;
+           }
+           if (id === '\0mock-sdk-readline') {
+              return `
+                 export const createInterface = () => ({
+                    [Symbol.asyncIterator]: async function* () {}
+                 });
+                 export default { createInterface };
+              `;
+           }
+         }
+      },
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['pwa-192x192.png', 'pwa-512x512.png'],
@@ -61,23 +114,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-      }
-    },
-    build: {
-      rollupOptions: {
-        external: [
-          'node:fs',
-          'node:os',
-          'node:path',
-          'node:fs/promises',
-          'fs/promises',
-          'node:timers/promises',
-          'node:crypto',
-          'node:buffer',
-          'node:url',
-          'readline',
-          'fs'
-        ]
       }
     }
   };

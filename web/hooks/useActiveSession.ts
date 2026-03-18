@@ -87,6 +87,27 @@ export function useActiveSession(
             } catch (e: any) {
                 if (!signal.aborted) {
                     console.error("Streaming error", e);
+                    setError(e.message || "An error occurred during streaming.");
+                    setIsProcessing(false);
+                }
+            } finally {
+                // Ensure we get the final session state when the stream ends/fails/aborts
+                if (activePollingSession.current === sessionName && !signal.aborted && service) {
+                    try {
+                        const finalSession = await service.getSession(sessionName);
+                        if (!signal.aborted) {
+                            setCurrentSession(prev => {
+                                if (!prev || prev.state !== finalSession.state || prev.outputs?.length !== finalSession.outputs?.length) {
+                                    return finalSession;
+                                }
+                                return prev;
+                            });
+                            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(finalSession.state);
+                            setIsProcessing(isActive);
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch final session state:", e);
+                    }
                 }
             }
         };
