@@ -45,7 +45,7 @@ const mockSources: JulesSource[] = [
 ];
 
 describe('Drawer Virtualization', () => {
-    it('renders session headers and items', () => {
+    it('renders session headers and items', async () => {
         render(
             <MemoryRouter>
                 <Drawer
@@ -60,7 +60,7 @@ describe('Drawer Virtualization', () => {
         );
 
         // Check for headers
-        expect(screen.getByText('Recent sessions')).toBeInTheDocument();
+        expect(await screen.findByText('Recent sessions')).toBeInTheDocument();
         expect(screen.getByText('Repositories')).toBeInTheDocument();
 
         // Check for session items

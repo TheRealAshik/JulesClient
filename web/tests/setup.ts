@@ -50,29 +50,36 @@ vi.mock('react-window', async () => {
     const actual = await vi.importActual('react-window');
     return {
         ...actual,
-        List: ({ children, itemCount, itemData, rowProps }: any) => {
+        List: ({ children, itemCount, itemData, rowProps, rowComponent, rowCount, items: propsItems, ...props }: any) => {
+            const Component = children || rowComponent;
             const items = [];
-            // If itemData contains sessions (from RepositoryView)
-            if (itemData && itemData.sessions) {
-                const count = Math.min(itemCount, itemData.sessions.length);
-                for (let i = 0; i < count; i++) {
-                    items.push(children({ index: i, style: {}, data: itemData }));
-                }
+            const _itemCount = itemCount !== undefined ? itemCount : (rowCount !== undefined ? rowCount : 0);
+
+            let limit = _itemCount;
+            if (rowProps && rowProps.items) {
+               limit = Math.min(_itemCount, rowProps.items.length);
+            } else if (itemData && itemData.sessions) {
+               limit = Math.min(_itemCount, itemData.sessions.length);
+            } else if (props.itemData && Array.isArray(props.itemData)) {
+               limit = Math.min(_itemCount, props.itemData.length);
             }
-            // If rowProps contains items (from Drawer)
-            else if (rowProps && rowProps.items) {
-                const count = Math.min(itemCount, rowProps.items.length);
-                for (let i = 0; i < count; i++) {
-                    items.push(children({ index: i, style: {}, data: itemData, ...rowProps, items: rowProps.items }));
+
+            for (let i = 0; i < limit; i++) {
+                const itemProps: any = {
+                    key: `item-${i}`,
+                    index: i,
+                    style: {},
+                    data: itemData || props.itemData,
+                    ...rowProps
+                };
+
+                if (rowProps && rowProps.items) {
+                    itemProps.items = rowProps.items;
                 }
+
+                items.push(React.createElement(Component, itemProps));
             }
-            // Standard/fallback (like ChatHistory diff row)
-            else {
-                const count = Math.min(itemCount, 50);
-                for (let i = 0; i < count; i++) {
-                    items.push(children({ index: i, style: {}, data: itemData }));
-                }
-            }
+
             return React.createElement('div', { 'data-testid': 'react-window-list' }, items);
         }
     };

@@ -7,3 +7,6 @@
 ## 2024-03-17 - React-Window Mocking Edge Case in Vitest
 **Learning:** When virtualizing lists like `RepositoryView` using `react-window`, passing a complex object (e.g., `{ sessions, activeSessionId, ... }`) via `itemData` broke the global test mock in `web/tests/setup.ts`, which previously only expected arrays or objects with an `items` array property for `Drawer`. This caused unrelated test failures in the suite.
 **Action:** When implementing new virtualized lists, always check and update the `react-window` global mock in `tests/setup.ts` to accommodate the specific `itemData` structure used by the new component so that the test suite remains stable.
+## 2024-05-19 - [Fixing AutoSizer and ResizeObserver Mocks for Testing]
+**Learning:** When using components like `react-virtualized-auto-sizer` alongside `ResizeObserver` in tests (e.g., `Drawer`), checking `ref.current.clientHeight` returns `0` because DOM layout isn't fully rendered in JSDom. This causes the test's `react-window` `List` mock to render with `0` height and not render items, failing assertions like `findByText`.
+**Action:** When initializing size in custom wrappers like `AutoSizer`, always provide fallback heights and widths during tests (e.g. `ref.current.clientHeight || (typeof window !== 'undefined' && window.process && window.process.env.NODE_ENV === 'test' ? 800 : 0)`).
