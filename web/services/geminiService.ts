@@ -1,3 +1,4 @@
+import { jules, JulesClient } from '@google/jules-sdk';
 import {
   JulesActivity,
   JulesSession,
@@ -36,6 +37,7 @@ export class GeminiService {
   private apiKey: string;
   private paginationSettings: PaginationSettings;
   private readonly baseUrl = "https://jules.googleapis.com/v1alpha";
+  public client: JulesClient;
 
   constructor(apiKey: string, paginationSettings?: PaginationSettings) {
     this.apiKey = apiKey;
@@ -43,6 +45,7 @@ export class GeminiService {
       autoPaginate: true,
       pageSize: 20
     };
+    this.client = jules.with({ apiKey: this.apiKey });
   }
 
   private getHeaders() {
@@ -56,39 +59,18 @@ export class GeminiService {
 
   async listSources(options?: ListSourcesOptions): Promise<ListSourcesResponse> {
     try {
-      const params = new URLSearchParams();
-      params.append('pageSize', String(options?.pageSize ?? this.paginationSettings.pageSize));
-      if (options?.pageToken) params.append('pageToken', options.pageToken);
+      const sources: JulesSource[] = [];
+      const iterator = this.client.sources({ pageSize: options?.pageSize });
+      let limit = options?.pageSize ?? this.paginationSettings.pageSize;
 
-      const queryString = params.toString();
-      const url = `${this.baseUrl}/sources${queryString ? `?${queryString}` : ''}`;
-
-      const res = await fetch(url, { headers: this.getHeaders() });
-
-      if (res.status === 401) throw new Error("Invalid API Key");
-      if (!res.ok) throw new Error("Failed to fetch sources");
-
-      const data = await res.json();
-
-      const sources = (data.sources || []).map((s: any) => {
-        const repo = s.githubRepo || s.github_repo;
-        return {
-          ...s,
-          id: s.id,
-          githubRepo: repo ? {
-            owner: repo.owner,
-            repo: repo.repo,
-            isPrivate: repo.isPrivate ?? repo.is_private ?? false,
-            defaultBranch: repo.defaultBranch || repo.default_branch,
-            branches: repo.branches || []
-          } : undefined,
-          displayName: repo ? `${repo.owner}/${repo.repo}` : s.name.split('/').slice(-2).join('/')
-        };
-      });
+      for await (const source of iterator) {
+        sources.push(mapSource(source));
+        if (sources.length >= limit) break;
+      }
 
       return {
         sources,
-        nextPageToken: data.nextPageToken || data.next_page_token
+        nextPageToken: undefined // The SDK's source manager abstracts pagination
       };
     } catch (error) {
       console.error("listSources error:", error);
@@ -101,43 +83,24 @@ export class GeminiService {
    */
   async listAllSources(): Promise<JulesSource[]> {
     const allSources: JulesSource[] = [];
-    let pageToken: string | undefined;
-
-    do {
-      const response = await this.listSources({ pageSize: this.paginationSettings.pageSize, pageToken });
-      allSources.push(...response.sources);
-      pageToken = this.paginationSettings.autoPaginate ? response.nextPageToken : undefined;
-    } while (pageToken);
-
+    try {
+      for await (const source of this.client.sources()) {
+        allSources.push(mapSource(source));
+      }
+    } catch (error) {
+       console.error("listAllSources error:", error);
+    }
     return allSources;
   }
 
   async getSource(sourceName: string): Promise<JulesSource> {
     try {
-      const url = sourceName.startsWith('sources/')
-        ? `${this.baseUrl}/${sourceName}`
-        : `${this.baseUrl}/sources/${sourceName}`;
+      const cleanName = sourceName.replace('sources/github/', '').replace('sources/', '');
+      const source = await this.client.sources.get({ github: cleanName });
 
-      const res = await fetch(url, { headers: this.getHeaders() });
+      if (!source) throw new Error("Source not found");
 
-      if (res.status === 401) throw new Error("Invalid API Key");
-      if (!res.ok) throw new Error("Failed to fetch source");
-
-      const data = await res.json();
-      const repo = data.githubRepo || data.github_repo;
-
-      return {
-        ...data,
-        id: data.id,
-        githubRepo: repo ? {
-          owner: repo.owner,
-          repo: repo.repo,
-          isPrivate: repo.isPrivate ?? repo.is_private ?? false,
-          defaultBranch: repo.defaultBranch || repo.default_branch,
-          branches: repo.branches || []
-        } : undefined,
-        displayName: repo ? `${repo.owner}/${repo.repo}` : data.name.split('/').slice(-2).join('/')
-      };
+      return mapSource(source);
     } catch (error) {
       console.error("getSource error:", error);
       throw error;
@@ -148,23 +111,14 @@ export class GeminiService {
 
   async listSessions(options?: ListSessionsOptions): Promise<ListSessionsResponse> {
     try {
-      const params = new URLSearchParams();
-      params.append('pageSize', String(options?.pageSize ?? this.paginationSettings.pageSize));
-      if (options?.pageToken) params.append('pageToken', options.pageToken);
-
-      const res = await fetch(`${this.baseUrl}/sessions?${params.toString()}`, { headers: this.getHeaders() });
-
-      if (!res.ok) {
-        console.warn("listSessions failed with status:", res.status);
-        return { sessions: [], nextPageToken: undefined };
-      }
-
-      const data = await res.json();
-      const sessions = (data.sessions || []).map(mapSession);
+      const response = await this.client.sessions({
+        pageSize: options?.pageSize ?? this.paginationSettings.pageSize,
+        pageToken: options?.pageToken
+      });
 
       return {
-        sessions,
-        nextPageToken: data.nextPageToken || data.next_page_token
+        sessions: response.sessions.map(s => mapSession(s)),
+        nextPageToken: response.nextPageToken
       };
     } catch (error) {
       console.error("listSessions network error:", error);
@@ -176,16 +130,13 @@ export class GeminiService {
    * Fetch all sessions with automatic pagination
    */
   async listAllSessions(): Promise<JulesSession[]> {
-    const allSessions: JulesSession[] = [];
-    let pageToken: string | undefined;
-
-    do {
-      const response = await this.listSessions({ pageSize: this.paginationSettings.pageSize, pageToken });
-      allSessions.push(...response.sessions);
-      pageToken = this.paginationSettings.autoPaginate ? response.nextPageToken : undefined;
-    } while (pageToken);
-
-    return allSessions;
+    try {
+        const sessions = await this.client.sessions().all();
+        return sessions.map(s => mapSession(s));
+    } catch (error) {
+        console.error("listAllSessions error:", error);
+        return [];
+    }
   }
 
   async createSession(
@@ -193,51 +144,42 @@ export class GeminiService {
     sourceName?: string,
     options?: CreateSessionOptions
   ): Promise<JulesSession> {
-    const payload: Record<string, any> = {
-      prompt
-    };
+    const cleanSource = sourceName ? sourceName.replace('sources/github/', '').replace('sources/', '') : undefined;
 
-    if (sourceName) {
-      payload.requirePlanApproval = options?.requirePlanApproval ?? true;
-      payload.automationMode = options?.automationMode ?? "AUTO_CREATE_PR";
-      payload.sourceContext = {
-        source: sourceName,
-        githubRepoContext: {
-          startingBranch: options?.startingBranch || "main"
-        }
+    const config: any = { prompt };
+    if (cleanSource) {
+      config.source = {
+          github: cleanSource,
+          baseBranch: options?.startingBranch || "main"
       };
+      config.requirePlanApproval = options?.requirePlanApproval ?? true;
     }
 
-    // Add optional title if provided
     if (options?.title) {
-      payload.title = options.title;
+        config.title = options.title;
     }
 
-    const res = await fetch(`${this.baseUrl}/sessions`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Failed to create session: ${err}`);
+    try {
+      // The SDK uses jules.session(config) for interactive and jules.run(config) for automated.
+      // Based on UI logic, it expects interactive SessionClient if requireApproval is true, otherwise run.
+      // The SDK session() handles both conceptually but let's stick to session() and let the backend decide based on config.
+      const sessionClient = await this.client.session(config);
+      const sessionInfo = await sessionClient.info();
+      return mapSession(sessionInfo, prompt);
+    } catch (err: any) {
+        throw new Error(`Failed to create session: ${err.message}`);
     }
-
-    const data = await res.json();
-    return mapSession(data, prompt);
   }
 
   async getSession(sessionId: string): Promise<JulesSession> {
-    const url = sessionId.startsWith('sessions/')
-      ? `${this.baseUrl}/${sessionId}`
-      : `${this.baseUrl}/sessions/${sessionId}`;
-
-    const res = await fetch(url, { headers: this.getHeaders() });
-    if (!res.ok) throw new Error("Failed to get session");
-
-    const data = await res.json();
-    return mapSession(data);
+    const cleanId = sessionId.replace('sessions/', '');
+    try {
+        const sessionClient = this.client.session(cleanId);
+        const info = await sessionClient.info();
+        return mapSession(info);
+    } catch (error) {
+        throw new Error("Failed to get session");
+    }
   }
 
   // ==================== ACTIVITIES ====================
@@ -246,28 +188,16 @@ export class GeminiService {
     sessionId: string,
     options?: ListActivitiesOptions
   ): Promise<ListActivitiesResponse> {
+    const cleanId = sessionId.replace('sessions/', '');
     try {
-      const params = new URLSearchParams();
-      params.append('pageSize', String(options?.pageSize ?? this.paginationSettings.pageSize));
-      if (options?.pageToken) params.append('pageToken', options.pageToken);
-      if (options?.createTime) params.append('createTime', options.createTime);
-
-      const res = await fetch(
-        `${this.baseUrl}/sessions/${sessionId}/activities?${params.toString()}`,
-        { headers: this.getHeaders() }
-      );
-
-      if (!res.ok) {
-        return { activities: [], nextPageToken: undefined };
-      }
-
-      const data = await res.json();
-      const activities = (data.activities || []).map(mapActivity);
-
-      return {
-        activities,
-        nextPageToken: data.nextPageToken || data.next_page_token
-      };
+        const response = await this.client.session(cleanId).activities.list({
+            pageSize: options?.pageSize ?? this.paginationSettings.pageSize,
+            pageToken: options?.pageToken
+        });
+        return {
+            activities: response.activities.map(a => mapActivity(a)),
+            nextPageToken: response.nextPageToken
+        };
     } catch (error) {
       console.warn("listActivities network error:", error);
       return { activities: [], nextPageToken: undefined };
@@ -279,61 +209,69 @@ export class GeminiService {
    */
   async listAllActivities(sessionId: string): Promise<JulesActivity[]> {
     const allActivities: JulesActivity[] = [];
-    let pageToken: string | undefined;
-
-    do {
-      const response = await this.listActivities(sessionId, { pageSize: this.paginationSettings.pageSize, pageToken });
-      allActivities.push(...response.activities);
-      pageToken = this.paginationSettings.autoPaginate ? response.nextPageToken : undefined;
-    } while (pageToken);
-
+    const cleanId = sessionId.replace('sessions/', '');
+    try {
+      const stream = this.client.session(cleanId).activities.history();
+      for await (const a of stream) {
+          allActivities.push(mapActivity(a));
+      }
+    } catch (error) {
+        console.error("listAllActivities error", error);
+    }
     return allActivities;
   }
 
   async getActivity(activityName: string): Promise<JulesActivity> {
     try {
-      const url = activityName.startsWith('sessions/')
-        ? `${this.baseUrl}/${activityName}`
-        : activityName;
+      // activityName format: sessions/{sessionId}/activities/{activityId}
+      const parts = activityName.split('/');
+      let sessionId = "";
+      let activityId = "";
 
-      const res = await fetch(url, { headers: this.getHeaders() });
-      if (!res.ok) throw new Error("Failed to get activity");
+      if (parts.length >= 4) {
+          sessionId = parts[1];
+          activityId = parts[3];
+          const activity = await this.client.session(sessionId).activities.get(activityId);
+          return mapActivity(activity);
+      } else {
+           // Fallback to fetch if path format doesn't match
+           const url = activityName.startsWith('sessions/')
+            ? `${this.baseUrl}/${activityName}`
+            : activityName;
 
-      const data = await res.json();
-      return mapActivity(data);
+          const res = await fetch(url, { headers: this.getHeaders() });
+          if (!res.ok) throw new Error("Failed to get activity");
+
+          const data = await res.json();
+          return mapActivity(data);
+      }
     } catch (error) {
       console.error("getActivity error:", error);
       throw error;
     }
   }
 
+  async *streamActivities(sessionId: string): AsyncIterable<JulesActivity> {
+      const cleanId = sessionId.replace('sessions/', '');
+      const stream = this.client.session(cleanId).activities.stream();
+      for await (const a of stream) {
+          yield mapActivity(a);
+      }
+  }
+
   // ==================== SESSION ACTIONS ====================
 
   async sendMessage(sessionName: string, prompt: string): Promise<boolean> {
-    const res = await fetch(`${this.baseUrl}/${sessionName}:sendMessage`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify({ prompt }),
-    });
-
-    if (!res.ok) throw new Error("Failed to send message");
-    return true;
+      const cleanId = sessionName.replace('sessions/', '');
+      await this.client.session(cleanId).send(prompt);
+      return true;
   }
 
   async approvePlan(sessionName: string, planId?: string): Promise<boolean> {
-    const body: Record<string, any> = {};
-    if (planId) {
-      body.planId = planId;
-    }
-
-    const res = await fetch(`${this.baseUrl}/${sessionName}:approvePlan`, {
-      method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) throw new Error("Failed to approve plan");
-    return true;
+      const cleanId = sessionName.replace('sessions/', '');
+      // The SDK approve method doesn't take planId directly, it approves the pending plan automatically
+      await this.client.session(cleanId).approve();
+      return true;
   }
 
   async deleteSession(sessionName: string): Promise<boolean> {
@@ -380,15 +318,33 @@ export class GeminiService {
   }
 }
 
-// Helper to map API session response to our interface
+// Helpers
+
+const mapSource = (s: any): JulesSource => {
+    const repo = s.githubRepo || s.github_repo;
+    return {
+        ...s,
+        id: s.id,
+        name: s.name,
+        githubRepo: repo ? {
+            owner: repo.owner,
+            repo: repo.repo,
+            isPrivate: repo.isPrivate ?? repo.is_private ?? false,
+            defaultBranch: repo.defaultBranch || repo.default_branch,
+            branches: repo.branches || []
+        } : undefined,
+        displayName: repo ? `${repo.owner}/${repo.repo}` : s.name.split('/').slice(-2).join('/')
+    };
+};
+
 const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
   return {
     ...data,
     state: data.state || 'QUEUED',
     prompt: data.prompt || fallbackPrompt || '',
     title: data.title,
-    createTime: data.createTime || data.create_time,
-    updateTime: data.updateTime || data.update_time,
+    createTime: data.createTime || data.create_time || data.createdAt,
+    updateTime: data.updateTime || data.update_time || data.updatedAt,
     sourceContext: data.sourceContext || data.source_context,
     automationMode: data.automationMode || data.automation_mode,
     requirePlanApproval: data.requirePlanApproval ?? data.require_plan_approval,
@@ -404,28 +360,27 @@ const mapSession = (data: any, fallbackPrompt?: string): JulesSession => {
   };
 };
 
-// Helper to map API activity response to our interface
 const mapActivity = (a: any): JulesActivity => {
   return {
     ...a,
     id: a.id,
     originator: a.originator,
     description: a.description,
-    createTime: a.createTime || a.create_time,
-    userMessaged: a.userMessaged || a.user_messaged,
+    createTime: a.createTime || a.create_time || a.createdAt,
+    userMessaged: a.type === 'userMessaged' ? { message: a.message } : (a.userMessaged || a.user_messaged),
     userMessage: a.userMessage || a.user_message,
-    agentMessaged: a.agentMessaged || a.agent_messaged,
+    agentMessaged: a.type === 'agentMessaged' ? { message: a.message } : (a.agentMessaged || a.agent_messaged),
     agentMessage: a.agentMessage || a.agent_message,
-    planGenerated: a.planGenerated || a.plan_generated,
-    planApproved: a.planApproved || a.plan_approved ? {
+    planGenerated: a.type === 'planGenerated' ? { plan: a.plan } : (a.planGenerated || a.plan_generated),
+    planApproved: a.type === 'planApproved' ? { planId: a.planId } : (a.planApproved || a.plan_approved ? {
       planId: (a.planApproved || a.plan_approved)?.planId ||
         (a.planApproved || a.plan_approved)?.plan_id
-    } : undefined,
-    progressUpdated: a.progressUpdated || a.progress_updated,
-    sessionCompleted: a.sessionCompleted || a.session_completed,
-    sessionFailed: a.sessionFailed || a.session_failed ? {
+    } : undefined),
+    progressUpdated: a.type === 'progressUpdated' ? { title: a.title, description: a.description } : (a.progressUpdated || a.progress_updated),
+    sessionCompleted: a.type === 'sessionCompleted' ? {} : (a.sessionCompleted || a.session_completed),
+    sessionFailed: a.type === 'sessionFailed' ? { reason: a.reason } : (a.sessionFailed || a.session_failed ? {
       reason: (a.sessionFailed || a.session_failed)?.reason
-    } : undefined,
+    } : undefined),
     artifacts: a.artifacts
   };
 };

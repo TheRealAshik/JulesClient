@@ -5,8 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/performance/**/*.test.{ts,tsx}'],
+    setupFiles: ['./tests/setup.ts'],
     globals: true,
-    setupFiles: ['./tests/setup.ts'], // Add setup file if needed for jest-dom matchers, but simple tests might not need it yet
   },
 });
