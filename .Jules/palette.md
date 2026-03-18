@@ -4,3 +4,6 @@
 ## 2024-03-16 - Accessible Custom Toggle Switches
 **Learning:** When implementing custom toggle switches (e.g., div elements styled as switches instead of native checkbox inputs), assigning `role="switch"` and `aria-checked` is not enough for complete accessibility. They also require `tabIndex={0}` to be focusable via keyboard, an `onKeyDown` handler to toggle state via 'Enter' and 'Space' keys, clear `focus-visible` styles, and explicit `aria-labelledby` / `aria-describedby` attributes to associate them with adjacent text.
 **Action:** Always ensure custom interactive controls receive keyboard event handlers, tab navigation support, and correct label associations, rather than just ARIA roles and visual styling.
+## 2026-03-18 - ARIA labels for icon-only buttons
+**Learning:** Icon-only buttons or links (e.g. download, external link, copy) must have an `aria-label` for screen readers. A `title` attribute alone is sometimes insufficient for accessibility purposes.
+**Action:** Ensure that all icon-only interactive elements contain a descriptive `aria-label` alongside any `title` attributes.
