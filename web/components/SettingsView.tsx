@@ -93,31 +93,34 @@ const ToggleSwitch: React.FC<{
     onChange: (checked: boolean) => void;
     label: string;
     description?: string;
-}> = ({ checked, onChange, label, description }) => (
-    <div className="flex items-center justify-between gap-4 p-4">
-        <div className="space-y-0.5 flex-1">
-            <div className="text-sm font-medium text-[var(--color-text-main)]">{label}</div>
-            {description && (
-                <div className="text-xs text-[var(--color-text-muted)]">{description}</div>
-            )}
+}> = ({ checked, onChange, label, description }) => {
+    return (
+        <div className="flex items-center justify-between gap-4 p-4">
+            <div className="space-y-0.5 flex-1">
+                <div className="text-sm font-medium text-[var(--color-text-main)]" id={`label-${label.replace(/\s+/g, '-')}`}>{label}</div>
+                {description && (
+                    <div className="text-xs text-[var(--color-text-muted)]" id={`desc-${label.replace(/\s+/g, '-')}`}>{description}</div>
+                )}
+            </div>
+            <button
+                role="switch"
+                aria-checked={checked}
+                aria-labelledby={`label-${label.replace(/\s+/g, '-')}`}
+                aria-describedby={description ? `desc-${label.replace(/\s+/g, '-')}` : undefined}
+                onClick={() => onChange(!checked)}
+                className={`
+            relative w-12 h-7 rounded-full transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
+            ${checked ? 'bg-[var(--color-primary)]' : 'bg-white/20'}
+          `}
+            >
+                <div className={`
+            absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform
+            ${checked ? 'translate-x-6' : 'translate-x-1'}
+          `} />
+            </button>
         </div>
-        <button
-            role="switch"
-            aria-checked={checked}
-            aria-label={label}
-            onClick={() => onChange(!checked)}
-            className={`
-        relative w-12 h-7 rounded-full transition-colors flex-shrink-0
-        ${checked ? 'bg-[var(--color-primary)]' : 'bg-white/20'}
-      `}
-        >
-            <div className={`
-        absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform
-        ${checked ? 'translate-x-6' : 'translate-x-1'}
-      `} />
-        </button>
-    </div>
-);
+    );
+};
 
 export const SettingsView: React.FC = () => {
     const {
