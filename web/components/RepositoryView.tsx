@@ -67,7 +67,11 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
         }
 
         // Sort by Date (Newest first)
-        return [...data].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+        return [...data].sort((a, b) => {
+            if (b.createTime > a.createTime) return 1;
+            if (b.createTime < a.createTime) return -1;
+            return 0;
+        });
     }, [sessions, filter, search]);
 
     return (
