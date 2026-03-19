@@ -7,3 +7,6 @@
 ## 2024-03-17 - React-Window Mocking Edge Case in Vitest
 **Learning:** When virtualizing lists like `RepositoryView` using `react-window`, passing a complex object (e.g., `{ sessions, activeSessionId, ... }`) via `itemData` broke the global test mock in `web/tests/setup.ts`, which previously only expected arrays or objects with an `items` array property for `Drawer`. This caused unrelated test failures in the suite.
 **Action:** When implementing new virtualized lists, always check and update the `react-window` global mock in `tests/setup.ts` to accommodate the specific `itemData` structure used by the new component so that the test suite remains stable.
+## 2024-10-27 - O(N log N) Date Parsing Bottleneck
+**Learning:** Instantiating `new Date()` inside an array `sort()` callback evaluates in O(N log N) time, creating significant CPU and memory overhead for large lists. Furthermore, pre-computing a Map to cache these parsed dates is unnecessary memory allocation if the raw date strings are ISO 8601 formatted.
+**Action:** Always prefer direct lexical string comparison (`>` or `<`) for sorting ISO 8601 strings. This achieves the exact same chronological sorting order with O(1) property access and no memory allocation overhead.
