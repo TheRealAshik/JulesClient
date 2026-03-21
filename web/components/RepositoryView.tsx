@@ -67,7 +67,14 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
         }
 
         // Sort by Date (Newest first)
-        return [...data].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+        // ⚡ Bolt: Direct lexical comparison of ISO 8601 strings is much faster than allocating Date objects
+        return [...data].sort((a, b) => {
+            const timeA = a.createTime || "";
+            const timeB = b.createTime || "";
+            if (timeA < timeB) return 1;
+            if (timeA > timeB) return -1;
+            return 0;
+        });
     }, [sessions, filter, search]);
 
     return (
