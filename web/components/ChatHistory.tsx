@@ -725,6 +725,7 @@ const ActivityItem: React.FC<{
                                         download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Download"
+                                        aria-label="Download artifact"
                                     >
                                         <Download size={14} />
                                     </a>
@@ -739,6 +740,7 @@ const ActivityItem: React.FC<{
                                         href="#"
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Open in new window"
+                                        aria-label="Open artifact in new window"
                                     >
                                         <ExternalLink size={14} />
                                     </a>
