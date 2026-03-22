@@ -93,31 +93,38 @@ const ToggleSwitch: React.FC<{
     onChange: (checked: boolean) => void;
     label: string;
     description?: string;
-}> = ({ checked, onChange, label, description }) => (
-    <div className="flex items-center justify-between gap-4 p-4">
-        <div className="space-y-0.5 flex-1">
-            <div className="text-sm font-medium text-[var(--color-text-main)]">{label}</div>
-            {description && (
-                <div className="text-xs text-[var(--color-text-muted)]">{description}</div>
-            )}
-        </div>
-        <button
-            role="switch"
-            aria-checked={checked}
-            aria-label={label}
-            onClick={() => onChange(!checked)}
-            className={`
-        relative w-12 h-7 rounded-full transition-colors flex-shrink-0
+}> = ({ checked, onChange, label, description }) => {
+    const id = React.useId();
+    const labelId = `toggle-label-${id}`;
+    const descId = `toggle-desc-${id}`;
+
+    return (
+        <div className="flex items-center justify-between gap-4 p-4">
+            <div className="space-y-0.5 flex-1">
+                <div id={labelId} className="text-sm font-medium text-[var(--color-text-main)]">{label}</div>
+                {description && (
+                    <div id={descId} className="text-xs text-[var(--color-text-muted)]">{description}</div>
+                )}
+            </div>
+            <button
+                role="switch"
+                aria-checked={checked}
+                aria-labelledby={labelId}
+                aria-describedby={description ? descId : undefined}
+                onClick={() => onChange(!checked)}
+                className={`
+        relative w-12 h-7 rounded-full transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
         ${checked ? 'bg-[var(--color-primary)]' : 'bg-white/20'}
       `}
-        >
-            <div className={`
+            >
+                <div className={`
         absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform
         ${checked ? 'translate-x-6' : 'translate-x-1'}
       `} />
-        </button>
-    </div>
-);
+            </button>
+        </div>
+    );
+};
 
 export const SettingsView: React.FC = () => {
     const {
