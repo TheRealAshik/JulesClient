@@ -557,7 +557,7 @@ const PullRequestCard: React.FC<{ output: { pullRequest?: { url: string; title: 
                         }}
                         className="p-2.5 sm:p-3 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white rounded-lg border border-white/5 hover:border-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                         title="Copy URL"
-                        aria-label="Copy URL"
+                        aria-label="Copy PR URL"
                     >
                         <Copy size={16} />
                     </button>
@@ -726,7 +726,7 @@ const ActivityItem: React.FC<{
                                         download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Download"
-                                        aria-label="Download artifact"
+                                        aria-label="Download generated artifact"
                                     >
                                         <Download size={14} />
                                     </a>
@@ -741,7 +741,7 @@ const ActivityItem: React.FC<{
                                         href="#"
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Open in new window"
-                                        aria-label="Open artifact in new window"
+                                        aria-label="Open generated artifact in new window"
                                     >
                                         <ExternalLink size={14} />
                                     </a>
