@@ -270,25 +270,15 @@ class SharedViewModel(
                      return@launch
                 }
 
-                // Execute network calls on IO dispatcher
-                val (sourcesResp, allSessions) = withContext(Dispatchers.IO) {
-                    val srcDeferred = async { api.listSources() }
-                    val sessDeferred = async { api.listAllSessions() }
-                    srcDeferred.await() to sessDeferred.await()
+                // Execute network calls via repository for persistence
+                withContext(Dispatchers.IO) {
+                    val srcJob = async { repository.refreshSources(forceNetwork = true) }
+                    val sessJob = async { repository.refreshSessions(forceNetwork = true) }
+                    srcJob.await()
+                    sessJob.await()
                 }
 
-                // Auto-select first source if none selected
-                val firstSource = sourcesResp.sources.firstOrNull()
-
-                _uiState.update {
-                    it.copy(
-                        sources = sourcesResp.sources,
-                        currentSource = it.currentSource ?: firstSource,
-                        sessions = allSessions,
-                        sessionsUsed = calculateSessionsUsed(allSessions),
-                        isLoading = false
-                    )
-                }
+                _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
@@ -334,6 +324,15 @@ class SharedViewModel(
         activitiesJob = repository.getActivities(session.name).onEach { activities ->
             _uiState.update { it.copy(activities = activities) }
         }.launchIn(viewModelScope)
+
+        // Initial refresh of activities
+        viewModelScope.launch {
+            try {
+                repository.refreshActivities(session.name)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Sync error: ${e.message}") }
+            }
+        }
 
         startPolling(session.name)
     }
@@ -464,10 +463,12 @@ class SharedViewModel(
             if (_uiState.value.currentSession?.name != sessionName) return true
 
             // Execute concurrent requests to reduce latency
-            val (activitiesResp, session) = withContext(Dispatchers.IO) {
-                val actDeferred = async { api.listActivities(sessionName) }
+            // We use repository.refreshActivities instead of direct api call to ensure persistence
+            val session = withContext(Dispatchers.IO) {
+                val actDeferred = async { repository.refreshActivities(sessionName, forceNetwork = true) }
                 val sessDeferred = async { api.getSession(sessionName) }
-                actDeferred.await() to sessDeferred.await()
+                actDeferred.await() 
+                sessDeferred.await()
             }
 
             val isProcessing = session.state == SessionState.QUEUED ||

@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.therealashik.client.jules.data.JulesData
 import dev.therealashik.client.jules.ui.JulesBackground
 import dev.therealashik.client.jules.ui.JulesTheme
-import dev.therealashik.client.jules.ui.LoginScreen
 import dev.therealashik.client.jules.ui.components.Drawer
 import dev.therealashik.client.jules.ui.components.Header
 import dev.therealashik.client.jules.ui.screens.HomeView
@@ -43,11 +42,13 @@ fun JulesAppContent(viewModel: SharedViewModel) {
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Header(
-                onOpenDrawer = { isDrawerOpen = true },
-                isLoading = state.isProcessing || state.isLoading,
-                onOpenSettings = { viewModel.navigateToSettings() }
-            )
+            if (state.currentScreen !is Screen.Settings) {
+                Header(
+                    onOpenDrawer = { isDrawerOpen = true },
+                    isLoading = state.isProcessing || state.isLoading,
+                    onOpenSettings = { viewModel.navigateToSettings() }
+                )
+            }
 
             Box(modifier = Modifier.weight(1f)) {
                 when (val screen = state.currentScreen) {
