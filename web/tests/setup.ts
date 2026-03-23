@@ -52,6 +52,10 @@ vi.mock('react-window', async () => {
         ...actual,
         List: ({ children, itemCount, itemData, rowProps }: any) => {
             const items = [];
+            // Handle if children is not a function (e.g. if it was mocked away)
+            if (typeof children !== 'function') {
+                return React.createElement('div', { 'data-testid': 'react-window-list' }, null);
+            }
             // If itemData contains sessions (from RepositoryView)
             if (itemData && itemData.sessions) {
                 const count = Math.min(itemCount, itemData.sessions.length);
