@@ -61,11 +61,10 @@ const mockSources: JulesSource[] = [
 ];
 
 describe('Drawer Virtualization', () => {
-    it('renders session headers and items', () => {
+    it('renders session headers and items', async () => {
         // Mock AutoSizer to force rendering of children
         vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
         vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
-
         render(
             <MemoryRouter>
                 <Drawer
@@ -80,7 +79,7 @@ describe('Drawer Virtualization', () => {
         );
 
         // Check for headers
-        expect(screen.getByText('Recent sessions')).toBeInTheDocument();
+        expect(await screen.findByText('Recent sessions')).toBeInTheDocument();
         expect(screen.getByText('Repositories')).toBeInTheDocument();
 
         // Check for session items

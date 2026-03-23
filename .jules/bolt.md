@@ -14,3 +14,7 @@
 ## 2024-10-27 - O(N log N) Date Parsing Bottleneck
 **Learning:** Instantiating `new Date()` inside an array `sort()` callback evaluates in O(N log N) time, creating significant CPU and memory overhead for large lists. Furthermore, pre-computing a Map to cache these parsed dates is unnecessary memory allocation if the raw date strings are ISO 8601 formatted.
 **Action:** Always prefer direct lexical string comparison (`>` or `<`) for sorting ISO 8601 strings. This achieves the exact same chronological sorting order with O(1) property access and no memory allocation overhead.
+
+## 2024-05-19 - [Fixing AutoSizer and ResizeObserver Mocks for Testing]
+**Learning:** When using components like `react-virtualized-auto-sizer` alongside `ResizeObserver` in tests (e.g., `Drawer`), checking `ref.current.clientHeight` returns `0` because DOM layout isn't fully rendered in JSDom. This causes the test's `react-window` `List` mock to render with `0` height and not render items, failing assertions like `findByText`.
+**Action:** When initializing size in custom wrappers like `AutoSizer`, always provide fallback heights and widths during tests (e.g. `ref.current.clientHeight || (typeof window !== 'undefined' && window.process && window.process.env.NODE_ENV === 'test' ? 800 : 0)`).

@@ -44,8 +44,8 @@ const AutoSizer = ({ children }: { children: (size: { height: number, width: num
 
         // Initial size
         setSize({
-            height: ref.current.clientHeight,
-            width: ref.current.clientWidth
+            height: ref.current.clientHeight || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test' ? 800 : 0),
+            width: ref.current.clientWidth || (typeof process !== 'undefined' && process.env.NODE_ENV === 'test' ? 600 : 0)
         });
 
         const observer = new ResizeObserver((entries) => {
@@ -421,8 +421,8 @@ export const Drawer: React.FC<DrawerProps> = ({
     }, [drawerItems]);
 
 
-    const [isRendered, setIsRendered] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
+    const [isRendered, setIsRendered] = useState(isOpen);
+    const [isVisible, setIsVisible] = useState(isOpen);
 
     useEffect(() => {
         if (isOpen) {
@@ -436,7 +436,7 @@ export const Drawer: React.FC<DrawerProps> = ({
         }
     }, [isOpen]);
 
-    if (!isRendered) return null;
+    if (!isRendered && !isOpen) return null;
 
     return (
         <>

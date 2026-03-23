@@ -22,7 +22,7 @@ const getSessionStatusText = (state: JulesSession['state']): string => {
     }
 };
 
-export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [], onSelectSession }) => {
+export const ProactiveSection: React.FC<ProactiveSectionProps> = React.memo(({ sessions = [], onSelectSession }) => {
     const [isEnabled, setIsEnabled] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -147,7 +147,8 @@ export const ProactiveSection: React.FC<ProactiveSectionProps> = ({ sessions = [
             </div>
         </div>
     );
-};
+});
+ProactiveSection.displayName = 'ProactiveSection';
 
 const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
     <button
