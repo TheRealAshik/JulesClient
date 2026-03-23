@@ -6,10 +6,26 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { JulesSession, JulesSource } from '../../types';
 
-// Mock AutoSizer to render with fixed dimensions in tests
-vi.mock('react-virtualized-auto-sizer', () => ({
-    AutoSizer: ({ children }: any) => children({ height: 600, width: 300 })
-}));
+// Mock react-window to avoid virtualization rendering issues
+vi.mock('react-window', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...actual,
+        VariableSizeList: ({ children, itemCount, itemSize, itemData, height, width, style }: any) => {
+            const items = [];
+            for (let i = 0; i < itemCount; i++) {
+                items.push(
+                    children({
+                        index: i,
+                        style: { height: itemSize(i), width },
+                        data: itemData
+                    })
+                );
+            }
+            return <div data-testid="react-window-list" style={{ ...style, height, width }}>{items}</div>;
+        }
+    };
+});
 
 const mockSessions: JulesSession[] = [
     {
@@ -46,6 +62,10 @@ const mockSources: JulesSource[] = [
 
 describe('Drawer Virtualization', () => {
     it('renders session headers and items', () => {
+        // Mock AutoSizer to force rendering of children
+        vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+        vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
         render(
             <MemoryRouter>
                 <Drawer

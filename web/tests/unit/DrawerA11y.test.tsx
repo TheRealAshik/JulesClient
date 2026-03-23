@@ -6,6 +6,27 @@ import { Drawer } from '../../components/Drawer';
 import { JulesSession, JulesSource } from '../../types';
 import { MemoryRouter } from 'react-router-dom';
 
+// Mock react-window to avoid virtualization rendering issues
+vi.mock('react-window', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        ...actual,
+        VariableSizeList: ({ children, itemCount, itemSize, itemData, height, width, style }: any) => {
+            const items = [];
+            for (let i = 0; i < itemCount; i++) {
+                items.push(
+                    children({
+                        index: i,
+                        style: { height: itemSize(i), width },
+                        data: itemData
+                    })
+                );
+            }
+            return <div data-testid="react-window-list" style={{ ...style, height, width }}>{items}</div>;
+        }
+    };
+});
+
 // Mock Lucide icons
 vi.mock('lucide-react', async (importOriginal) => {
     const actual = await importOriginal();
@@ -56,6 +77,10 @@ const mockSources: JulesSource[] = [
 
 describe('Drawer Accessibility', () => {
     it('should have accessible session toggle', async () => {
+        // Mock AutoSizer to force rendering of children
+        vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+        vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
         render(
             <MemoryRouter>
                 <Drawer
@@ -81,6 +106,10 @@ describe('Drawer Accessibility', () => {
     });
 
     it('should have accessible repository toggle', async () => {
+        // Mock AutoSizer to force rendering of children
+        vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+        vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
         render(
             <MemoryRouter>
                 <Drawer
@@ -106,6 +135,10 @@ describe('Drawer Accessibility', () => {
     });
 
     it('should have accessible session options menu', async () => {
+        // Mock AutoSizer to force rendering of children
+        vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+        vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
         render(
             <MemoryRouter>
                 <Drawer
@@ -144,6 +177,10 @@ describe('Drawer Accessibility', () => {
     });
 
     it('should fallback to prompt for session options label if title is missing', async () => {
+        // Mock AutoSizer to force rendering of children
+        vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600);
+        vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300);
+
         render(
             <MemoryRouter>
                 <Drawer
