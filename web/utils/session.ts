@@ -127,11 +127,11 @@ export const sortSessions = (sessions: JulesSession[]): JulesSession[] => {
         }
 
         // 3. Last Update (Most recent first / Descending)
-        // Optimization: Use ISO 8601 string comparison directly to avoid expensive Date parsing
-        const timeA = a.updateTime ?? "";
-        const timeB = b.updateTime ?? "";
-        if (timeB > timeA) return 1;
-        if (timeB < timeA) return -1;
+        // ⚡ Bolt: Direct lexical comparison of ISO 8601 strings is much faster than allocating Date objects and Maps
+        const timeA = a.updateTime || "";
+        const timeB = b.updateTime || "";
+        if (timeA < timeB) return 1;
+        if (timeA > timeB) return -1;
         return 0;
     });
 };
