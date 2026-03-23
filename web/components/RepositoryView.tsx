@@ -54,7 +54,9 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
             // Placeholder: Filtering sessions older than 30 days as 'Archived'
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            data = data.filter(s => new Date(s.createTime) < thirtyDaysAgo);
+            const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
+            // Optimization: String comparison for ISO 8601 dates avoids N Date parsings
+            data = data.filter(s => s.createTime < thirtyDaysAgoIso);
         }
 
         // Search
@@ -67,7 +69,8 @@ export const RepositoryView: React.FC<RepositoryViewProps> = ({
         }
 
         // Sort by Date (Newest first)
-        return [...data].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+        // Optimization: Lexical string comparison is much faster than parsing new Date objects N log N times
+        return [...data].sort((a, b) => b.createTime > a.createTime ? 1 : b.createTime < a.createTime ? -1 : 0);
     }, [sessions, filter, search]);
 
     return (
