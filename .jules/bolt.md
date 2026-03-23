@@ -10,3 +10,7 @@
 ## 2024-05-18 - [Optimizing Date Parsing in React Re-renders]
 **Learning:** Parsing `new Date(ISOString)` continuously inside a `useMemo` block that executes `sort` or `filter` on a large array scales poorly because creating `Date` objects is CPU intensive and the sort callback runs $O(N \log N)$ times.
 **Action:** When filtering or sorting data locally on the frontend by standard ISO 8601 timestamps, prefer lexical string comparison (e.g., `dateStringA > dateStringB ? 1 : ...`) and statically pre-calculating the relative boundary strings (e.g., `const cutOffIso = cutOffDate.toISOString()`) to avoid constant parsing overhead inside iteration blocks.
+
+## 2024-10-27 - O(N log N) Date Parsing Bottleneck
+**Learning:** Instantiating `new Date()` inside an array `sort()` callback evaluates in O(N log N) time, creating significant CPU and memory overhead for large lists. Furthermore, pre-computing a Map to cache these parsed dates is unnecessary memory allocation if the raw date strings are ISO 8601 formatted.
+**Action:** Always prefer direct lexical string comparison (`>` or `<`) for sorting ISO 8601 strings. This achieves the exact same chronological sorting order with O(1) property access and no memory allocation overhead.
