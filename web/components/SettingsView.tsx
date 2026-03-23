@@ -113,14 +113,14 @@ const ToggleSwitch: React.FC<{
                 aria-describedby={description ? descId : undefined}
                 onClick={() => onChange(!checked)}
                 className={`
-        relative w-12 h-7 rounded-full transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
-        ${checked ? 'bg-[var(--color-primary)]' : 'bg-white/20'}
-      `}
+                    relative w-12 h-7 rounded-full transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface)]
+                    ${checked ? 'bg-[var(--color-primary)]' : 'bg-white/20'}
+                `}
             >
                 <div className={`
-        absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform
-        ${checked ? 'translate-x-6' : 'translate-x-1'}
-      `} />
+                    absolute top-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform
+                    ${checked ? 'translate-x-6' : 'translate-x-1'}
+                `} />
             </button>
         </div>
     );
