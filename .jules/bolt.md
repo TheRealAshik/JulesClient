@@ -7,3 +7,6 @@
 ## 2024-03-17 - React-Window Mocking Edge Case in Vitest
 **Learning:** When virtualizing lists like `RepositoryView` using `react-window`, passing a complex object (e.g., `{ sessions, activeSessionId, ... }`) via `itemData` broke the global test mock in `web/tests/setup.ts`, which previously only expected arrays or objects with an `items` array property for `Drawer`. This caused unrelated test failures in the suite.
 **Action:** When implementing new virtualized lists, always check and update the `react-window` global mock in `tests/setup.ts` to accommodate the specific `itemData` structure used by the new component so that the test suite remains stable.
+## 2024-05-18 - [Optimizing Date Parsing in React Re-renders]
+**Learning:** Parsing `new Date(ISOString)` continuously inside a `useMemo` block that executes `sort` or `filter` on a large array scales poorly because creating `Date` objects is CPU intensive and the sort callback runs $O(N \log N)$ times.
+**Action:** When filtering or sorting data locally on the frontend by standard ISO 8601 timestamps, prefer lexical string comparison (e.g., `dateStringA > dateStringB ? 1 : ...`) and statically pre-calculating the relative boundary strings (e.g., `const cutOffIso = cutOffDate.toISOString()`) to avoid constant parsing overhead inside iteration blocks.
