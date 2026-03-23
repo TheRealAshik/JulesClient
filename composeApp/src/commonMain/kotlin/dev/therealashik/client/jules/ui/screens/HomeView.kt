@@ -126,37 +126,11 @@ fun HomeView(
                     }
                 }
 
-                // Proactive Section
-                ProactiveSection(
-                    sessions = sessions,
-                    onSelectSession = onSelectSession
-                )
-
-                // Footer
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = JulesSpacing.xxxl),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s)) {
-                        ActionButton(Icons.Default.ViewInAr, "Render")
-                        ActionButton(Icons.Default.Terminal, "CLI")
-                        ActionButton(Icons.Default.Code, "API")
-                    }
-
-                    if (onResetKey != null) {
-                        ActionButton(Icons.Default.Refresh, "Reset Key", onClick = onResetKey)
-                    }
-                }
-            
-            // Bottom padding for mobile
-            Spacer(modifier = Modifier.height(JulesSpacing.xxl))
+            }
         }
     }
 }
-}
+
 
 @Composable
 fun ActionButton(icon: ImageVector, label: String, onClick: (() -> Unit)? = null) {

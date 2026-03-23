@@ -67,18 +67,19 @@ fun RepositoryView(
         ) {
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
                 Text(
-                    text = source.displayName ?: source.name.substringAfterLast("/"),
+                    text = (source.displayName ?: source.name).removePrefix("sources/github/"),
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = source.name,
+                    text = source.name.removePrefix("sources/github/"),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.padding(top = 4.dp)
                 )
+
                 
                 Spacer(modifier = Modifier.height(32.dp))
 

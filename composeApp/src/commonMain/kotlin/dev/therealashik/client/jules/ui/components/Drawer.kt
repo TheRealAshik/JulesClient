@@ -489,7 +489,7 @@ fun SourceItem(
         }
         Spacer(modifier = Modifier.width(JulesSpacing.m))
         Text(
-            text = source.displayName ?: source.name.split("/").takeLast(2).joinToString("/"),
+            text = (source.displayName ?: source.name).removePrefix("sources/github/"),
             fontSize = 14.sp,
             color = contentColor,
             maxLines = 1,

@@ -323,20 +323,18 @@ fun InputArea(
                                 horizontalArrangement = Arrangement.spacedBy(JulesSpacing.s),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Attachment Button (Pill Style)
-                                FilledTonalButton(
+                                // Attachment Button (Icon Style)
+                                FilledTonalIconButton(
                                     onClick = { filePicker.launch() },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    modifier = Modifier.height(32.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                    modifier = Modifier.size(32.dp),
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 ) {
-                                    Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text("Add", fontSize = 12.sp)
+                                    Icon(Icons.Default.Add, "Add attachment", modifier = Modifier.size(18.dp))
                                 }
+
 
                                 // Repository Selector (Chip Style)
                                 Box {
@@ -344,7 +342,8 @@ fun InputArea(
                                         onClick = { isRepoMenuOpen = true },
                                         label = {
                                             Text(
-                                                currentSource?.displayName ?: currentSource?.name ?: "Select Repo",
+                                                (currentSource?.displayName ?: currentSource?.name ?: "Select Repo")
+                                                    .removePrefix("sources/github/"),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
                                                 modifier = Modifier.widthIn(max = 100.dp),
@@ -413,7 +412,7 @@ fun InputArea(
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
                                                             Text(
-                                                                source.displayName ?: source.name,
+                                                                (source.displayName ?: source.name).removePrefix("sources/github/"),
                                                                 fontSize = 14.sp,
                                                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
@@ -452,29 +451,63 @@ fun InputArea(
                                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                                     )
 
-                                    DropdownMenu(
-                                        expanded = isBranchMenuOpen,
-                                        onDismissRequest = { isBranchMenuOpen = false },
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
-                                    ) {
-                                        currentSource?.githubRepo?.branches?.forEach { branch ->
-                                            DropdownMenuItem(
-                                                text = {
-                                                    Text(
-                                                        branch.displayName,
-                                                        color = if(branch.displayName == selectedBranch) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                },
-                                                onClick = {
-                                                    selectedBranch = branch.displayName
-                                                    isBranchMenuOpen = false
-                                                },
-                                                leadingIcon = {
-                                                    if (branch.displayName == selectedBranch) {
-                                                        Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    if (isBranchMenuOpen) {
+                                        ModalBottomSheet(
+                                            onDismissRequest = { isBranchMenuOpen = false },
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp)
+                                                    .padding(bottom = 32.dp)
+                                            ) {
+                                                Text(
+                                                    "Select Branch",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    modifier = Modifier.padding(vertical = 16.dp)
+                                                )
+                                                
+                                                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                                                    val branches = currentSource?.githubRepo?.branches ?: emptyList()
+                                                    items(branches) { branch ->
+                                                        val isSelected = branch.displayName == selectedBranch
+                                                        Row(
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .heightIn(min = 44.dp)
+                                                                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                                                .clickable {
+                                                                    selectedBranch = branch.displayName
+                                                                    isBranchMenuOpen = false
+                                                                }
+                                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.AccountTree,
+                                                                null,
+                                                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                            Spacer(modifier = Modifier.width(12.dp))
+                                                            Text(
+                                                                branch.displayName,
+                                                                fontSize = 14.sp,
+                                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                                modifier = Modifier.weight(1f),
+                                                                maxLines = 1,
+                                                                overflow = TextOverflow.Ellipsis
+                                                            )
+                                                            if (isSelected) {
+                                                                Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                            )
+                                            }
                                         }
                                     }
                                 }
@@ -616,10 +649,10 @@ fun InputArea(
                                     ) {
                                         val modes = listOf(
                                             Triple("START", "Start immediately", Icons.Default.Send),
-                                            Triple("SCHEDULED", "Scheduled task", Icons.Default.Schedule),
                                             Triple("INTERACTIVE", "Interactive plan", Icons.Default.ChatBubble),
                                             Triple("REVIEW", "Review plan", Icons.Default.Search)
                                         )
+
 
                                         modes.forEach { (mode, label, icon) ->
                                             DropdownMenuItem(
