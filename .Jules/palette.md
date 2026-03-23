@@ -7,3 +7,7 @@
 ## 2024-03-22 - [Toggle Switch Accessibility Pattern]
 **Learning:** Native `<button>` elements naturally receive keyboard focus and natively respond to 'Enter' and 'Space' keypresses to trigger their `onClick` handlers. When implementing custom ARIA components (like `role="switch"` toggles) using buttons, adding `tabIndex={0}` or custom `onKeyDown` handlers for these keys is redundant and an anti-pattern. Instead, rely on native semantic HTML capabilities while focusing custom styling (like `focus-visible`) and `aria-labelledby`/`aria-describedby` (via `useId()`) for a clean implementation.
 **Action:** When creating custom accessible interactive elements, use semantic HTML tags first and rely on their native keyboard/focus behaviors instead of re-implementing them.
+
+## 2026-03-18 - ARIA labels for icon-only buttons
+**Learning:** Icon-only buttons or links (e.g. download, external link, copy) must have an `aria-label` for screen readers. A `title` attribute alone is sometimes insufficient for accessibility purposes.
+**Action:** Ensure that all icon-only interactive elements contain a descriptive `aria-label` alongside any `title` attributes.
