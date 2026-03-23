@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -346,12 +347,12 @@ fun InputArea(
                                                     .removePrefix("sources/github/"),
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis,
-                                                modifier = Modifier.widthIn(max = 100.dp),
-                                                fontSize = 12.sp
+                                                modifier = Modifier.widthIn(max = 80.dp),
+                                                fontSize = 11.sp
                                             )
                                         },
-                                        leadingIcon = { Icon(Icons.Default.Terminal, null, modifier = Modifier.size(14.dp)) },
-                                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(14.dp)) },
+                                        leadingIcon = { Icon(Icons.Default.Terminal, null, modifier = Modifier.size(12.dp)) },
+                                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(12.dp)) },
                                         colors = AssistChipDefaults.assistChipColors(
                                             containerColor = Color.Transparent,
                                             labelColor = MaterialTheme.colorScheme.onSurface
@@ -438,12 +439,12 @@ fun InputArea(
                                         label = {
                                             Text(
                                                 selectedBranch,
-                                                fontSize = 12.sp,
+                                                fontSize = 11.sp,
                                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                                             )
                                         },
-                                        leadingIcon = { Icon(Icons.Default.AccountTree, null, modifier = Modifier.size(14.dp)) },
-                                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(14.dp)) },
+                                        leadingIcon = { Icon(Icons.Default.AccountTree, null, modifier = Modifier.size(12.dp)) },
+                                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, modifier = Modifier.size(12.dp)) },
                                         colors = AssistChipDefaults.assistChipColors(
                                             containerColor = Color.Transparent,
                                             labelColor = MaterialTheme.colorScheme.onSurface
@@ -511,161 +512,142 @@ fun InputArea(
                                         }
                                     }
                                 }
-
-                                // Settings Button
-                                Box {
-                                    IconButton(
-                                        onClick = { isSettingsMenuOpen = true },
-                                        modifier = Modifier.size(32.dp),
-                                        colors = IconButtonDefaults.iconButtonColors(
-                                            contentColor = if(sessionTitle.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Settings,
-                                            contentDescription = "Settings",
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-
-                                    DropdownMenu(
-                                        expanded = isSettingsMenuOpen,
-                                        onDismissRequest = { isSettingsMenuOpen = false },
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer).width(280.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(JulesSpacing.m)) {
-                                            // Session Title
-                                            Text("SESSION TITLE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            OutlinedTextField(
-                                                value = sessionTitle,
-                                                onValueChange = { sessionTitle = it },
-                                                placeholder = { Text("Optional title...", fontSize = 12.sp) },
-                                                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface),
-                                                modifier = Modifier.fillMaxWidth().height(40.dp),
-                                                colors = OutlinedTextFieldDefaults.colors(
-                                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
                             }
 
-                            // Send Split Button
-                            Row(
-                                modifier = Modifier
-                                    .height(36.dp)
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .background(if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                // Main Action
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .clickable(enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) {
-                                            scope.launch {
-                                                var prompt = input
-                                                if (attachments.isNotEmpty()) {
-                                                    val sb = StringBuilder()
-                                                    attachments.forEach { file ->
-                                                        val content = try {
-                                                            file.readText()
-                                                        } catch (e: Exception) {
-                                                            "Error reading file: ${e.message}"
-                                                        }
-                                                        sb.append("File: ${file.name}\n```\n$content\n```\n\n")
-                                                    }
-                                                    val filesContent = sb.toString().trim()
-                                                    prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
-                                                }
-
-                                                onSendMessage(
-                                                    prompt,
-                                                    CreateSessionConfig(
-                                                        title = sessionTitle.takeIf { it.isNotBlank() },
-                                                        startingBranch = selectedBranch,
-                                                        automationMode = when (selectedMode) {
-                                                            "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
-                                                            else -> AutomationMode.AUTO_CREATE_PR
-                                                        }
-                                                    )
-                                                )
-                                                input = ""
-                                                sessionTitle = ""
-                                                attachments.clear()
-                                            }
-                                        }
-                                        .padding(horizontal = 16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isLoading) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    } else {
-                                        Text(
-                                            "Send",
-                                            color = if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.38f),
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 13.sp
-                                        )
-                                    }
+                                // Material 3 Expressive Split Button (Combined Send & Modes & Settings)
+                            @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+                            Box {
+                                val splitButtonColors = if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) {
+                                    SplitButtonDefaults.filledSplitButtonColors()
+                                } else {
+                                    SplitButtonDefaults.tonalSplitButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    )
                                 }
 
-                                // Divider
-                                Box(
-                                    modifier = Modifier
-                                        .width(1.dp)
-                                        .fillMaxHeight()
-                                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                                SplitButton(
+                                    leadingButton = {
+                                        SplitButtonDefaults.LeadingButton(
+                                            onClick = {
+                                                if (((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading)) {
+                                                    scope.launch {
+                                                        var prompt = input
+                                                        if (attachments.isNotEmpty()) {
+                                                            val sb = StringBuilder()
+                                                            attachments.forEach { file ->
+                                                                val content = try {
+                                                                    file.readText()
+                                                                } catch (e: Exception) {
+                                                                    "Error reading file: ${e.message}"
+                                                                }
+                                                                sb.append("File: ${file.name}\n```\n$content\n```\n\n")
+                                                            }
+                                                            val filesContent = sb.toString().trim()
+                                                            prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
+                                                        }
+
+                                                        onSendMessage(
+                                                            prompt,
+                                                            CreateSessionConfig(
+                                                                title = sessionTitle.takeIf { it.isNotBlank() },
+                                                                startingBranch = selectedBranch,
+                                                                automationMode = when (selectedMode) {
+                                                                    "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
+                                                                    else -> AutomationMode.AUTO_CREATE_PR
+                                                                }
+                                                            )
+                                                        )
+                                                        input = ""
+                                                        sessionTitle = ""
+                                                        attachments.clear()
+                                                    }
+                                                }
+                                            },
+                                            enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading,
+                                            colors = splitButtonColors
+                                        ) {
+                                            if (isLoading) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    strokeWidth = 2.dp,
+                                                    color = if ((input.isNotBlank() || attachments.isNotEmpty())) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            } else {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                ) {
+                                                    Text("Send", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                                    Icon(Icons.Default.Send, null, modifier = Modifier.size(14.dp))
+                                                }
+                                            }
+                                        }
+                                    },
+                                    trailingButton = {
+                                        SplitButtonDefaults.TrailingButton(
+                                            checked = isModeMenuOpen,
+                                            onCheckedChange = { isModeMenuOpen = it },
+                                            enabled = !isLoading,
+                                            colors = splitButtonColors
+                                        ) {
+                                            Icon(
+                                                if (isModeMenuOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                                null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.height(36.dp)
                                 )
 
-                                // Dropdown Trigger
-                                var isModeMenuOpen by remember { mutableStateOf(false) }
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .clickable(enabled = !isLoading) { isModeMenuOpen = true }
-                                        .padding(horizontal = 8.dp),
-                                    contentAlignment = Alignment.Center
+                                DropdownMenu(
+                                    expanded = isModeMenuOpen,
+                                    onDismissRequest = { isModeMenuOpen = false },
+                                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer).width(280.dp)
                                 ) {
-                                    Icon(
-                                        Icons.Default.ArrowDropDown,
-                                        null,
-                                        tint = if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha=0.38f),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-
-                                    DropdownMenu(
-                                        expanded = isModeMenuOpen,
-                                        onDismissRequest = { isModeMenuOpen = false },
-                                        modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)
-                                    ) {
-                                        val modes = listOf(
-                                            Triple("START", "Start immediately", Icons.Default.Send),
-                                            Triple("INTERACTIVE", "Interactive plan", Icons.Default.ChatBubble),
-                                            Triple("REVIEW", "Review plan", Icons.Default.Search)
+                                    Column(modifier = Modifier.padding(12.dp)) {
+                                        // Session Title (Moved from Settings)
+                                        Text("SESSION TITLE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        OutlinedTextField(
+                                            value = sessionTitle,
+                                            onValueChange = { sessionTitle = it },
+                                            placeholder = { Text("Optional title...", fontSize = 12.sp) },
+                                            textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface),
+                                            modifier = Modifier.fillMaxWidth().height(44.dp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                            )
                                         )
-
+                                        
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        // Mode Selection
+                                        Text("AUTOMATION MODE", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        
+                                        val modes = listOf(
+                                            Triple("START", "Start immediately", Icons.Default.FlashOn),
+                                            Triple("INTERACTIVE", "Interactive plan", Icons.Default.ChatBubbleOutline),
+                                            Triple("REVIEW", "Review plan", Icons.Default.FactCheck)
+                                        )
 
                                         modes.forEach { (mode, label, icon) ->
                                             DropdownMenuItem(
                                                 text = {
                                                     Column {
-                                                        Text(label, fontSize = 14.sp)
+                                                        Text(label, fontSize = 13.sp)
                                                         if (mode == selectedMode) {
-                                                            Text("Selected", fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
+                                                            Text("Selected", fontSize = 9.sp, color = MaterialTheme.colorScheme.primary)
                                                         }
                                                     }
                                                 },
                                                 leadingIcon = {
-                                                    Icon(icon, null, tint = if (mode == selectedMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Icon(icon, null, modifier = Modifier.size(16.dp), tint = if (mode == selectedMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                                                 },
                                                 onClick = {
                                                     selectedMode = mode

@@ -98,53 +98,56 @@ fun SessionView(
         }
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+        // Header (Fixed at top)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 2.dp
         ) {
-            // Header
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                tonalElevation = 2.dp
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = JulesSpacing.l, vertical = JulesSpacing.m),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = JulesSpacing.l, vertical = JulesSpacing.m),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Chat",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
-                        modifier = Modifier.clickable { onNavigateHome() }
-                    )
-                    Text(" / ", color = MaterialTheme.colorScheme.outline, fontSize = 14.sp)
-                    Text(
-                        session.title ?: session.name.removePrefix("sessions/"),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    "Chat",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable { onNavigateHome() }
+                )
+                Text(" / ", color = MaterialTheme.colorScheme.outline, fontSize = 14.sp)
+                Text(
+                    session.title ?: session.name.removePrefix("sessions/"),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
+        // Main Resizing Area (Keyboard-aware)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .imePadding()
+        ) {
             // Chat History
             LazyColumn(
                 state = listState,
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(horizontal = JulesSpacing.l),
-                contentPadding = PaddingValues(bottom = 160.dp, top = JulesSpacing.l)
+                contentPadding = PaddingValues(bottom = 120.dp, top = JulesSpacing.l) // Slightly smaller bottom padding as gradient is now inside
             ) {
                 items(activities) { activity ->
                     ActivityItem(activity, defaultCardState, onApprovePlan)
@@ -161,21 +164,21 @@ fun SessionView(
                     }
                 }
 
-                // Shimmer Loading State - Appended so previous content isn't hidden
+                // Shimmer Loading State
                 if (isProcessing) {
                     item {
                         ShimmerMessage()
                     }
                 }
 
-                // Plan Approval Card (Pinned to bottom of list if waiting)
+                // Plan Approval Card
                 if (session.state == SessionState.AWAITING_PLAN_APPROVAL) {
                     item {
                         PlanApprovalCard(onApprove = { onApprovePlan(null) })
                     }
                 }
 
-                // Completion / Failure Status (if no specific activity rendered it)
+                // Completion / Failure Status
                 if (session.state == SessionState.COMPLETED) {
                      item {
                          Spacer(modifier = Modifier.height(JulesSpacing.xxl))
@@ -207,46 +210,46 @@ fun SessionView(
                     }
                 }
             }
-        }
 
-        // Input Area (Floating & Gradient)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-        ) {
-            // Gradient Overlay
+            // Input Area (Pinned to bottom of the resizing area)
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
                     .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color(0xFF0C0C0C).copy(alpha = 0.8f),
-                                Color(0xFF0C0C0C)
+                    .fillMaxWidth()
+            ) {
+                // Gradient Overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(130.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color(0xFF0C0C0C).copy(alpha = 0.8f),
+                                    Color(0xFF0C0C0C)
+                                )
                             )
                         )
-                    )
-            )
+                )
 
-            // Input Pill
-            InputArea(
-                variant = InputAreaVariant.CHAT,
-                onSendMessage = { text, _ -> onSendMessage(text) },
-                onSendMessageMinimal = onSendMessage,
-                isLoading = isProcessing,
-                currentSource = null,
-                sources = emptyList(),
-                onSourceChange = {},
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = JulesSpacing.l)
-                    .padding(bottom = JulesSpacing.l)
-            )
+                // Input Pill
+                InputArea(
+                    variant = InputAreaVariant.CHAT,
+                    onSendMessage = { text, _ -> onSendMessage(text) },
+                    onSendMessageMinimal = onSendMessage,
+                    isLoading = isProcessing,
+                    currentSource = null,
+                    sources = emptyList(),
+                    onSourceChange = {},
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = JulesSpacing.l)
+                        .padding(bottom = JulesSpacing.l)
+                )
+            }
         }
     }
 }
