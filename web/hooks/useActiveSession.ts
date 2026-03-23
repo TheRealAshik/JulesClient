@@ -20,14 +20,17 @@ export function useActiveSession(
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Polling ref
-    const pollTimeout = useRef<number | null>(null);
     const activePollingSession = useRef<string | null>(null);
     const activitiesRef = useRef<JulesActivity[]>([]);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     const startPolling = useCallback((sessionName: string) => {
-        if (pollTimeout.current) window.clearTimeout(pollTimeout.current);
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
         activePollingSession.current = sessionName;
+        const newController = new AbortController();
+        abortControllerRef.current = newController;
 
         // Reset activities if switching sessions
         if (activitiesRef.current.length > 0 && !activitiesRef.current[0].name.startsWith(sessionName)) {
@@ -35,79 +38,90 @@ export function useActiveSession(
             setActivities([]);
         }
 
-        const poll = async () => {
-            if (activePollingSession.current !== sessionName) return;
+        const runStream = async (signal: AbortSignal) => {
+            if (activePollingSession.current !== sessionName || !service) return;
 
             try {
-                const sessionId = sessionName.split('/').pop()!;
-                // Incremental fetch if we have existing activities
-                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
-                const options = (activitiesRef.current.length > 0 && lastActivity?.createTime)
-                    ? { createTime: lastActivity.createTime }
-                    : undefined;
+                const stream = service.streamActivities(sessionName);
 
-                // Execute API calls concurrently to minimize latency
-                const [response, sess] = await Promise.all([
-                    service.listActivities(sessionId, options),
-                    service.getSession(sessionName)
-                ]);
-
-                if (activePollingSession.current !== sessionName) return;
-
-                const newActivities = response.activities;
-
-                // Merge new activities
-                if (newActivities.length > 0) {
-                    const existingNames = new Set(activitiesRef.current.map(a => a.name));
-                    const uniqueNew = newActivities.filter(a => !existingNames.has(a.name));
-
-                    if (uniqueNew.length > 0) {
-                        const updated = [...activitiesRef.current, ...uniqueNew];
-                        activitiesRef.current = updated;
-                        setActivities(updated);
+                for await (const activity of stream) {
+                    if (signal.aborted) {
+                        break;
                     }
-                } else if (activitiesRef.current.length === 0 && !options) {
-                    // Initial load returned empty
-                    setActivities([]);
-                }
 
-                setCurrentSession(prev => {
-                    // Only update if state has changed to avoid unnecessary re-renders
-                    if (!prev || prev.state !== sess.state || prev.outputs?.length !== sess.outputs?.length) {
-                        return sess;
+                    // Check if it's already in the ref
+                    const existingIndex = activitiesRef.current.findIndex(a => a.name === activity.name);
+
+                    if (existingIndex >= 0) {
+                       // Update existing activity
+                       activitiesRef.current[existingIndex] = activity;
+                    } else {
+                       // Add new activity
+                       activitiesRef.current = [...activitiesRef.current, activity];
                     }
-                    return prev;
-                });
 
-                // Use API state to determine if processing
-                // Active states: QUEUED, PLANNING, IN_PROGRESS
-                // Waiting states: AWAITING_PLAN_APPROVAL, AWAITING_USER_FEEDBACK, PAUSED
-                // Terminal states: COMPLETED, FAILED
-                const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(sess.state);
-                setIsProcessing(isActive);
+                    setActivities([...activitiesRef.current]);
 
-                const isTerminal = ['COMPLETED', 'FAILED'].includes(sess.state);
+                    // Sync the session state based on new activities
+                    const isTerminal = activity.sessionCompleted || activity.sessionFailed;
+                    const requiresAction = activity.planGenerated || activity.userMessaged;
 
-                if (activePollingSession.current === sessionName && !isTerminal) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
+                    if (isTerminal || requiresAction) {
+                        const updatedSession = await service.getSession(sessionName);
+                        if (!signal.aborted) {
+                            setCurrentSession(prev => {
+                                if (!prev || prev.state !== updatedSession.state || prev.outputs?.length !== updatedSession.outputs?.length) {
+                                    return updatedSession;
+                                }
+                                return prev;
+                            });
+
+                            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(updatedSession.state);
+                            setIsProcessing(isActive);
+                        }
+                    } else {
+                         // Keep isProcessing true during intermediate updates to reflect ongoing work
+                         setIsProcessing(true);
+                    }
                 }
-            } catch (e) {
-                console.error("Polling error", e);
-                // Retry on error
-                if (activePollingSession.current === sessionName) {
-                    pollTimeout.current = window.setTimeout(poll, 2000);
+            } catch (e: any) {
+                if (!signal.aborted) {
+                    console.error("Streaming error", e);
+                    setError(e.message || "An error occurred during streaming.");
+                    setIsProcessing(false);
+                }
+            } finally {
+                // Ensure we get the final session state when the stream ends/fails/aborts
+                if (activePollingSession.current === sessionName && !signal.aborted && service) {
+                    try {
+                        const finalSession = await service.getSession(sessionName);
+                        if (!signal.aborted) {
+                            setCurrentSession(prev => {
+                                if (!prev || prev.state !== finalSession.state || prev.outputs?.length !== finalSession.outputs?.length) {
+                                    return finalSession;
+                                }
+                                return prev;
+                            });
+                            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(finalSession.state);
+                            setIsProcessing(isActive);
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch final session state:", e);
+                    }
                 }
             }
         };
 
-        poll();
+        runStream(newController.signal);
     }, [service]);
 
     // Cleanup polling on unmount
     useEffect(() => {
         return () => {
             activePollingSession.current = null;
-            if (pollTimeout.current) window.clearTimeout(pollTimeout.current);
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
         };
     }, []);
 
@@ -140,24 +154,7 @@ export function useActiveSession(
             } else {
                 // SEND MESSAGE TO EXISTING SESSION
                 await service.sendMessage(currentSession.name, text);
-                // Force immediate update - polling will set isProcessing based on API state
-                const sessionId = currentSession.name.split('/').pop()!;
-                const lastActivity = activitiesRef.current[activitiesRef.current.length - 1];
-                const response = await service.listActivities(sessionId, {
-                    createTime: lastActivity?.createTime
-                });
-
-                // Merge
-                if (response.activities.length > 0) {
-                     const existingNames = new Set(activitiesRef.current.map(a => a.name));
-                     const uniqueNew = response.activities.filter(a => !existingNames.has(a.name));
-                     if (uniqueNew.length > 0) {
-                         const updated = [...activitiesRef.current, ...uniqueNew];
-                         activitiesRef.current = updated;
-                         setActivities(updated);
-                     }
-                }
-                // Polling will handle isProcessing based on session.state from API
+                // Streaming will handle isProcessing based on session.state from API
             }
         } catch (e: any) {
             setError(e.message || "An error occurred");
@@ -170,9 +167,13 @@ export function useActiveSession(
         setIsProcessing(true);
         try {
             await service.approvePlan(currentSession.name);
+            // Re-fetch the session immediately to reflect state change
+            const updated = await service.getSession(currentSession.name);
+            setCurrentSession(updated);
+            const isActive = ['QUEUED', 'PLANNING', 'IN_PROGRESS'].includes(updated.state);
+            setIsProcessing(isActive);
         } catch (e: any) {
             setError(e.message);
-        } finally {
             setIsProcessing(false);
         }
     }, [currentSession, service]);
