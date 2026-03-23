@@ -114,7 +114,7 @@ fun InputArea(
     var isBranchMenuOpen by remember { mutableStateOf(false) }
 
     // Settings / Mode Selection
-    var isSettingsMenuOpen by remember { mutableStateOf(false) }
+    var isModeMenuOpen by remember { mutableStateOf(false) }
     var sessionTitle by remember { mutableStateOf("") }
     var selectedMode by remember { mutableStateOf("START") } // "START", "SCHEDULED", "INTERACTIVE", "REVIEW"
 
@@ -517,89 +517,106 @@ fun InputArea(
                                 // Material 3 Expressive Split Button (Combined Send & Modes & Settings)
                             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
                             Box {
-                                val splitButtonColors = if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) {
-                                    SplitButtonDefaults.filledSplitButtonColors()
-                                } else {
-                                    SplitButtonDefaults.tonalSplitButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                    )
-                                }
-
-                                SplitButton(
-                                    leadingButton = {
-                                        SplitButtonDefaults.LeadingButton(
-                                            onClick = {
-                                                if (((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading)) {
-                                                    scope.launch {
-                                                        var prompt = input
-                                                        if (attachments.isNotEmpty()) {
-                                                            val sb = StringBuilder()
-                                                            attachments.forEach { file ->
-                                                                val content = try {
-                                                                    file.readText()
-                                                                } catch (e: Exception) {
-                                                                    "Error reading file: ${e.message}"
-                                                                }
-                                                                sb.append("File: ${file.name}\n```\n$content\n```\n\n")
+                                // Manual implementation of a Split Button if the experimental one is failing or not available
+                                Row(
+                                    modifier = Modifier
+                                        .height(36.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(if ((input.isNotBlank() || attachments.isNotEmpty()) && !isLoading) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Main Action Button
+                                    val isEnabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .clickable(enabled = isEnabled) {
+                                                scope.launch {
+                                                    var prompt = input
+                                                    if (attachments.isNotEmpty()) {
+                                                        val sb = StringBuilder()
+                                                        attachments.forEach { file ->
+                                                            val content = try {
+                                                                file.readText()
+                                                            } catch (e: Exception) {
+                                                                "Error reading file: ${e.message}"
                                                             }
-                                                            val filesContent = sb.toString().trim()
-                                                            prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
+                                                            sb.append("File: ${file.name}\n```\n$content\n```\n\n")
                                                         }
-
-                                                        onSendMessage(
-                                                            prompt,
-                                                            CreateSessionConfig(
-                                                                title = sessionTitle.takeIf { it.isNotBlank() },
-                                                                startingBranch = selectedBranch,
-                                                                automationMode = when (selectedMode) {
-                                                                    "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
-                                                                    else -> AutomationMode.AUTO_CREATE_PR
-                                                                }
-                                                            )
-                                                        )
-                                                        input = ""
-                                                        sessionTitle = ""
-                                                        attachments.clear()
+                                                        val filesContent = sb.toString().trim()
+                                                        prompt = if (prompt.isNotBlank()) "$prompt\n\n--- Attached Files ---\n$filesContent" else "--- Attached Files ---\n$filesContent"
                                                     }
-                                                }
-                                            },
-                                            enabled = (input.isNotBlank() || attachments.isNotEmpty()) && !isLoading,
-                                            colors = splitButtonColors
-                                        ) {
-                                            if (isLoading) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    strokeWidth = 2.dp,
-                                                    color = if ((input.isNotBlank() || attachments.isNotEmpty())) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            } else {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                                ) {
-                                                    Text("Send", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                                    Icon(Icons.Default.Send, null, modifier = Modifier.size(14.dp))
+
+                                                    onSendMessage(
+                                                        prompt,
+                                                        CreateSessionConfig(
+                                                            title = sessionTitle.takeIf { it.isNotBlank() },
+                                                            startingBranch = selectedBranch,
+                                                            automationMode = when (selectedMode) {
+                                                                "INTERACTIVE", "REVIEW" -> AutomationMode.NONE
+                                                                else -> AutomationMode.AUTO_CREATE_PR
+                                                            }
+                                                        )
+                                                    )
+                                                    input = ""
+                                                    sessionTitle = ""
+                                                    attachments.clear()
                                                 }
                                             }
-                                        }
-                                    },
-                                    trailingButton = {
-                                        SplitButtonDefaults.TrailingButton(
-                                            checked = isModeMenuOpen,
-                                            onCheckedChange = { isModeMenuOpen = it },
-                                            enabled = !isLoading,
-                                            colors = splitButtonColors
-                                        ) {
-                                            Icon(
-                                                if (isModeMenuOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                null,
-                                                modifier = Modifier.size(18.dp)
+                                            .padding(horizontal = 16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (isLoading) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                                color = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                        } else {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Text(
+                                                    "Send", 
+                                                    fontSize = 13.sp, 
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                                )
+                                                Icon(
+                                                    Icons.Default.Send, 
+                                                    null, 
+                                                    modifier = Modifier.size(14.dp),
+                                                    tint = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                                )
+                                            }
                                         }
-                                    },
-                                    modifier = Modifier.height(36.dp)
-                                )
+                                    }
+
+                                    // Divider
+                                    Box(
+                                        modifier = Modifier
+                                            .width(1.dp)
+                                            .fillMaxHeight(0.6f)
+                                            .background(if (isEnabled) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f))
+                                    )
+
+                                    // Dropdown Toggle
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .clickable(enabled = !isLoading) { isModeMenuOpen = !isModeMenuOpen }
+                                            .padding(horizontal = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            if (isModeMenuOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                            null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = if (isEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
 
                                 DropdownMenu(
                                     expanded = isModeMenuOpen,
