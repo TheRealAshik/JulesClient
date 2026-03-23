@@ -85,6 +85,7 @@ fun SessionView(
 ) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    var selectedTabIndex by remember { mutableStateOf(0) }
 
     // Auto-scroll to bottom
     LaunchedEffect(activities.size, session.outputs.size, error) {
@@ -137,6 +138,24 @@ fun SessionView(
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+            ) {
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Chat") }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Code") }
+                )
+            }
+
             // Chat History
             LazyColumn(
                 state = listState,
@@ -147,16 +166,18 @@ fun SessionView(
                 contentPadding = PaddingValues(bottom = 160.dp, top = JulesSpacing.l)
             ) {
                 items(activities) { activity ->
-                    ActivityItem(activity, defaultCardState, onApprovePlan)
+                    ActivityItem(activity, defaultCardState, onApprovePlan, isCompactMode = selectedTabIndex == 0, showOnlyArtifacts = selectedTabIndex == 1)
                 }
 
                 // Session Outputs (PR Cards)
-                session.outputs.forEach { output ->
-                    val pr = output.pullRequest
-                    if (pr != null) {
-                        item {
-                            Spacer(modifier = Modifier.height(JulesSpacing.l))
-                            PullRequestCard(pr)
+                if (selectedTabIndex == 0) {
+                    session.outputs.forEach { output ->
+                        val pr = output.pullRequest
+                        if (pr != null) {
+                            item {
+                                Spacer(modifier = Modifier.height(JulesSpacing.l))
+                                PullRequestCard(pr)
+                            }
                         }
                     }
                 }
@@ -169,19 +190,19 @@ fun SessionView(
                 }
 
                 // Plan Approval Card (Pinned to bottom of list if waiting)
-                if (session.state == SessionState.AWAITING_PLAN_APPROVAL) {
+                if (session.state == SessionState.AWAITING_PLAN_APPROVAL && selectedTabIndex == 0) {
                     item {
                         PlanApprovalCard(onApprove = { onApprovePlan(null) })
                     }
                 }
 
                 // Completion / Failure Status (if no specific activity rendered it)
-                if (session.state == SessionState.COMPLETED) {
+                if (session.state == SessionState.COMPLETED && selectedTabIndex == 0) {
                      item {
                          Spacer(modifier = Modifier.height(JulesSpacing.xxl))
                          StatusBanner(true, "Session Completed Successfully")
                      }
-                } else if (session.state == SessionState.FAILED) {
+                } else if (session.state == SessionState.FAILED && selectedTabIndex == 0) {
                      item {
                          Spacer(modifier = Modifier.height(JulesSpacing.xxl))
                          StatusBanner(false, "Session Failed")
@@ -189,7 +210,7 @@ fun SessionView(
                 }
 
                 // Error Display
-                if (!error.isNullOrBlank()) {
+                if (!error.isNullOrBlank() && selectedTabIndex == 0) {
                     item {
                         Row(
                             modifier = Modifier
@@ -263,7 +284,7 @@ private fun getTextContent(content: MessageContent?): String? {
 }
 
 @Composable
-fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePlan: (String?) -> Unit) {
+fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePlan: (String?) -> Unit, isCompactMode: Boolean = false, showOnlyArtifacts: Boolean = false) {
     val isUser = activity.userMessaged != null || activity.userMessage != null
     val isPlan = activity.planGenerated != null
     val isProgress = activity.progressUpdated != null
@@ -288,6 +309,10 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
         return
     }
 
+    if (showOnlyArtifacts && !hasArtifacts) {
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -295,27 +320,29 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
     ) {
         // System Message
         if (activity.originator == "system" && !isPlan && !isProgress && !isCompleted && !isFailed) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = JulesSpacing.s),
-                contentAlignment = Alignment.Center
-            ) {
-                 Text(
-                    text = text ?: "System Event",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF71717A), // Zinc-500
+            if (!showOnlyArtifacts) {
+                Box(
                     modifier = Modifier
-                        .background(Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
-                        .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
-                        .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.xs)
-                )
+                        .fillMaxWidth()
+                        .padding(vertical = JulesSpacing.s),
+                    contentAlignment = Alignment.Center
+                ) {
+                     Text(
+                        text = text ?: "System Event",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF71717A), // Zinc-500
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
+                            .border(1.dp, Color.White.copy(alpha = JulesOpacity.subtle), JulesShapes.circle)
+                            .padding(horizontal = JulesSpacing.m, vertical = JulesSpacing.xs)
+                    )
+                }
             }
             return
         }
 
         // User/Agent Message Header & Bubble
-        if (text != null) {
+        if (text != null && !showOnlyArtifacts) {
             var isTimestampVisible by remember { mutableStateOf(false) }
 
             Row(
@@ -503,14 +530,14 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
 
             // Progress Updates
             val progressUpdate = activity.progressUpdated
-            if (isProgress && progressUpdate != null) {
+            if (isProgress && progressUpdate != null && !showOnlyArtifacts) {
                 ProgressItem(progressUpdate)
                 Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Plan
             val planGenerated = activity.planGenerated
-            if (isPlan && planGenerated != null) {
+            if (isPlan && planGenerated != null && !showOnlyArtifacts) {
                 val plan = planGenerated.plan
                 // val isApproved = activity.planApproved != null // Simplification
                 PlanCard(plan, defaultCardState, onApprove = { onApprovePlan(activity.name) })
@@ -519,15 +546,15 @@ fun ActivityItem(activity: JulesActivity, defaultCardState: Boolean, onApprovePl
 
             // Artifacts
             activity.artifacts.forEach { artifact ->
-                ArtifactView(artifact, defaultCardState)
+                ArtifactView(artifact, defaultCardState, isCompactMode = isCompactMode)
                 Spacer(modifier = Modifier.height(JulesSpacing.s))
             }
 
             // Completion / Failure
-            if (isCompleted) {
+            if (isCompleted && !showOnlyArtifacts) {
                 StatusBanner(true, "Session Completed Successfully")
             }
-            if (isFailed) {
+            if (isFailed && !showOnlyArtifacts) {
                 StatusBanner(false, "Session Failed: ${activity.sessionFailed?.reason ?: "Unknown"}")
             }
         }
@@ -734,12 +761,18 @@ fun PlanApprovalCard(onApprove: () -> Unit) {
 
 @OptIn(ExperimentalEncodingApi::class)
 @Composable
-fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
+fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean, isCompactMode: Boolean = false) {
     val bashOutput = artifact.bashOutput
     val changeSet = artifact.changeSet
     val media = artifact.media
 
     if (bashOutput != null) {
+        if (isCompactMode) {
+        CompactArtifactView(
+            title = bashOutput.command,
+            isError = bashOutput.exitCode != null && bashOutput.exitCode != 0
+        )
+    } else {
         CodeBlock(
             title = bashOutput.command,
             content = bashOutput.output,
@@ -747,6 +780,7 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
             exitCode = bashOutput.exitCode,
             defaultExpanded = defaultExpanded
         )
+    }
     } else if (changeSet != null) {
         val patch = changeSet.gitPatch?.unidiffPatch ?: ""
 
@@ -757,6 +791,12 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
            if (parts.size > 2) ".../${parts.takeLast(2).joinToString("/")}" else fullPath
         }
 
+        if (isCompactMode) {
+        CompactArtifactView(
+            title = changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
+            subtitle = fileName
+        )
+    } else {
         CodeBlock(
             title = changeSet.gitPatch?.suggestedCommitMessage ?: "Code Changes",
             subtitle = fileName,
@@ -764,6 +804,7 @@ fun ArtifactView(artifact: ActivityArtifact, defaultExpanded: Boolean) {
             language = "diff",
             defaultExpanded = defaultExpanded
         )
+    }
     } else if (media != null) {
         val base64Data = media.data
         val mime = media.mimeType
@@ -1003,6 +1044,54 @@ fun PullRequestCard(pr: PullRequestOutput) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun CompactArtifactView(title: String, subtitle: String? = null, isError: Boolean = false) {
+    val borderColor = if (isError) Color(0xFFEF4444).copy(alpha = 0.3f) else Color.White.copy(alpha = JulesOpacity.subtle)
+    val headerBg = if (isError) Color(0xFFEF4444).copy(alpha = JulesOpacity.subtle) else Color.White.copy(alpha = 0.02f)
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF09090B)),
+        shape = JulesShapes.small,
+        modifier = Modifier.fillMaxWidth().border(1.dp, borderColor, JulesShapes.small)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(headerBg)
+                .padding(JulesSpacing.m),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                if (isError) Icons.Default.Warning else Icons.Default.Code,
+                null,
+                tint = if (isError) Color(0xFFF87171) else Color(0xFF71717A),
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(JulesSpacing.s))
+            Column(modifier = Modifier.weight(1f)) {
+                 Text(
+                     title,
+                     color = if (isError) Color(0xFFF87171) else Color(0xFFD4D4D8),
+                     style = MaterialTheme.typography.bodySmall,
+                     fontFamily = FontFamily.Monospace,
+                     maxLines = 1,
+                     overflow = TextOverflow.Ellipsis
+                 )
+                 if (subtitle != null) {
+                     Text(
+                         subtitle,
+                         color = Color(0xFF71717A),
+                         fontSize = 10.sp,
+                         fontFamily = FontFamily.Monospace,
+                         maxLines = 1,
+                         overflow = TextOverflow.Ellipsis
+                     )
+                 }
             }
         }
     }
