@@ -15,9 +15,10 @@ export function useSessionList(service: GeminiService | null) {
 
             // Calculate sessions in last 24 hours
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            // ⚡ Bolt: Direct lexical comparison of ISO 8601 strings is much faster than allocating Date objects in loops
+            const twentyFourHoursAgoIso = twentyFourHoursAgo.toISOString();
             const usedCount = allSessions.filter(s => {
-                const createDate = new Date(s.createTime);
-                return createDate > twentyFourHoursAgo;
+                return s.createTime > twentyFourHoursAgoIso;
             }).length;
 
             setSessionsUsed(usedCount);
