@@ -206,10 +206,12 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
                 )}
             >
                 {/* Header - Click to toggle */}
-                <div
+                <button
+                    type="button"
+                    aria-expanded={isExpanded}
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={twMerge(
-                        "flex items-center justify-between px-3 py-2.5 border-b cursor-pointer transition-colors group min-h-[44px] w-full",
+                        "flex items-center justify-between px-3 py-2.5 border-b cursor-pointer transition-colors group min-h-[44px] w-full text-left focus-visible:outline-none focus-visible:bg-white/[0.08]",
                         isFailed
                             ? "bg-red-500/[0.03] border-red-500/10 hover:bg-red-500/[0.06]"
                             : "bg-white/[0.02] border-white/5 hover:bg-white/[0.05]"
@@ -246,7 +248,7 @@ const CommandArtifact: React.FC<{ command: string, output?: string, exitCode?: n
                             )}
                         />
                     </div>
-                </div>
+                </button>
 
                 {/* Expanded Content */}
                 <AnimatePresence>
@@ -335,9 +337,11 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
                 )}
             >
                 {/* Header - Click to toggle */}
-                <div
+                <button
+                    type="button"
+                    aria-expanded={isExpanded}
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px] w-full"
+                    className="flex items-center justify-between px-3 py-2.5 bg-white/[0.02] border-b border-white/5 cursor-pointer hover:bg-white/[0.05] transition-colors group min-h-[44px] w-full text-left focus-visible:outline-none focus-visible:bg-white/[0.08]"
                 >
                     <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                         <FileDiff size={14} className="text-zinc-500 flex-shrink-0" />
@@ -367,7 +371,7 @@ const CodeChangeArtifact: React.FC<{ changeSet?: any, defaultCollapsed?: boolean
                             )}
                         />
                     </div>
-                </div>
+                </button>
 
                 {/* Expanded Content */}
                 <AnimatePresence>
@@ -727,11 +731,11 @@ const ActivityItem: React.FC<{
                                         download={`artifact-${i}.${artifact.media.mimeType.split('/')[1] || 'png'}`}
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Download"
-<<<<<<< HEAD
-                                        aria-label="Download generated artifact"
-=======
+
+
+
                                         aria-label="Download Generated Artifact"
->>>>>>> origin/palette/aria-labels-icon-buttons-6351807906965806055
+
                                     >
                                         <Download size={14} />
                                     </a>
@@ -746,11 +750,11 @@ const ActivityItem: React.FC<{
                                         href="#"
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Open in new window"
-<<<<<<< HEAD
-                                        aria-label="Open generated artifact in new window"
-=======
+
+
+
                                         aria-label="Open Generated Artifact in new window"
->>>>>>> origin/palette/aria-labels-icon-buttons-6351807906965806055
+
                                     >
                                         <ExternalLink size={14} />
                                     </a>
