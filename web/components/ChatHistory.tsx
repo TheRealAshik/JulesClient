@@ -732,9 +732,8 @@ const ActivityItem: React.FC<{
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Download"
 
+                                        aria-label="Download generated artifact"
 
-
-                                        aria-label="Download Generated Artifact"
 
                                     >
                                         <Download size={14} />
@@ -751,9 +750,8 @@ const ActivityItem: React.FC<{
                                         className="text-zinc-500 hover:text-zinc-300 transition-colors p-1 hover:bg-white/10 rounded"
                                         title="Open in new window"
 
+                                        aria-label="Open generated artifact in new window"
 
-
-                                        aria-label="Open Generated Artifact in new window"
 
                                     >
                                         <ExternalLink size={14} />

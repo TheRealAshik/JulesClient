@@ -14,9 +14,12 @@ export function useSessionList(service: GeminiService | null) {
             setSessions(allSessions);
 
             // Calculate sessions in last 24 hours
-            const twentyFourHoursAgoIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            // ⚡ Bolt: Direct lexical comparison of ISO 8601 strings avoids allocating Date objects for each session
-            const usedCount = allSessions.filter(s => s.createTime > twentyFourHoursAgoIso).length;
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            // ⚡ Bolt: Direct lexical comparison of ISO 8601 strings is much faster than allocating Date objects in loops
+            const twentyFourHoursAgoIso = twentyFourHoursAgo.toISOString();
+            const usedCount = allSessions.filter(s => {
+                return s.createTime > twentyFourHoursAgoIso;
+            }).length;
 
             setSessionsUsed(usedCount);
         } catch (e) {
